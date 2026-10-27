@@ -81,7 +81,7 @@ export default function AdminNews() {
       category: form.category,
       image:
         form.image ||
-        '/images/about.svg-14dd04022da1?w=800&h=500&fit=crop',
+        '/vtoroe-dyhanie/images/about.svg',
     };
 
     if (editingId) {

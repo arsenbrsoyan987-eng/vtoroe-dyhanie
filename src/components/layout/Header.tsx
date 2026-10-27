@@ -40,7 +40,7 @@ export default function Header() {
           <Link to="/" className="flex shrink-0 items-center" aria-label="Второе дыхание — на главную">
             <span className="flex items-center rounded-md bg-white px-2 py-1 transition-all hover:ring-2 hover:ring-accent-red/50">
               <img
-                src="/logo.jpg"
+                src="/vtoroe-dyhanie/logo.jpg"
                 alt="Логотип клуба «Второе дыхание»"
                 className="h-10 w-auto object-contain lg:h-12"
               />
@@ -74,7 +74,7 @@ export default function Header() {
                   Кабинет
                 </Button>
               ) : (
-                <Button to="/login" variant="outline" size="sm">
+                <Button to="/vtoroe-dyhanie/login" variant="outline" size="sm">
                   Войти
                 </Button>
               )}

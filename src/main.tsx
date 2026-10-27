@@ -7,7 +7,7 @@ import App from './App.tsx'
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', () => {
     navigator.serviceWorker
-      .register('/sw.js', { updateViaCache: 'none' })
+      .register('/vtoroe-dyhanie/sw.js', { updateViaCache: 'none' })
       .catch((err) => console.warn('SW registration failed:', err));
   });
 }

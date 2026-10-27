@@ -11,7 +11,7 @@ export default function Footer() {
             <Link to="/" className="inline-flex items-center mb-4" aria-label="Второе дыхание — на главную">
               <span className="bg-white rounded-md px-3 py-2 flex items-center">
                 <img
-                  src="/logo.jpg"
+                  src="/vtoroe-dyhanie/logo.jpg"
                   alt="Логотип клуба «Второе дыхание»"
                   className="h-16 w-auto object-contain"
                 />
@@ -114,7 +114,7 @@ export default function Footer() {
             © {new Date().getFullYear()} {CLUB.fullName}. Все права защищены.
           </p>
           <div className="flex items-center gap-4">
-            <Link to="/privacy" className="text-xs text-gray-500 transition-colors hover:text-white">
+            <Link to="/vtoroe-dyhanie/privacy" className="text-xs text-gray-500 transition-colors hover:text-white">
               Политика конфиденциальности
             </Link>
             <Link to="/cabinet" className="text-xs text-gray-500 transition-colors hover:text-white">

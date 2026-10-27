@@ -25,7 +25,7 @@ export default function ProtectedRoute({ children, roles }: ProtectedRouteProps)
   }
 
   if (!currentUser) {
-    return <Navigate to="/login" state={{ from: location.pathname }} replace />;
+    return <Navigate to="/vtoroe-dyhanie/login" state={{ from: location.pathname }} replace />;
   }
 
   if (roles && !roles.includes(currentUser.role)) {

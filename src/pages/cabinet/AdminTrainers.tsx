@@ -131,7 +131,7 @@ export default function AdminTrainers() {
       specialization: form.specialization.trim(),
       experience: form.experience.trim(),
       biography: form.biography.trim(),
-      photo: form.photo.trim() || '/images/trainer.svg-d25dfeac3438?w=400&h=400&fit=crop',
+      photo: form.photo.trim() || '/vtoroe-dyhanie/images/trainer.svg',
       phone: form.phone.trim(),
       email: form.email.trim(),
       certifications: form.certifications

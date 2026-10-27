@@ -1,11 +1,11 @@
 import SectionTitle from '../ui/SectionTitle';
 
 const galleryImages = [
-  { src: '/images/running.svg-db6ffd4facb5?w=600&h=400&fit=crop', alt: 'Бег', span: 'col-span-2 row-span-2' },
-  { src: '/images/trail.svg-6c3bdd6c93e5?w=600&h=400&fit=crop', alt: 'Горы', span: '' },
-  { src: '/images/cycling.svg-2277a4c46182?w=600&h=400&fit=crop', alt: 'Велоспорт', span: '' },
-  { src: '/images/hiking.svg-561732d1e306?w=600&h=400&fit=crop', alt: 'Поход', span: '' },
-  { src: '/images/functional.svg-6ad2b056d712?w=600&h=400&fit=crop', alt: 'Тренировка', span: '' },
+  { src: '/vtoroe-dyhanie/images/running.svg', alt: 'Бег', span: 'col-span-2 row-span-2' },
+  { src: '/vtoroe-dyhanie/images/trail.svg', alt: 'Горы', span: '' },
+  { src: '/vtoroe-dyhanie/images/cycling.svg', alt: 'Велоспорт', span: '' },
+  { src: '/vtoroe-dyhanie/images/hiking.svg', alt: 'Поход', span: '' },
+  { src: '/vtoroe-dyhanie/images/functional.svg', alt: 'Тренировка', span: '' },
 ];
 
 export default function Gallery() {

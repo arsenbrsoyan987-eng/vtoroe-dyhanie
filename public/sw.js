@@ -4,9 +4,10 @@
  * открывалась свежая версия) и stale-while-revalidate для статики.
  * При изменении логики обязательно увеличивайте CACHE_VERSION.
  */
-const CACHE_VERSION = 'v2';
+const CACHE_VERSION = 'v3';
 const CACHE_NAME = `vtoroe-dyhanie-${CACHE_VERSION}`;
-const PRECACHE = ['/', '/index.html', '/manifest.json', '/logo.jpg'];
+const BASE = '/vtoroe-dyhanie';
+const PRECACHE = [`${BASE}/`, `${BASE}/index.html`, `${BASE}/manifest.json`, `${BASE}/logo.jpg`];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -49,12 +50,12 @@ self.addEventListener('fetch', (event) => {
         .then((response) => {
           if (response.ok) {
             const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put('/index.html', clone));
+            caches.open(CACHE_NAME).then((cache) => cache.put(`${BASE}/index.html`, clone));
           }
           return response;
         })
         .catch(async () => {
-          const cached = await caches.match('/index.html');
+          const cached = await caches.match(`${BASE}/index.html`);
           return cached || Response.error();
         })
     );
