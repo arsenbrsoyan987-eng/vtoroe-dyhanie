@@ -257,7 +257,7 @@ export default function AdminTrainers() {
     if (!credentials) return;
     try {
       await navigator.clipboard.writeText(
-        `Логин: ${credentials.email}\nПароль: ${credentials.password}\nВход: https://vtoroe-dyhanie.vercel.app/login`
+        `Логин: ${credentials.email}\nПароль: ${credentials.password}\nВход: ${window.location.origin}/login`
       );
       setCopied(true);
     } catch {

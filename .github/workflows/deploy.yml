@@ -34,6 +34,10 @@ jobs:
       - name: Build
         run: npm run build
 
+      # CNAME для кастомного домена
+      - name: Write CNAME
+        run: echo 'vtoroe-dyhanie.ru' > dist/CNAME
+
       # GitHub Pages не умеет SPA-rewrite: отдаём index.html и для 404,
       # чтобы глубокие ссылки (/schedule, /cabinet) открывались корректно
       - name: SPA fallback
