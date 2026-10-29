@@ -20,8 +20,10 @@ const css = assets.find((f) => f.endsWith('.css'));
 const paths = [
   ['index', '/'],
   ['404.html (SPA fallback)', '/404.html'],
-  ['spa /schedule', '/schedule'],
-  ['spa /cabinet', '/cabinet'],
+  ['redirect /schedule → /schedule/', '/schedule'],
+  ['spa /schedule/', '/schedule/'],
+  ['spa /trainers/trainer-2/', '/trainers/trainer-2/'],
+  ['spa /cabinet/', '/cabinet/'],
   [`assets/${js}`, `/assets/${js}`],
   [`assets/${css}`, `/assets/${css}`],
   ['images/hero.svg', '/images/hero.svg'],
@@ -30,6 +32,7 @@ const paths = [
   ['icon-192.png', '/icon-192.png'],
   ['og-image.jpg', '/og-image.jpg'],
   ['manifest.json', '/manifest.json'],
+  ['sitemap.xml', '/sitemap.xml'],
   ['sw.js', '/sw.js'],
 ];
 
@@ -47,9 +50,13 @@ let bad = 0;
 for (const [name, path] of paths) {
   try {
     const { status, body } = request(path);
-    // Для SPA-роутов GitHub Pages отдаёт 404 с содержимым index.html —
-    // это ожидаемо: браузер получит HTML и роутер отработает.
-    const ok = status === 200 || (name.startsWith('spa') && status === 404);
+    // GitHub Pages отдаёт каталог со слэшем: /schedule → 301 /schedule/,
+    // а для SPA-роутов без готового HTML — 404 с содержимым index.html.
+    // И то и другое нормально, важно что браузер получает приложение.
+    const ok =
+      status === 200 ||
+      (name.startsWith('redirect') && status === 301) ||
+      (name.startsWith('spa') && status === 404);
     if (!ok) bad++;
     console.log(`${ok ? 'OK ' : 'BAD'} ${status} ${name}`);
 
@@ -61,7 +68,16 @@ for (const [name, path] of paths) {
       console.log(`    это наш сайт: ${ours ? 'ДА' : 'НЕТ — отдаётся не приложение'}`);
     }
     if (name.startsWith('spa')) {
-      console.log(`    контент index: ${body.includes('id="root"') ? 'ДА (SPA работает)' : 'НЕТ'}`);
+      // Пререндеренные страницы содержат готовый HTML с h1, а не пустой root
+      const rendered = /<h1[^>]*>[^<]+<\/h1>/.test(body);
+      console.log(
+        `    готовый HTML: ${rendered ? 'ДА' : 'НЕТ — только SPA-оболочка'}`,
+      );
+    }
+    if (name === 'sitemap.xml') {
+      const count = (body.match(/<url>/g) || []).length;
+      console.log(`    адресов в карте сайта: ${count}`);
+      if (count !== 14) bad++;
     }
   } catch (e) {
     bad++;
