@@ -81,7 +81,7 @@ export default function AdminNews() {
       category: form.category,
       image:
         form.image ||
-        '/vtoroe-dyhanie/images/about.svg',
+        '/images/about.svg',
     };
 
     if (editingId) {

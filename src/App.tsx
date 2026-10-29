@@ -44,7 +44,7 @@ import { ToastProvider } from './context/ToastContext';
 
 export default function App() {
   return (
-    <BrowserRouter basename="/vtoroe-dyhanie">
+    <BrowserRouter>
       <ToastProvider>
         <AuthProvider>
           <Routes>

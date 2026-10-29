@@ -8,7 +8,7 @@ export const news: NewsItem[] = [
     content: '[Полный текст новости]',
     date: '2026-10-20',
     category: 'События',
-    image: '/vtoroe-dyhanie/images/about.svg',
+    image: '/images/about.svg',
   },
   {
     id: 'news-2',
@@ -17,7 +17,7 @@ export const news: NewsItem[] = [
     content: '[Полный текст новости]',
     date: '2026-10-15',
     category: 'Результаты',
-    image: '/vtoroe-dyhanie/images/running.svg',
+    image: '/images/running.svg',
   },
   {
     id: 'news-3',
@@ -26,7 +26,7 @@ export const news: NewsItem[] = [
     content: '[Полный текст новости]',
     date: '2026-10-10',
     category: 'Клуб',
-    image: '/vtoroe-dyhanie/images/cycling.svg',
+    image: '/images/cycling.svg',
   },
 ];
 
@@ -57,7 +57,7 @@ export const testimonials: Testimonial[] = [
   {
     id: 'testimonial-1',
     name: '[Имя участника]',
-    photo: '/vtoroe-dyhanie/images/testimonial.svg',
+    photo: '/images/testimonial.svg',
     text: '[Здесь будет отзыв участника клуба о тренировках, атмосфере и личном опыте.]',
     achievement: '[Личное достижение]',
     direction: 'Бег',
@@ -65,7 +65,7 @@ export const testimonials: Testimonial[] = [
   {
     id: 'testimonial-2',
     name: '[Имя участника]',
-    photo: '/vtoroe-dyhanie/images/testimonial.svg',
+    photo: '/images/testimonial.svg',
     text: '[Здесь будет отзыв участника клуба о тренировках, атмосфере и личном опыте.]',
     achievement: '[Личное достижение]',
     direction: 'Велоспорт',
@@ -73,7 +73,7 @@ export const testimonials: Testimonial[] = [
   {
     id: 'testimonial-3',
     name: '[Имя участника]',
-    photo: '/vtoroe-dyhanie/images/testimonial.svg',
+    photo: '/images/testimonial.svg',
     text: '[Здесь будет отзыв участника клуба о тренировках, атмосфере и личном опыте.]',
     achievement: '[Личное достижение]',
     direction: 'Трейлраннинг',

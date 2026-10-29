@@ -5,7 +5,7 @@ export default function CTA() {
     <section className="relative py-24 lg:py-32 overflow-hidden">
       <div className="absolute inset-0">
         <img
-          src="/vtoroe-dyhanie/images/cta.svg"
+          src="/images/cta.svg"
           alt="Бегущие люди"
           className="w-full h-full object-cover"
           loading="lazy"

@@ -47,7 +47,7 @@ export default function About() {
           <div className="relative">
             <div className="aspect-[4/3] rounded-sm overflow-hidden">
               <img
-                src="/vtoroe-dyhanie/images/about.svg"
+                src="/images/about.svg"
                 alt="Атмосфера клуба"
                 className="w-full h-full object-cover"
                 loading="lazy"

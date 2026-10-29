@@ -1,11 +1,11 @@
 import SectionTitle from '../ui/SectionTitle';
 
 const galleryImages = [
-  { src: '/vtoroe-dyhanie/images/running.svg', alt: 'Бег', span: 'col-span-2 row-span-2' },
-  { src: '/vtoroe-dyhanie/images/trail.svg', alt: 'Горы', span: '' },
-  { src: '/vtoroe-dyhanie/images/cycling.svg', alt: 'Велоспорт', span: '' },
-  { src: '/vtoroe-dyhanie/images/hiking.svg', alt: 'Поход', span: '' },
-  { src: '/vtoroe-dyhanie/images/functional.svg', alt: 'Тренировка', span: '' },
+  { src: '/images/running.svg', alt: 'Бег', span: 'col-span-2 row-span-2' },
+  { src: '/images/trail.svg', alt: 'Горы', span: '' },
+  { src: '/images/cycling.svg', alt: 'Велоспорт', span: '' },
+  { src: '/images/hiking.svg', alt: 'Поход', span: '' },
+  { src: '/images/functional.svg', alt: 'Тренировка', span: '' },
 ];
 
 export default function Gallery() {

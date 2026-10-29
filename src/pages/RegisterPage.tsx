@@ -152,7 +152,7 @@ export default function RegisterPage() {
             />
             <span>
               Согласен с{' '}
-              <a href="/vtoroe-dyhanie/privacy" className="text-accent-blue hover:underline">
+              <a href="/privacy" className="text-accent-blue hover:underline">
                 политикой конфиденциальности
               </a>{' '}
               и обработкой персональных данных
@@ -175,7 +175,7 @@ export default function RegisterPage() {
 
           <p className="text-center text-xs text-gray-500">
             Уже есть аккаунт?{' '}
-            <Link to="/vtoroe-dyhanie/login" className="text-accent-blue hover:underline">
+            <Link to="/login" className="text-accent-blue hover:underline">
               Войти
             </Link>
           </p>

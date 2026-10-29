@@ -6,7 +6,7 @@ export default function Hero() {
       {/* Background Image */}
       <div className="absolute inset-0">
         <img
-          src="/vtoroe-dyhanie/images/hero.svg"
+          src="/images/hero.svg"
           alt="Спортсмены на тренировке"
           className="w-full h-full object-cover"
           loading="eager"

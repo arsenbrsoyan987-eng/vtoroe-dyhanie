@@ -4,7 +4,7 @@ export const trainers: Trainer[] = [
   {
     id: 'trainer-1',
     name: '[Имя тренера]',
-    photo: '/vtoroe-dyhanie/images/trainer.svg',
+    photo: '/images/trainer.svg',
     specialization: 'Бег, подготовка к марафонам',
     experience: '[X] лет тренерского стажа',
     biography: '[Биография тренера. Здесь будет размещена информация об опыте, достижениях и подходе к тренировкам.]',
@@ -16,7 +16,7 @@ export const trainers: Trainer[] = [
   {
     id: 'trainer-2',
     name: '[Имя тренера]',
-    photo: '/vtoroe-dyhanie/images/trainer.svg',
+    photo: '/images/trainer.svg',
     specialization: 'Трейлраннинг, горный бег',
     experience: '[X] лет тренерского стажа',
     biography: '[Биография тренера. Здесь будет размещена информация об опыте, достижениях и подходе к тренировкам.]',
@@ -28,7 +28,7 @@ export const trainers: Trainer[] = [
   {
     id: 'trainer-3',
     name: '[Имя тренера]',
-    photo: '/vtoroe-dyhanie/images/trainer.svg',
+    photo: '/images/trainer.svg',
     specialization: 'Велоспорт, шоссейные гонки',
     experience: '[X] лет тренерского стажа',
     biography: '[Биография тренера. Здесь будет размещена информация об опыте, достижениях и подходе к тренировкам.]',
@@ -40,7 +40,7 @@ export const trainers: Trainer[] = [
   {
     id: 'trainer-4',
     name: '[Имя тренера]',
-    photo: '/vtoroe-dyhanie/images/trainer.svg',
+    photo: '/images/trainer.svg',
     specialization: 'Функциональная подготовка, ОФП',
     experience: '[X] лет тренерского стажа',
     biography: '[Биография тренера. Здесь будет размещена информация об опыте, достижениях и подходе к тренировкам.]',
@@ -52,7 +52,7 @@ export const trainers: Trainer[] = [
   {
     id: 'trainer-5',
     name: '[Имя тренера]',
-    photo: '/vtoroe-dyhanie/images/trainer.svg',
+    photo: '/images/trainer.svg',
     specialization: 'Походы, туризм, ориентирование',
     experience: '[X] лет тренерского стажа',
     biography: '[Биография тренера. Здесь будет размещена информация об опыте, достижениях и подходе к тренировкам.]',

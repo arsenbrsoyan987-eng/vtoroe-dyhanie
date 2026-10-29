@@ -17,7 +17,7 @@ export const trainings: Training[] = [
     spotsAvailable: 5,
     description: 'Лёгкая пробежка для начинающих в комфортном темпе. Работа над техникой и дыханием.',
     equipment: ['Беговые кроссовки', 'Вода'],
-    image: '/vtoroe-dyhanie/images/route.svg',
+    image: '/images/route.svg',
   },
   {
     id: 'training-2',
@@ -34,7 +34,7 @@ export const trainings: Training[] = [
     spotsAvailable: 8,
     description: 'Скоростная интервальная работа на стадионе. Развитие МПК и скоростной выносливости.',
     equipment: ['Беговые кроссовки', 'Спортивные часы', 'Вода'],
-    image: '/vtoroe-dyhanie/images/cta.svg',
+    image: '/images/cta.svg',
   },
   {
     id: 'training-3',
@@ -51,7 +51,7 @@ export const trainings: Training[] = [
     spotsAvailable: 3,
     description: 'Тренировка на пересечённой местности с набором высоты. Работа над подъёмами и спусками.',
     equipment: ['Трейловые кроссовки', 'Гидратор', 'Перекус'],
-    image: '/vtoroe-dyhanie/images/hiking.svg',
+    image: '/images/hiking.svg',
   },
   {
     id: 'training-4',
@@ -68,7 +68,7 @@ export const trainings: Training[] = [
     spotsAvailable: 12,
     description: 'Групповая поездка по пригородному маршруту ~40 км. Комфортный темп, остановки.',
     equipment: ['Велосипед', 'Шлем', 'Вода', 'Запаска'],
-    image: '/vtoroe-dyhanie/images/cycling.svg',
+    image: '/images/cycling.svg',
   },
   {
     id: 'training-5',
@@ -85,7 +85,7 @@ export const trainings: Training[] = [
     spotsAvailable: 10,
     description: 'Круговая тренировка: сила, выносливость, координация. Работа с собственным весом и инвентарём.',
     equipment: ['Спортивная форма', 'Коврик', 'Вода'],
-    image: '/vtoroe-dyhanie/images/functional.svg',
+    image: '/images/functional.svg',
   },
   {
     id: 'training-6',
@@ -102,6 +102,6 @@ export const trainings: Training[] = [
     spotsAvailable: 15,
     description: 'Однодневный пеший поход по осеннему лесу. Маршрут ~15 км с привалом и обедом на природе.',
     equipment: ['Трекинговые ботинки', 'Рюкзак', 'Термос', 'Дождевик'],
-    image: '/vtoroe-dyhanie/images/hiking.svg',
+    image: '/images/hiking.svg',
   },
 ];
