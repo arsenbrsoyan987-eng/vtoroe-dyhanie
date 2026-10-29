@@ -2,22 +2,31 @@
   "name": "Второе дыхание — спортивный клуб",
   "short_name": "2 Дыхание",
   "description": "Спортивное сообщество: бег, трейлраннинг, велоспорт, походы, функциональные тренировки",
+  "lang": "ru",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#0a0a0a",
   "theme_color": "#dc2626",
   "icons": [
     {
-      "src": "/logo.jpg",
-      "sizes": "any",
-      "type": "image/jpeg"
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-      "src": "/logo.jpg",
+      "src": "/icon-512.png",
       "sizes": "512x512",
-      "type": "image/jpeg",
-      "purpose": "any maskable"
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }

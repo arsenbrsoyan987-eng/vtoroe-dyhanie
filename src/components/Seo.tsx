@@ -1,11 +1,12 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { applySeo, trainerSeo, STATIC_SEO, DIRECTION_SEO } from '../lib/seo';
+import { applySeo, hasPlaceholders, trainerSeo, STATIC_SEO, DIRECTION_SEO } from '../lib/seo';
 import { useTrainers } from '../store/trainersStore';
 import { useTrainings } from '../store/trainingsStore';
 import { useEvents } from '../store/eventsStore';
 import { useNews } from '../store/newsStore';
 import { directions } from '../data/directions';
+import { realValue } from '../lib/placeholder';
 
 /** Разделы без публичного контента — их не нужно показывать в поиске */
 function isNoindex(pathname: string) {
@@ -41,10 +42,13 @@ export default function Seo() {
         const dirNames = trainer.directions
           .map((d) => directions.find((x) => x.id === d)?.name)
           .filter((n): n is string => Boolean(n));
+        const seo = trainerSeo(trainer, dirNames);
         applySeo({
-          ...trainerSeo(trainer, dirNames),
+          title: seo.title,
+          description: seo.description,
           path: pathname,
           image: trainer.photo,
+          noindex: seo.incomplete,
         });
         return;
       }
@@ -64,10 +68,21 @@ export default function Seo() {
     if (trainingMatch) {
       const training = trainings.find((t) => t.id === trainingMatch[1]);
       if (training) {
+        // В описание не должны попадать «[Парк, место сбора]» и «[Имя тренера]»
+        const where = realValue(training.location);
+        const who = realValue(training.trainer);
         applySeo({
           title: `${training.name} — ${training.directionName}`,
-          description: `${training.name}: ${training.date}, ${training.time}, ${training.location}. Тренер: ${training.trainer}. Уровень: ${training.level}. Запись на тренировку клуба «Второе дыхание».`,
+          description: [
+            `${training.name}: ${training.date}, ${training.time}.`,
+            where ? `Место: ${where}.` : '',
+            who ? `Тренер: ${who}.` : '',
+            `Уровень: ${training.level}. Запись на тренировку клуба «Второе дыхание».`,
+          ]
+            .filter(Boolean)
+            .join(' '),
           path: pathname,
+          noindex: hasPlaceholders([training.name, training.location, training.trainer]),
         });
         return;
       }
@@ -77,11 +92,13 @@ export default function Seo() {
     if (eventMatch) {
       const event = events.find((e) => e.id === eventMatch[1]);
       if (event) {
+        const where = realValue(event.location);
         applySeo({
           title: event.name,
-          description: `${event.name} — ${event.date}, ${event.location}. ${event.description}`,
+          description: `${event.name} — ${event.date}${where ? `, ${where}` : ''}. ${event.description}`,
           path: pathname,
           image: event.images[0],
+          noindex: hasPlaceholders([event.name, event.location, event.fullDescription]),
         });
         return;
       }
@@ -96,6 +113,7 @@ export default function Seo() {
           description: item.summary,
           path: pathname,
           image: item.image,
+          noindex: hasPlaceholders([item.title, item.content]),
         });
         return;
       }

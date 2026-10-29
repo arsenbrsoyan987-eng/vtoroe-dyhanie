@@ -96,7 +96,7 @@ export default function RoutesPage() {
         </div>
 
         <p className="text-gray-500 text-sm text-center mt-8">
-          [Маршруты — демонстрационные примеры. Реальные маршруты и GPX-файлы будут добавлены позже.]
+          Треки присылаем участникам перед выездом — в Telegram-канале клуба.
         </p>
       </div>
     </div>

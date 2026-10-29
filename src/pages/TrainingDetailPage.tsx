@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { useTrainings } from '../store/trainingsStore';
 import { formatDate, isPastDate } from '../lib/date';
+import { displayValue, realValue } from '../lib/placeholder';
 import Button from '../components/ui/Button';
 import {
   ArrowLeft,
@@ -128,12 +129,14 @@ export default function TrainingDetailPage() {
               </div>
               <div className="flex items-center gap-2 text-gray-300">
                 <MapPin className="h-4 w-4 shrink-0 text-gray-500" />
-                {training.location}
+                {displayValue(training.location, 'Точку сбора уточняйте у тренера')}
               </div>
-              <div className="flex items-center gap-2 text-gray-300">
-                <User className="h-4 w-4 shrink-0 text-gray-500" />
-                {training.trainer}
-              </div>
+              {realValue(training.trainer) && (
+                <div className="flex items-center gap-2 text-gray-300">
+                  <User className="h-4 w-4 shrink-0 text-gray-500" />
+                  {training.trainer}
+                </div>
+              )}
               <div className="flex items-center gap-2 text-gray-300">
                 <Users className="h-4 w-4 shrink-0 text-gray-500" />
                 {left > 0 ? `Свободно мест: ${left} из ${capacity}` : 'Мест нет'}

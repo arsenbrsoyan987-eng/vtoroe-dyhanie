@@ -27,6 +27,8 @@ const paths = [
   ['images/hero.svg', '/images/hero.svg'],
   ['images/trainer.svg', '/images/trainer.svg'],
   ['logo.jpg', '/logo.jpg'],
+  ['icon-192.png', '/icon-192.png'],
+  ['og-image.jpg', '/og-image.jpg'],
   ['manifest.json', '/manifest.json'],
   ['sw.js', '/sw.js'],
 ];

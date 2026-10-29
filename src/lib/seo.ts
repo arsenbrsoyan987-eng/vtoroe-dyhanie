@@ -7,6 +7,7 @@
  */
 
 import type { Trainer } from '../types';
+import { isPlaceholder } from './placeholder';
 
 const SITE_NAME = 'Второе дыхание';
 const SITE_URL = 'https://vtoroe-dyhanie.ru';
@@ -56,7 +57,11 @@ export function applySeo({ title, description, path = '/', image, noindex }: Seo
   const fullTitle = title ? `${title} — ${SITE_NAME}` : DEFAULT_TITLE;
   const desc = description ?? DEFAULT_DESCRIPTION;
   const url = `${SITE_URL}${canonicalPath(path)}`;
-  const img = image ? (image.startsWith('http') ? image : `${SITE_URL}${image}`) : `${SITE_URL}/logo.jpg`;
+  const img = image
+    ? image.startsWith('http')
+      ? image
+      : `${SITE_URL}${image}`
+    : `${SITE_URL}/og-image.jpg`;
 
   document.title = fullTitle;
 
@@ -66,10 +71,16 @@ export function applySeo({ title, description, path = '/', image, noindex }: Seo
   setMeta('meta[property="og:url"]', 'property', 'og:url', url);
   setMeta('meta[property="og:type"]', 'property', 'og:type', 'website');
   setMeta('meta[property="og:site_name"]', 'property', 'og:site_name', SITE_NAME);
+  setMeta('meta[property="og:locale"]', 'property', 'og:locale', 'ru_RU');
   setMeta('meta[property="og:image"]', 'property', 'og:image', img);
+  // Размеры нужны, чтобы Telegram и VK показали превью крупной карточкой
+  setMeta('meta[property="og:image:width"]', 'property', 'og:image:width', '1200');
+  setMeta('meta[property="og:image:height"]', 'property', 'og:image:height', '630');
+  setMeta('meta[property="og:image:alt"]', 'property', 'og:image:alt', fullTitle);
   setMeta('meta[name="twitter:card"]', 'name', 'twitter:card', 'summary_large_image');
   setMeta('meta[name="twitter:title"]', 'name', 'twitter:title', fullTitle);
   setMeta('meta[name="twitter:description"]', 'name', 'twitter:description', desc);
+  setMeta('meta[name="twitter:image"]', 'name', 'twitter:image', img);
 
   setLink('canonical', url);
 
@@ -81,9 +92,14 @@ export function applySeo({ title, description, path = '/', image, noindex }: Seo
   }
 }
 
-/** Заглушка вида «[Имя тренера]» — реальных данных ещё нет */
-function isPlaceholder(value: string) {
-  return /^\s*\[.*\]\s*$/.test(value);
+/**
+ * Страница заполнена заглушками — в индекс её отдавать нельзя.
+ * Пять карточек с «[Имя тренера]» и текстом в квадратных скобках выглядят для
+ * поисковика как дорвей: он понижает весь сайт, а не только эти страницы.
+ * Как только данные заполнят, проверка сама перестанет срабатывать.
+ */
+export function hasPlaceholders(values: string[]): boolean {
+  return values.some((v) => isPlaceholder(v));
 }
 
 /**
@@ -94,10 +110,16 @@ function isPlaceholder(value: string) {
 export function trainerSeo(
   trainer: Trainer,
   directionNames: string[],
-): { title: string; description: string } {
+): { title: string; description: string; incomplete: boolean } {
   const spec = trainer.specialization.toLowerCase();
   const name = isPlaceholder(trainer.name) ? '' : trainer.name;
   const dirs = directionNames.join(', ');
+  const incomplete = hasPlaceholders([
+    trainer.name,
+    trainer.experience,
+    trainer.biography,
+    ...trainer.certifications,
+  ]);
 
   const title = name
     ? `${name} — тренер клуба «Второе дыхание» в Москве`
@@ -114,7 +136,7 @@ export function trainerSeo(
     .filter(Boolean)
     .join(' ');
 
-  return { title, description };
+  return { title, description, incomplete };
 }
 
 /** Мета для статических разделов: ключ — путь без завершающего слэша */

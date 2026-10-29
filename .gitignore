@@ -31,3 +31,9 @@ dist-ssr
 
 # Local Netlify folder
 .netlify
+
+# Скриншоты для ручной проверки — генерируются scripts/shots.cjs
+shots/
+
+# Черновики адресов для проверки индексации
+.sm.txt

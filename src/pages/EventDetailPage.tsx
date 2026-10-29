@@ -1,6 +1,8 @@
 import { useParams } from 'react-router-dom';
 import Button from '../components/ui/Button';
-import { events } from '../data/events';
+import { useEvents } from '../store/eventsStore';
+import { useAuth } from '../context/AuthContext';
+import { displayValue, realValue } from '../lib/placeholder';
 
 const categoryLabels: Record<string, string> = {
   training: 'Клубная тренировка',
@@ -12,6 +14,8 @@ const categoryLabels: Record<string, string> = {
 
 export default function EventDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const events = useEvents();
+  const { currentUser } = useAuth();
   const event = events.find((e) => e.id === id);
 
   if (!event) {
@@ -22,6 +26,9 @@ export default function EventDetailPage() {
       </div>
     );
   }
+
+  const requirements = event.requirements.map(realValue).filter(Boolean);
+  const price = realValue(event.price);
 
   return (
     <div>
@@ -37,9 +44,16 @@ export default function EventDetailPage() {
           </span>
           <h1 className="text-3xl md:text-5xl font-bold text-white mb-4">{event.name}</h1>
           <div className="flex flex-wrap gap-4 text-gray-300 text-sm">
-            <span>📅 {new Date(event.date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+            <span>
+              📅{' '}
+              {new Date(`${event.date}T12:00:00`).toLocaleDateString('ru-RU', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric',
+              })}
+            </span>
             <span>🕐 {event.time}</span>
-            <span>📍 {event.location}</span>
+            {realValue(event.location) && <span>📍 {event.location}</span>}
           </div>
         </div>
       </section>
@@ -51,14 +65,16 @@ export default function EventDetailPage() {
             <div className="lg:col-span-2 space-y-8">
               <div>
                 <h2 className="text-2xl font-bold text-white mb-4">О мероприятии</h2>
-                <p className="text-gray-300 leading-relaxed">{event.fullDescription}</p>
+                <p className="text-gray-300 leading-relaxed">
+                  {displayValue(event.fullDescription, event.description)}
+                </p>
               </div>
 
-              {event.requirements.length > 0 && (
+              {requirements.length > 0 && (
                 <div>
                   <h2 className="text-2xl font-bold text-white mb-4">Условия участия</h2>
                   <ul className="space-y-2">
-                    {event.requirements.map((req) => (
+                    {requirements.map((req) => (
                       <li key={req} className="flex items-center gap-3 text-gray-300">
                         <span className="w-2 h-2 bg-accent-blue rounded-full shrink-0" />
                         {req}
@@ -74,10 +90,12 @@ export default function EventDetailPage() {
               <div className="bg-surface border border-white/10 rounded-sm p-6">
                 <h3 className="text-white font-bold mb-4">Информация</h3>
                 <div className="space-y-3 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Стоимость</span>
-                    <span className="text-white">{event.price}</span>
-                  </div>
+                  {price && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Стоимость</span>
+                      <span className="text-white">{price}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between">
                     <span className="text-gray-400">Регистрация</span>
                     <span className={event.registrationOpen ? 'text-green-400' : 'text-red-400'}>
@@ -86,14 +104,21 @@ export default function EventDetailPage() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-400">До</span>
-                    <span className="text-white">{new Date(event.registrationDeadline).toLocaleDateString('ru-RU')}</span>
+                    <span className="text-white">
+                      {new Date(`${event.registrationDeadline}T12:00:00`).toLocaleDateString('ru-RU')}
+                    </span>
                   </div>
                 </div>
               </div>
 
               {event.registrationOpen && (
-                <Button to="/cabinet/registrations" variant="primary" size="lg" className="w-full">
-                  Записаться на мероприятие
+                <Button
+                  to={currentUser ? '/cabinet/registrations' : '/login'}
+                  variant="primary"
+                  size="lg"
+                  className="w-full"
+                >
+                  {currentUser ? 'Записаться на мероприятие' : 'Войти и записаться'}
                 </Button>
               )}
             </div>

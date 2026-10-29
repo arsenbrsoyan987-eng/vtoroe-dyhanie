@@ -1,11 +1,19 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400" viewBox="0 0 600 400">
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400" viewBox="0 0 600 400" fill="none">
   <defs>
-    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#1a1a0a"/>
-      <stop offset="100%" style="stop-color:#222211"/>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1a140a"/>
+      <stop offset="1" stop-color="#0a0a0a"/>
     </linearGradient>
+    <radialGradient id="g-glow" cx="0.5" cy="0.42" r="0.62">
+      <stop offset="0" stop-color="#fbbf24" stop-opacity="0.3"/>
+      <stop offset="0.55" stop-color="#fbbf24" stop-opacity="0.09"/>
+      <stop offset="1" stop-color="#fbbf24" stop-opacity="0"/>
+    </radialGradient>
   </defs>
   <rect width="600" height="400" fill="url(#g)"/>
-  <text x="300" y="190" text-anchor="middle" fill="#fbbf24" font-size="48" font-weight="bold" font-family="system-ui, sans-serif">🗺️</text>
-  <text x="300" y="260" text-anchor="middle" fill="#9ca3af" font-size="28" font-family="system-ui, sans-serif">Маршрут</text>
+  <rect width="600" height="400" fill="url(#g-glow)"/>
+  <path d="M48 328 L168 220 L276 280 L396 128 L540 184" stroke="#fcd34d" stroke-width="3" stroke-dasharray="10 8" opacity="0.4"/>
+  <circle cx="48" cy="328" r="6" fill="#ffffff" opacity="0.5"/>
+  <circle cx="276" cy="280" r="6" fill="#ffffff" opacity="0.5"/>
+  <circle cx="540" cy="184" r="6" fill="#ffffff" opacity="0.5"/>
 </svg>

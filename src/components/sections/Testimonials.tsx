@@ -1,8 +1,11 @@
 import SectionTitle from '../ui/SectionTitle';
 import { useTestimonials } from '../../store/testimonialsStore';
+import { isFilled } from '../../lib/placeholder';
 
 export default function Testimonials() {
-  const testimonials = useTestimonials();
+  const testimonials = useTestimonials().filter((item) =>
+    isFilled(item, ['name', 'text']),
+  );
 
   if (testimonials.length === 0) return null;
 

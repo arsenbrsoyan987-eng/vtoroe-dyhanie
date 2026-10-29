@@ -7,6 +7,9 @@
  * sitemap.xml в браузере и сохраняем готовую страницу в dist/<путь>/index.html:
  * статус становится 200, в HTML уже есть заголовок, описание и текст.
  *
+ * Заодно пересобирается sitemap.xml: страницы с `noindex` (кабинет, заглушки)
+ * из карты сайта убираются, чтобы не просить краулер обходить закрытое.
+ *
  * Запуск: npm run build && npm run prerender
  */
 const fs = require('fs');
@@ -17,6 +20,7 @@ const puppeteer = require('puppeteer-core');
 const DIST = path.resolve(__dirname, '..', 'dist');
 const PORT = 5200;
 const ORIGIN = `http://127.0.0.1:${PORT}`;
+const SITE_URL = 'https://vtoroe-dyhanie.ru';
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -70,6 +74,33 @@ function routesFromSitemap() {
   return [...xml.matchAll(/<loc>(.*?)<\/loc>/g)].map((m) => new URL(m[1]).pathname);
 }
 
+/**
+ * Адреса вне карты сайта, которым всё равно нужен код 200.
+ * Без пререндера GitHub Pages отдаёт их через 404.html — форма входа
+ * открывается, но со статусом «страница не найдена».
+ */
+const EXTRA_ROUTES = ['/login/', '/register/', '/cabinet/'];
+
+/** Оставляет в карте сайта только страницы, которые мы разрешили индексировать */
+function rewriteSitemap(noindexRoutes) {
+  const file = path.join(DIST, 'sitemap.xml');
+  const xml = fs.readFileSync(file, 'utf8');
+  const blocked = new Set(noindexRoutes);
+
+  const kept = [...xml.matchAll(/<url>[\s\S]*?<\/url>/g)]
+    .map((m) => m[0])
+    .filter((block) => {
+      const loc = block.match(/<loc>(.*?)<\/loc>/)?.[1];
+      if (!loc) return false;
+      const route = new URL(loc).pathname;
+      return !blocked.has(route) && !blocked.has(route.replace(/\/$/, ''));
+    });
+
+  const head = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
+  fs.writeFileSync(file, `${head}${kept.join('\n')}\n</urlset>\n`, 'utf8');
+  return { total: kept.length, removed: blocked.size };
+}
+
 (async () => {
   const indexPath = path.join(DIST, 'index.html');
   if (!fs.existsSync(indexPath)) {
@@ -77,7 +108,7 @@ function routesFromSitemap() {
     process.exit(1);
   }
 
-  const routes = routesFromSitemap();
+  const routes = [...routesFromSitemap(), ...EXTRA_ROUTES];
 
   // 404.html делаем из пустого шаблона: GitHub Pages отдаст его для любого
   // неизвестного адреса, а маршрут нарисует уже React.
@@ -101,6 +132,7 @@ function routesFromSitemap() {
 
   let ok = 0;
   let failed = 0;
+  const noindexRoutes = [];
 
   for (const route of routes) {
     const page = await browser.newPage();
@@ -116,12 +148,25 @@ function routesFromSitemap() {
 
       const html = await page.content();
       const title = await page.title();
+      const robots = await page.evaluate(
+        () => document.head.querySelector('meta[name="robots"]')?.getAttribute('content') || ''
+      );
 
       const dir = path.join(DIST, route);
       fs.mkdirSync(dir, { recursive: true });
       fs.writeFileSync(path.join(dir, 'index.html'), html, 'utf8');
 
       if (!title) throw new Error('пустой title');
+
+      // Страницу всё равно публикуем (ссылки из меню должны работать),
+      // но из карты сайта убираем — краулеру там делать нечего
+      if (robots.includes('noindex')) {
+        noindexRoutes.push(route);
+        ok += 1;
+        console.log(`  ok  ${route} — закрыта от индексации`);
+        continue;
+      }
+
       ok += 1;
       console.log(`  ok  ${route} — ${title}`);
     } catch (err) {
@@ -135,7 +180,9 @@ function routesFromSitemap() {
   await browser.close();
   server.close();
 
-  console.log(`\nПререндер: ${ok} страниц готово, ${failed} с ошибкой.`);
+  const sitemap = rewriteSitemap(noindexRoutes);
+  console.log(`\nКарта сайта: ${sitemap.total} адресов (убрано ${sitemap.removed}).`);
+  console.log(`Пререндер: ${ok} страниц готово, ${failed} с ошибкой.`);
   // Полный провал — повод остановить деплой. Частичный не блокирует сайт:
   // непрорендеренные адреса откроются как обычно, через 404.html.
   if (ok === 0) process.exit(1);

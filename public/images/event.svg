@@ -1,11 +1,27 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500">
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500" fill="none">
   <defs>
-    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#1a0a1a"/>
-      <stop offset="100%" style="stop-color:#221122"/>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1a0a14"/>
+      <stop offset="1" stop-color="#0a0a0a"/>
     </linearGradient>
+    <radialGradient id="g-glow" cx="0.5" cy="0.42" r="0.62">
+      <stop offset="0" stop-color="#f472b6" stop-opacity="0.3"/>
+      <stop offset="0.55" stop-color="#f472b6" stop-opacity="0.09"/>
+      <stop offset="1" stop-color="#f472b6" stop-opacity="0"/>
+    </radialGradient>
   </defs>
   <rect width="800" height="500" fill="url(#g)"/>
-  <text x="400" y="230" text-anchor="middle" fill="#f472b6" font-size="48" font-weight="bold" font-family="system-ui, sans-serif">🏅</text>
-  <text x="400" y="300" text-anchor="middle" fill="#9ca3af" font-size="28" font-family="system-ui, sans-serif">Мероприятие</text>
+  <rect width="800" height="500" fill="url(#g-glow)"/>
+  <rect x="224" y="110" width="352" height="260" rx="8" stroke="#f9a8d4" stroke-width="3" opacity="0.3"/>
+  <path d="M224 140 L576 140" stroke="#f9a8d4" stroke-width="3" opacity="0.3"/>
+  <rect x="236" y="154" width="103.3" height="53" rx="3" fill="#f9a8d4" opacity="0.18"/>
+  <rect x="236" y="219" width="103.3" height="53" rx="3" fill="#f9a8d4" opacity="0.18"/>
+  <rect x="236" y="284" width="103.3" height="53" rx="3" fill="#f9a8d4" opacity="0.18"/>
+  <rect x="353.3" y="154" width="103.3" height="53" rx="3" fill="#f9a8d4" opacity="0.18"/>
+  <rect x="353.3" y="219" width="103.3" height="53" rx="3" fill="#f9a8d4" opacity="0.18"/>
+  <rect x="353.3" y="284" width="103.3" height="53" rx="3" fill="#f9a8d4" opacity="0.18"/>
+  <rect x="470.7" y="154" width="103.3" height="53" rx="3" fill="#f9a8d4" opacity="0.18"/>
+  <rect x="470.7" y="219" width="103.3" height="53" rx="3" fill="#f9a8d4" opacity="0.18"/>
+  <rect x="470.7" y="284" width="103.3" height="53" rx="3" fill="#f9a8d4" opacity="0.18"/>
+
 </svg>

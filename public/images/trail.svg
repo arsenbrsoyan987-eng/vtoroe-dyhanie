@@ -1,11 +1,18 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600" fill="none">
   <defs>
-    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#0a0a1a"/>
-      <stop offset="100%" style="stop-color:#111122"/>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0a1020"/>
+      <stop offset="1" stop-color="#0a0a0a"/>
     </linearGradient>
+    <radialGradient id="g-glow" cx="0.5" cy="0.42" r="0.62">
+      <stop offset="0" stop-color="#3b82f6" stop-opacity="0.3"/>
+      <stop offset="0.55" stop-color="#3b82f6" stop-opacity="0.09"/>
+      <stop offset="1" stop-color="#3b82f6" stop-opacity="0"/>
+    </radialGradient>
   </defs>
   <rect width="800" height="600" fill="url(#g)"/>
-  <text x="400" y="280" text-anchor="middle" fill="#3b82f6" font-size="48" font-weight="bold" font-family="system-ui, sans-serif">⛰️</text>
-  <text x="400" y="350" text-anchor="middle" fill="#9ca3af" font-size="28" font-family="system-ui, sans-serif">Трейлраннинг</text>
+  <rect width="800" height="600" fill="url(#g-glow)"/>
+  <path d="M40 468 L240 192 L368 468 Z" fill="#60a5fa" opacity="0.16"/>
+  <path d="M272 468 L496 120 L760 468 Z" fill="#60a5fa" opacity="0.28"/>
+  <path d="M496 120 L576 216 L416 216 Z" fill="#ffffff" opacity="0.18"/>
 </svg>

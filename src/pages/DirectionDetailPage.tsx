@@ -1,11 +1,14 @@
 import { useParams, Link } from 'react-router-dom';
 import Button from '../components/ui/Button';
 import { directions } from '../data/directions';
-import { trainers } from '../data/trainers';
+import { useTrainers } from '../store/trainersStore';
 import { useTrainings } from '../store/trainingsStore';
+import { displayValue, realValue } from '../lib/placeholder';
+import { formatDate, isPastDate } from '../lib/date';
 
 export default function DirectionDetailPage() {
   const trainings = useTrainings();
+  const trainers = useTrainers();
   const { id } = useParams<{ id: string }>();
   const direction = directions.find((d) => d.id === id);
 
@@ -19,7 +22,9 @@ export default function DirectionDetailPage() {
   }
 
   const dirTrainers = trainers.filter((t) => t.directions.includes(direction.id));
-  const dirTrainings = trainings.filter((t) => t.directionId === direction.id);
+  const dirTrainings = trainings
+    .filter((t) => t.directionId === direction.id && !isPastDate(t.date))
+    .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
 
   return (
     <div>
@@ -69,10 +74,11 @@ export default function DirectionDetailPage() {
                         <div>
                           <h3 className="text-white font-semibold">{t.name}</h3>
                           <p className="text-gray-400 text-sm mt-1">
-                            {new Date(t.date).toLocaleDateString('ru-RU')} · {t.time} · {t.location}
+                            {formatDate(t.date, false)} · {t.time} ·{' '}
+                            {displayValue(t.location, 'точка сбора в анонсе')}
                           </p>
                         </div>
-                        <Button to="/schedule" variant="blue" size="sm">Подробнее</Button>
+                        <Button to={`/schedule/${t.id}`} variant="blue" size="sm">Подробнее</Button>
                       </div>
                     ))}
                   </div>
@@ -98,11 +104,19 @@ export default function DirectionDetailPage() {
                   <h3 className="text-white font-bold mb-4">Тренеры направления</h3>
                   <div className="space-y-4">
                     {dirTrainers.map((tr) => (
-                      <Link key={tr.id} to="/trainers" className="flex items-center gap-3 group">
-                        <img src={tr.photo} alt={tr.name} className="w-12 h-12 rounded-full object-cover" />
+                      <Link key={tr.id} to={`/trainers/${tr.id}`} className="flex items-center gap-3 group">
+                        <img
+                          src={tr.photo}
+                          alt={displayValue(tr.name, tr.specialization)}
+                          className="w-12 h-12 rounded-full object-cover"
+                        />
                         <div>
-                          <div className="text-white text-sm font-medium group-hover:text-accent-red transition-colors">{tr.name}</div>
-                          <div className="text-gray-400 text-xs">{tr.specialization}</div>
+                          <div className="text-white text-sm font-medium group-hover:text-accent-red transition-colors">
+                            {displayValue(tr.name, tr.specialization)}
+                          </div>
+                          <div className="text-gray-400 text-xs">
+                            {realValue(tr.experience) || tr.specialization}
+                          </div>
                         </div>
                       </Link>
                     ))}

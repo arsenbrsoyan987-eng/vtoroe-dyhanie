@@ -1,6 +1,19 @@
 import SectionTitle from '../ui/SectionTitle';
+import { directions } from '../../data/directions';
+import { useTrainers } from '../../store/trainersStore';
 
 export default function About() {
+  const trainers = useTrainers();
+
+  // Только проверяемые цифры: количество направлений и карточек тренеров.
+  // Придуманные «500+ участников» на старте выглядят как обман.
+  const stats = [
+    { number: String(directions.length), label: 'Направлений' },
+    { number: String(trainers.length), label: 'Тренеров' },
+    { number: 'Москва', label: 'Парки и стадионы' },
+    { number: '0 ₽', label: 'Первое занятие' },
+  ];
+
   return (
     <section className="py-20 lg:py-28 bg-primary overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -25,12 +38,7 @@ export default function About() {
               ходим в походы и тренируемся функционально — в зале и на улице.
             </p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
-              {[
-                { number: '[XXX]+', label: 'Участников' },
-                { number: '[5]', label: 'Направлений' },
-                { number: '[5]', label: 'Тренеров' },
-                { number: '[50]+', label: 'Мероприятий в год' },
-              ].map((stat) => (
+              {stats.map((stat) => (
                 <div key={stat.label}>
                   <div className="text-2xl md:text-3xl font-bold text-accent-red mb-1">
                     {stat.number}
@@ -53,8 +61,9 @@ export default function About() {
                 loading="lazy"
               />
             </div>
-            <div className="absolute -bottom-6 -left-6 w-32 h-32 bg-accent-red/20 rounded-sm -z-10" />
-            <div className="absolute -top-6 -right-6 w-24 h-24 bg-accent-blue/20 rounded-sm -z-10" />
+            {/* Декор только на широких экранах: на мобильном он вылезает за край */}
+            <div className="absolute -bottom-6 -left-6 hidden h-32 w-32 rounded-sm bg-accent-red/20 sm:block -z-10" />
+            <div className="absolute -top-6 -right-6 hidden h-24 w-24 rounded-sm bg-accent-blue/20 sm:block -z-10" />
           </div>
         </div>
       </div>

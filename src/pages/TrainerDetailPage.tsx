@@ -3,6 +3,7 @@ import { useTrainer, useTrainers } from '../store/trainersStore';
 import { useTrainings } from '../store/trainingsStore';
 import { directions } from '../data/directions';
 import { formatDate, isPastDate } from '../lib/date';
+import { displayValue, realValue } from '../lib/placeholder';
 import Button from '../components/ui/Button';
 import { ArrowLeft, Mail, Phone } from 'lucide-react';
 
@@ -22,6 +23,14 @@ export default function TrainerDetailPage() {
     );
   }
 
+  const realName = realValue(trainer.name);
+  const name = displayValue(trainer.name, trainer.specialization);
+  const experience = realValue(trainer.experience);
+  const biography = realValue(trainer.biography);
+  const certifications = trainer.certifications.map(realValue).filter(Boolean);
+  const phone = realValue(trainer.phone);
+  const email = realValue(trainer.email);
+
   const dirNames = trainer.directions
     .map((d) => directions.find((x) => x.id === d)?.name)
     .filter(Boolean);
@@ -30,7 +39,14 @@ export default function TrainerDetailPage() {
     .filter((t) => t.trainerId === trainer.id && !isPastDate(t.date))
     .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
 
-  const others = all.filter((t) => t.id !== trainer.id).slice(0, 3);
+  const others = all
+    .filter((t) => t.id !== trainer.id)
+    .slice(0, 3)
+    .map((t) => ({
+      ...t,
+      label: displayValue(t.name, t.specialization),
+      hasName: Boolean(realValue(t.name)),
+    }));
 
   return (
     <div className="py-12 lg:py-20">
@@ -49,42 +65,44 @@ export default function TrainerDetailPage() {
               {trainer.photo ? (
                 <img
                   src={trainer.photo}
-                  alt={trainer.name}
+                  alt={name}
                   className="aspect-square w-full object-cover"
                 />
               ) : (
                 <div className="flex aspect-square w-full items-center justify-center bg-accent-red/10 text-6xl font-bold text-accent-red">
-                  {trainer.name.charAt(0).toUpperCase()}
+                  {name.charAt(0).toUpperCase()}
                 </div>
               )}
             </div>
 
             <div className="mt-4 space-y-2">
-              {trainer.phone && (
+              {phone && (
                 <a
-                  href={`tel:${trainer.phone.replace(/[^\d+]/g, '')}`}
+                  href={`tel:${phone.replace(/[^\d+]/g, '')}`}
                   className="flex items-center gap-2 rounded-sm bg-white/5 px-3 py-2 text-sm text-gray-300 transition-colors hover:bg-white/10 hover:text-white"
                 >
                   <Phone className="h-4 w-4 text-gray-500" />
-                  {trainer.phone}
+                  {phone}
                 </a>
               )}
-              {trainer.email && (
+              {email && (
                 <a
-                  href={`mailto:${trainer.email}`}
+                  href={`mailto:${email}`}
                   className="flex items-center gap-2 rounded-sm bg-white/5 px-3 py-2 text-sm text-gray-300 transition-colors hover:bg-white/10 hover:text-white"
                 >
                   <Mail className="h-4 w-4 text-gray-500" />
-                  <span className="truncate">{trainer.email}</span>
+                  <span className="truncate">{email}</span>
                 </a>
               )}
             </div>
           </div>
 
           <div className="lg:col-span-2">
-            <h1 className="mb-1 text-3xl font-bold text-white">{trainer.name}</h1>
-            <p className="mb-2 text-base font-medium text-accent-red">{trainer.specialization}</p>
-            <p className="mb-6 text-sm text-gray-500">{trainer.experience}</p>
+            <h1 className="mb-1 text-3xl font-bold text-white">{name}</h1>
+            {realName && (
+              <p className="mb-2 text-base font-medium text-accent-red">{trainer.specialization}</p>
+            )}
+            {experience && <p className="mb-6 text-sm text-gray-500">{experience}</p>}
 
             <div className="mb-6 flex flex-wrap gap-2">
               {dirNames.map((d) => (
@@ -97,22 +115,22 @@ export default function TrainerDetailPage() {
               ))}
             </div>
 
-            {trainer.biography && (
+            {biography && (
               <div className="mb-6">
                 <h2 className="mb-2 text-xs uppercase tracking-wider text-gray-500">О тренере</h2>
                 <p className="whitespace-pre-line text-sm leading-relaxed text-gray-300">
-                  {trainer.biography}
+                  {biography}
                 </p>
               </div>
             )}
 
-            {trainer.certifications.length > 0 && (
+            {certifications.length > 0 && (
               <div className="mb-8">
                 <h2 className="mb-2 text-xs uppercase tracking-wider text-gray-500">
                   Квалификация
                 </h2>
                 <ul className="space-y-1.5">
-                  {trainer.certifications.map((c) => (
+                  {certifications.map((c) => (
                     <li key={c} className="text-sm text-gray-300">📜 {c}</li>
                   ))}
                 </ul>
@@ -163,18 +181,18 @@ export default function TrainerDetailPage() {
                   {t.photo ? (
                     <img
                       src={t.photo}
-                      alt={t.name}
+                      alt={t.label}
                       className="aspect-[4/3] w-full object-cover transition-transform duration-500 group-hover:scale-105"
                       loading="lazy"
                     />
                   ) : (
                     <div className="flex aspect-[4/3] w-full items-center justify-center bg-accent-red/10 text-3xl font-bold text-accent-red">
-                      {t.name.charAt(0).toUpperCase()}
+                      {t.label.charAt(0).toUpperCase()}
                     </div>
                   )}
                   <div className="p-4">
-                    <p className="text-sm font-semibold text-white">{t.name}</p>
-                    <p className="text-xs text-gray-500">{t.specialization}</p>
+                    <p className="text-sm font-semibold text-white">{t.label}</p>
+                    {t.hasName && <p className="text-xs text-gray-500">{t.specialization}</p>}
                   </div>
                 </Link>
               ))}

@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Layout from './components/layout/Layout';
 import Seo from './components/Seo';
@@ -17,31 +18,39 @@ import NewsDetailPage from './pages/NewsDetailPage';
 import ResultsPage from './pages/ResultsPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
-import CabinetLayout from './pages/cabinet/CabinetLayout';
-import CabinetHome from './pages/cabinet/CabinetHome';
-import AthleteRegistrations from './pages/cabinet/AthleteRegistrations';
-import AthleteCalendar from './pages/cabinet/AthleteCalendar';
-import AthleteResults from './pages/cabinet/AthleteResults';
-import AthleteNotifications from './pages/cabinet/AthleteNotifications';
-import AccountSettings from './pages/cabinet/AccountSettings';
-import TrainerSchedule from './pages/cabinet/TrainerSchedule';
-import TrainerStudents from './pages/cabinet/TrainerStudents';
-import TrainerAttendance from './pages/cabinet/TrainerAttendance';
-import AdminUsers from './pages/cabinet/AdminUsers';
-import AdminTrainers from './pages/cabinet/AdminTrainers';
-import AdminNews from './pages/cabinet/AdminNews';
-import AdminEvents from './pages/cabinet/AdminEvents';
-import AdminTestimonials from './pages/cabinet/AdminTestimonials';
-import AdminTrainings from './pages/cabinet/AdminTrainings';
-import AdminResults from './pages/cabinet/AdminResults';
-import AdminNotifications from './pages/cabinet/AdminNotifications';
-import PaymentPage from './pages/cabinet/PaymentPage';
-import CalendarExport from './pages/cabinet/CalendarExport';
-import EventQR from './pages/cabinet/EventQR';
 import PrivacyPage from './pages/PrivacyPage';
 import NotFoundPage from './pages/NotFoundPage';
 import { AuthProvider } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
+
+// Кабинет грузится отдельным чанком: посетителю публичных страниц (и краулеру)
+// не нужно скачивать админку, графики и формы оплаты
+const CabinetLayout = lazy(() => import('./pages/cabinet/CabinetLayout'));
+const CabinetHome = lazy(() => import('./pages/cabinet/CabinetHome'));
+const AthleteRegistrations = lazy(() => import('./pages/cabinet/AthleteRegistrations'));
+const AthleteCalendar = lazy(() => import('./pages/cabinet/AthleteCalendar'));
+const AthleteResults = lazy(() => import('./pages/cabinet/AthleteResults'));
+const AthleteNotifications = lazy(() => import('./pages/cabinet/AthleteNotifications'));
+const AccountSettings = lazy(() => import('./pages/cabinet/AccountSettings'));
+const TrainerSchedule = lazy(() => import('./pages/cabinet/TrainerSchedule'));
+const TrainerStudents = lazy(() => import('./pages/cabinet/TrainerStudents'));
+const TrainerAttendance = lazy(() => import('./pages/cabinet/TrainerAttendance'));
+const AdminUsers = lazy(() => import('./pages/cabinet/AdminUsers'));
+const AdminTrainers = lazy(() => import('./pages/cabinet/AdminTrainers'));
+const AdminNews = lazy(() => import('./pages/cabinet/AdminNews'));
+const AdminEvents = lazy(() => import('./pages/cabinet/AdminEvents'));
+const AdminTestimonials = lazy(() => import('./pages/cabinet/AdminTestimonials'));
+const AdminTrainings = lazy(() => import('./pages/cabinet/AdminTrainings'));
+const AdminResults = lazy(() => import('./pages/cabinet/AdminResults'));
+const AdminNotifications = lazy(() => import('./pages/cabinet/AdminNotifications'));
+const PaymentPage = lazy(() => import('./pages/cabinet/PaymentPage'));
+const CalendarExport = lazy(() => import('./pages/cabinet/CalendarExport'));
+const EventQR = lazy(() => import('./pages/cabinet/EventQR'));
+
+/** Пока грузится чанк кабинета — держим высоту, чтобы страница не «прыгала» */
+function CabinetFallback() {
+  return <div className="min-h-[60vh]" aria-busy="true" />;
+}
 
 export default function App() {
   return (
@@ -49,7 +58,8 @@ export default function App() {
       <Seo />
       <ToastProvider>
         <AuthProvider>
-          <Routes>
+          <Suspense fallback={<CabinetFallback />}>
+            <Routes>
             <Route path="/" element={<Layout />}>
               {/* Публичные страницы */}
               <Route index element={<HomePage />} />
@@ -220,7 +230,8 @@ export default function App() {
 
               <Route path="*" element={<NotFoundPage />} />
             </Route>
-          </Routes>
+            </Routes>
+          </Suspense>
         </AuthProvider>
       </ToastProvider>
     </BrowserRouter>

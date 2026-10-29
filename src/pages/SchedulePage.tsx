@@ -6,6 +6,7 @@ import { useTrainings } from '../store/trainingsStore';
 import { useAuth } from '../context/AuthContext';
 import { directions } from '../data/directions';
 import { formatDate, isPastDate, todayISO } from '../lib/date';
+import { displayValue, realValue } from '../lib/placeholder';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 const WEEK_DAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
@@ -186,8 +187,8 @@ export default function SchedulePage() {
                           <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-gray-400">
                             <span>📅 {formatDate(t.date)}</span>
                             <span>🕐 {t.time} · {t.duration}</span>
-                            <span>📍 {t.location}</span>
-                            <span>👤 {t.trainer}</span>
+                            <span>📍 {displayValue(t.location, 'точка сбора в анонсе')}</span>
+                            {realValue(t.trainer) && <span>👤 {t.trainer}</span>}
                           </div>
                         </div>
                         <div className="flex shrink-0 gap-2">

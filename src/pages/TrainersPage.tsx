@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import SectionTitle from '../components/ui/SectionTitle';
 import { useTrainers } from '../store/trainersStore';
 import { directions } from '../data/directions';
+import { displayValue, realValue } from '../lib/placeholder';
 
 export default function TrainersPage() {
   const trainers = useTrainers();
@@ -15,6 +16,13 @@ export default function TrainersPage() {
             const trainerDirs = trainer.directions
               .map((id) => directions.find((d) => d.id === id)?.name)
               .filter(Boolean);
+            // Пока имя не заполнено, карточку подписываем специализацией:
+            // пять одинаковых «[Имя тренера]» читаются как сломанный сайт.
+            const realName = realValue(trainer.name);
+            const name = displayValue(trainer.name, trainer.specialization);
+            const experience = realValue(trainer.experience);
+            const bio = realValue(trainer.biography);
+            const certs = trainer.certifications.map(realValue).filter(Boolean);
 
             return (
               <Link
@@ -26,33 +34,48 @@ export default function TrainersPage() {
                   {trainer.photo ? (
                     <img
                       src={trainer.photo}
-                      alt={trainer.name}
+                      alt={name}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       loading="lazy"
                     />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center bg-accent-red/10 text-4xl font-bold text-accent-red">
-                      {trainer.name.charAt(0).toUpperCase()}
+                      {name.charAt(0).toUpperCase()}
                     </div>
                   )}
                 </div>
                 <div className="p-6">
-                  <h3 className="text-white text-xl font-bold mb-1">{trainer.name}</h3>
-                  <p className="text-accent-red text-sm font-medium mb-2">{trainer.specialization}</p>
-                  <p className="text-gray-500 text-xs mb-4">{trainer.experience}</p>
-                  <p className="text-gray-400 text-sm leading-relaxed mb-4">{trainer.biography}</p>
+                  <h3 className="text-white text-xl font-bold mb-1">{name}</h3>
+                  {realName && (
+                    <p className="text-accent-red text-sm font-medium mb-2">
+                      {trainer.specialization}
+                    </p>
+                  )}
+                  {experience && (
+                    <p className="text-gray-500 text-xs mb-4">{experience}</p>
+                  )}
+                  {bio && (
+                    <p className="text-gray-400 text-sm leading-relaxed mb-4 line-clamp-3">
+                      {bio}
+                    </p>
+                  )}
                   <div className="flex flex-wrap gap-2 mb-4">
                     {trainerDirs.map((dir) => (
-                      <span key={dir} className="text-xs px-2 py-1 bg-accent-blue/10 text-accent-blue rounded-sm">
+                      <span
+                        key={dir}
+                        className="text-xs px-2 py-1 bg-accent-blue/10 text-accent-blue rounded-sm"
+                      >
                         {dir}
                       </span>
                     ))}
                   </div>
-                  <div className="space-y-1 text-xs text-gray-500">
-                    {trainer.certifications.map((cert) => (
-                      <p key={cert}>📜 {cert}</p>
-                    ))}
-                  </div>
+                  {certs.length > 0 && (
+                    <div className="space-y-1 text-xs text-gray-500">
+                      {certs.map((cert) => (
+                        <p key={cert}>📜 {cert}</p>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </Link>
             );

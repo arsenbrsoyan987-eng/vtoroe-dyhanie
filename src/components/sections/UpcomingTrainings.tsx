@@ -4,6 +4,7 @@ import Button from '../ui/Button';
 import { useTrainings } from '../../store/trainingsStore';
 import { useAuth } from '../../context/AuthContext';
 import { formatDate, isPastDate } from '../../lib/date';
+import { displayValue } from '../../lib/placeholder';
 
 export default function UpcomingTrainings() {
   const trainings = useTrainings();
@@ -72,7 +73,7 @@ export default function UpcomingTrainings() {
                         <p>
                           {formatDate(t.date, false)} · {t.time} · {t.duration}
                         </p>
-                        <p>{t.location}</p>
+                        <p>{displayValue(t.location, 'Точка сбора — в расписании')}</p>
                       </div>
                     </div>
                     <div className="mt-4 flex items-center justify-between">

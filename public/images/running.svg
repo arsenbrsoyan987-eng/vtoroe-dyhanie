@@ -1,11 +1,20 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600" fill="none">
   <defs>
-    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#0a1a0a"/>
-      <stop offset="100%" style="stop-color:#112211"/>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0a1a0f"/>
+      <stop offset="1" stop-color="#0a0a0a"/>
     </linearGradient>
+    <radialGradient id="g-glow" cx="0.5" cy="0.42" r="0.62">
+      <stop offset="0" stop-color="#22c55e" stop-opacity="0.3"/>
+      <stop offset="0.55" stop-color="#22c55e" stop-opacity="0.09"/>
+      <stop offset="1" stop-color="#22c55e" stop-opacity="0"/>
+    </radialGradient>
   </defs>
   <rect width="800" height="600" fill="url(#g)"/>
-  <text x="400" y="280" text-anchor="middle" fill="#22c55e" font-size="48" font-weight="bold" font-family="system-ui, sans-serif">🏃</text>
-  <text x="400" y="350" text-anchor="middle" fill="#9ca3af" font-size="28" font-family="system-ui, sans-serif">Бег</text>
+  <rect width="800" height="600" fill="url(#g-glow)"/>
+  <path d="M0 600 L352 252 M800 600 L448 252" stroke="#34d399" stroke-width="3" opacity="0.35"/>
+  <path d="M80 552 L376 252 M720 552 L424 252" stroke="#34d399" stroke-width="2" opacity="0.2"/>
+  <path d="M400 330 L400 372" stroke="#ffffff" stroke-width="4" opacity="0.25"/>
+  <path d="M400 420 L400 480" stroke="#ffffff" stroke-width="6" opacity="0.22"/>
+  <path d="M400 528 L400 600" stroke="#ffffff" stroke-width="8" opacity="0.18"/>
 </svg>

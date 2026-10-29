@@ -31,6 +31,16 @@ export default function Header() {
     };
   }, [open]);
 
+  // Escape закрывает меню: без этого клавиатурный пользователь застревает в нём
+  useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [open]);
+
   const isActive = (path: string) => pathname === path || pathname.startsWith(path + '/');
 
   return (
@@ -57,6 +67,7 @@ export default function Header() {
                     isActive(link.path) ? 'text-accent-red' : 'text-gray-300 hover:text-white'
                   }`
                 }
+                aria-current={isActive(link.path) ? 'page' : undefined}
               >
                 {link.label}
                 {isActive(link.path) && (
@@ -95,6 +106,9 @@ export default function Header() {
       {/* Мобильное меню */}
       <div
         id="mobile-nav"
+        // Свёрнутое меню не должно ловить фокус и озвучиваться скринридером
+        inert={!open}
+        aria-hidden={!open}
         className={`overflow-hidden border-t border-white/10 bg-surface transition-[max-height] duration-300 lg:hidden ${
           open ? 'max-h-[calc(100vh-4rem)] overflow-y-auto' : 'max-h-0 border-t-0'
         }`}
@@ -104,6 +118,7 @@ export default function Header() {
             <NavLink
               key={link.path}
               to={link.path}
+              aria-current={isActive(link.path) ? 'page' : undefined}
               className={() =>
                 `block rounded-sm px-4 py-3 text-sm font-medium transition-colors ${
                   isActive(link.path)

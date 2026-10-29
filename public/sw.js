@@ -4,10 +4,16 @@
  * открывалась свежая версия) и stale-while-revalidate для статики.
  * При изменении логики обязательно увеличивайте CACHE_VERSION.
  */
-const CACHE_VERSION = 'v4';
+const CACHE_VERSION = 'v5';
 const CACHE_NAME = `vtoroe-dyhanie-${CACHE_VERSION}`;
 const BASE = '';
-const PRECACHE = [`${BASE}/`, `${BASE}/index.html`, `${BASE}/manifest.json`, `${BASE}/logo.jpg`];
+const PRECACHE = [
+  `${BASE}/`,
+  `${BASE}/index.html`,
+  `${BASE}/manifest.json`,
+  `${BASE}/icon-192.png`,
+  `${BASE}/og-image.jpg`,
+];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
