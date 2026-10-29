@@ -9,7 +9,7 @@ export default function TrainersPage() {
   return (
     <div className="py-16 lg:py-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <SectionTitle subtitle="Команда" title="Тренерский состав" align="center" />
+        <SectionTitle subtitle="Команда" title="Тренерский состав" align="center" as="h1" />
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {trainers.map((trainer) => {
             const trainerDirs = trainer.directions

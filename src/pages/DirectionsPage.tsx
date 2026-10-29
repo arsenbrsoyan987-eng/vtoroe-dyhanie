@@ -6,7 +6,7 @@ export default function DirectionsPage() {
   return (
     <div className="py-16 lg:py-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <SectionTitle subtitle="Спорт" title="Направления тренировок" align="center" />
+        <SectionTitle subtitle="Спорт" title="Направления тренировок" align="center" as="h1" />
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {directions.map((dir) => (
             <Link

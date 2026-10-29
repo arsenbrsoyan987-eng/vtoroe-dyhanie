@@ -29,7 +29,7 @@ export default function EventsPage() {
   return (
     <div className="py-16 lg:py-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <SectionTitle subtitle="Календарь" title="Мероприятия и соревнования" align="center" />
+        <SectionTitle subtitle="Календарь" title="Мероприятия и соревнования" align="center" as="h1" />
 
         {/* Filter tabs */}
         <div className="flex flex-wrap gap-2 mb-10 justify-center">

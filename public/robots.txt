@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+
+# Private area and auth forms should not be indexed
+Disallow: /cabinet
+Disallow: /login
+Disallow: /register
+Disallow: /*/qr
+
+Sitemap: https://vtoroe-dyhanie.ru/sitemap.xml

@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Layout from './components/layout/Layout';
+import Seo from './components/Seo';
 import ProtectedRoute from './components/ProtectedRoute';
 import HomePage from './pages/HomePage';
 import DirectionsPage from './pages/DirectionsPage';
@@ -12,7 +13,7 @@ import EventsPage from './pages/EventsPage';
 import EventDetailPage from './pages/EventDetailPage';
 import RoutesPage from './pages/RoutesPage';
 import NewsPage from './pages/NewsPage';
-import NewsDetailPage from './pages/NewsPage';
+import NewsDetailPage from './pages/NewsDetailPage';
 import ResultsPage from './pages/ResultsPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -45,6 +46,7 @@ import { ToastProvider } from './context/ToastContext';
 export default function App() {
   return (
     <BrowserRouter>
+      <Seo />
       <ToastProvider>
         <AuthProvider>
           <Routes>

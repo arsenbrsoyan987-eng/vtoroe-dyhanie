@@ -74,7 +74,7 @@ export default function SchedulePage() {
   return (
     <div className="py-16 lg:py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <SectionTitle subtitle="Тренировки" title="Расписание" />
+        <SectionTitle subtitle="Тренировки" title="Расписание" as="h1" />
 
         {/* Filters */}
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center">

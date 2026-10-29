@@ -31,17 +31,24 @@ jobs:
       - name: Install deps
         run: npm ci
 
+      # Chrome нужен скрипту пререндера, чтобы отрисовать страницы в HTML
+      - name: Setup Chrome
+        id: chrome
+        uses: browser-actions/setup-chrome@v1
+
       - name: Build
         run: npm run build
+
+      # Готовые HTML для всех адресов из sitemap.xml: GitHub Pages иначе отдаёт
+      # глубокие ссылки с кодом 404, и поисковики считают их несуществующими
+      - name: Prerender routes
+        run: npm run prerender
+        env:
+          CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
 
       # CNAME для кастомного домена
       - name: Write CNAME
         run: echo 'vtoroe-dyhanie.ru' > dist/CNAME
-
-      # GitHub Pages не умеет SPA-rewrite: отдаём index.html и для 404,
-      # чтобы глубокие ссылки (/schedule, /cabinet) открывались корректно
-      - name: SPA fallback
-        run: cp dist/index.html dist/404.html
 
       - name: Setup Pages
         uses: actions/configure-pages@v4

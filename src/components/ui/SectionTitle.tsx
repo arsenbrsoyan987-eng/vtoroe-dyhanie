@@ -2,12 +2,15 @@ interface SectionTitleProps {
   subtitle?: string;
   title: string;
   align?: 'left' | 'center';
+  /** Заголовок страницы должен быть h1 — для поисковиков это главный текст */
+  as?: 'h1' | 'h2';
 }
 
 export default function SectionTitle({
   subtitle,
   title,
   align = 'left',
+  as: Tag = 'h2',
 }: SectionTitleProps) {
   const alignClass = align === 'center' ? 'text-center' : '';
 
@@ -18,9 +21,9 @@ export default function SectionTitle({
           {subtitle}
         </span>
       )}
-      <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white leading-tight">
+      <Tag className="text-3xl md:text-4xl lg:text-5xl font-bold text-white leading-tight">
         {title}
-      </h2>
+      </Tag>
     </div>
   );
 }

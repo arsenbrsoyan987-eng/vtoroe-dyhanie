@@ -30,7 +30,7 @@ export default function RoutesPage() {
   return (
     <div className="py-16 lg:py-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <SectionTitle subtitle="Маршруты" title="Наши маршруты" align="center" />
+        <SectionTitle subtitle="Маршруты" title="Наши маршруты" align="center" as="h1" />
 
         <div className="flex flex-wrap gap-2 mb-10 justify-center">
           <button
