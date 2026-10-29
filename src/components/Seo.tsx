@@ -22,7 +22,11 @@ function isNoindex(pathname: string) {
  * Один компонент на всё приложение: страницы не нужно править по одной.
  */
 export default function Seo() {
-  const { pathname } = useLocation();
+  const { pathname: rawPathname } = useLocation();
+  // GitHub Pages дописывает слэш (/trainers/trainer-1/), поэтому сравниваем без него
+  const pathname = rawPathname !== '/' && rawPathname.endsWith('/')
+    ? rawPathname.slice(0, -1)
+    : rawPathname;
   const trainers = useTrainers();
   const trainings = useTrainings();
   const events = useEvents();
@@ -102,11 +106,10 @@ export default function Seo() {
       return;
     }
 
-    // Статические разделы: ключ без завершающего слэша
-    const key = pathname !== '/' && pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
-    const meta = STATIC_SEO[key];
+    // Статические разделы: ключ уже без завершающего слэша
+    const meta = STATIC_SEO[pathname];
     if (meta) {
-      applySeo({ title: meta.title || undefined, description: meta.description, path: key });
+      applySeo({ title: meta.title || undefined, description: meta.description, path: pathname });
       return;
     }
 

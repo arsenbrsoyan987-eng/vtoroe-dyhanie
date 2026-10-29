@@ -46,10 +46,16 @@ function setLink(rel: string, href: string) {
   el.setAttribute('href', href);
 }
 
+/** GitHub Pages отдаёт страницы только с завершающим слэшем: /trainers → 301 → /trainers/ */
+function canonicalPath(path: string) {
+  if (path === '/' || path.endsWith('/')) return path;
+  return `${path}/`;
+}
+
 export function applySeo({ title, description, path = '/', image, noindex }: SeoOptions = {}) {
   const fullTitle = title ? `${title} — ${SITE_NAME}` : DEFAULT_TITLE;
   const desc = description ?? DEFAULT_DESCRIPTION;
-  const url = `${SITE_URL}${path}`;
+  const url = `${SITE_URL}${canonicalPath(path)}`;
   const img = image ? (image.startsWith('http') ? image : `${SITE_URL}${image}`) : `${SITE_URL}/logo.jpg`;
 
   document.title = fullTitle;
