@@ -1,44 +1,71 @@
-/* Проверяет доступность ключевых ресурсов задеплоенного сайта. */
-const BASE = 'https://arsenbrsoyan987-eng.github.io/vtoroe-dyhanie';
-const { readdirSync } = require('fs');
+/*
+ * Проверяет доступность ключевых ресурсов задеплоенного сайта.
+ * SITE_URL — адрес сайта (по умолчанию боевой домен).
+ * SITE_IP  — необязательный IP: позволяет проверить сайт в обход
+ *            локального DNS-кэша, который после переезда домена
+ *            ещё какое-то время отдаёт адрес парковки регистратора.
+ */
+const { execFileSync } = require('node:child_process');
+const { readdirSync } = require('node:fs');
+
+const SITE = process.env.SITE_URL || 'https://vtoroe-dyhanie.ru';
+const SITE_IP = process.env.SITE_IP || '';
+const { hostname, protocol } = new URL(SITE);
+const port = protocol === 'https:' ? '443' : '80';
 
 const assets = readdirSync('./dist/assets');
 const js = assets.find((f) => f.endsWith('.js'));
 const css = assets.find((f) => f.endsWith('.css'));
 
-const urls = [
-  ['index', `${BASE}/`],
-  ['404.html (SPA fallback)', `${BASE}/404.html`],
-  ['spa /schedule', `${BASE}/schedule`],
-  ['spa /cabinet', `${BASE}/cabinet`],
-  [`assets/${js}`, `${BASE}/assets/${js}`],
-  [`assets/${css}`, `${BASE}/assets/${css}`],
-  ['images/hero.svg', `${BASE}/images/hero.svg`],
-  ['images/trainer.svg', `${BASE}/images/trainer.svg`],
-  ['logo.jpg', `${BASE}/logo.jpg`],
-  ['manifest.json', `${BASE}/manifest.json`],
-  ['sw.js', `${BASE}/sw.js`],
+const paths = [
+  ['index', '/'],
+  ['404.html (SPA fallback)', '/404.html'],
+  ['spa /schedule', '/schedule'],
+  ['spa /cabinet', '/cabinet'],
+  [`assets/${js}`, `/assets/${js}`],
+  [`assets/${css}`, `/assets/${css}`],
+  ['images/hero.svg', '/images/hero.svg'],
+  ['images/trainer.svg', '/images/trainer.svg'],
+  ['logo.jpg', '/logo.jpg'],
+  ['manifest.json', '/manifest.json'],
+  ['sw.js', '/sw.js'],
 ];
 
-(async () => {
-  let bad = 0;
-  for (const [name, url] of urls) {
-    try {
-      const res = await fetch(url, { signal: AbortSignal.timeout(15000) });
-      const code = res.status;
-      // Для SPA-роутов GitHub Pages отдаёт 404 со контентом index.html —
-      // это ожидаемо: браузер получит HTML и роутер отработает.
-      const ok = code === 200 || (name.startsWith('spa') && code === 404);
-      if (!ok) bad++;
-      console.log(`${ok ? 'OK ' : 'BAD'} ${String(code)} ${name}`);
-      if (name.startsWith('spa') && code === 404) {
-        const body = await res.text();
-        console.log(`    контент index: ${body.includes('id="root"') ? 'ДА (SPA работает)' : 'НЕТ'}`);
-      }
-    } catch (e) {
-      bad++;
-      console.log(`BAD ERR ${name}: ${e.message}`);
+function request(path) {
+  const args = ['-s', '--max-time', '25', '--http1.1'];
+  // Подменяем только адрес подключения: TLS-проверка и Host остаются по домену
+  if (SITE_IP) args.push('--resolve', `${hostname}:${port}:${SITE_IP}`);
+  args.push('-w', '\n%{http_code}', `${SITE}${path}`);
+  const out = execFileSync('curl', args, { encoding: 'utf8', maxBuffer: 8 << 20 });
+  const cut = out.lastIndexOf('\n');
+  return { body: out.slice(0, cut), status: Number(out.slice(cut + 1)) };
+}
+
+let bad = 0;
+for (const [name, path] of paths) {
+  try {
+    const { status, body } = request(path);
+    // Для SPA-роутов GitHub Pages отдаёт 404 с содержимым index.html —
+    // это ожидаемо: браузер получит HTML и роутер отработает.
+    const ok = status === 200 || (name.startsWith('spa') && status === 404);
+    if (!ok) bad++;
+    console.log(`${ok ? 'OK ' : 'BAD'} ${status} ${name}`);
+
+    if (name === 'index') {
+      // По адресу может отдаваться парковка регистратора с кодом 200,
+      // поэтому проверяем, что это действительно наше приложение.
+      const ours = body.includes('id="root"');
+      if (!ours) bad++;
+      console.log(`    это наш сайт: ${ours ? 'ДА' : 'НЕТ — отдаётся не приложение'}`);
     }
+    if (name.startsWith('spa')) {
+      console.log(`    контент index: ${body.includes('id="root"') ? 'ДА (SPA работает)' : 'НЕТ'}`);
+    }
+  } catch (e) {
+    bad++;
+    const reason = e.stderr ? String(e.stderr).trim() : e.message;
+    console.log(`BAD ERR ${name}: ${reason || `curl exit ${e.status}`}`);
   }
-  process.exit(bad ? 1 : 0);
-})();
+}
+
+process.exitCode = bad ? 1 : 0;

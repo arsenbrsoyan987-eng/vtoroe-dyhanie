@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "check:dns": "node scripts/check-dns.cjs",
+    "check:live": "node scripts/check-live.cjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.118.0",
