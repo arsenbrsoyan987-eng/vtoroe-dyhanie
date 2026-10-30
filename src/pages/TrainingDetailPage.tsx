@@ -53,12 +53,12 @@ export default function TrainingDetailPage() {
       )
     : undefined;
 
-  const handleRegister = () => {
+  const handleRegister = async () => {
     if (!currentUser) {
       navigate('/login', { state: { from: `/schedule/${training.id}` } });
       return;
     }
-    const status = register(training.id, capacity);
+    const status = await register(training.id, capacity);
     if (status === 'already') {
       toast('Вы уже записаны на эту тренировку', 'info');
     } else if (status === 'waitlist') {

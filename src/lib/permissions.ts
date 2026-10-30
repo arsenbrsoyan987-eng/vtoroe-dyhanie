@@ -6,9 +6,9 @@ export function isAdmin(user: User | null | undefined): boolean {
 }
 
 /** Владелец клуба — единственный, кого нельзя удалить или понизить */
-export function isOwner(user: User | null | undefined): boolean {
-  if (!user) return false;
-  return user.id === 'u-admin' || user.email.toLowerCase() === OWNER_EMAIL;
+export function isOwner(user: Pick<User, 'email'> | null | undefined): boolean {
+  if (!user?.email) return false;
+  return user.email.toLowerCase() === OWNER_EMAIL;
 }
 
 export type UserActionCheck = { ok: true } | { ok: false; error: string };
@@ -16,7 +16,7 @@ export type UserActionCheck = { ok: true } | { ok: false; error: string };
 /** Может ли текущий пользователь удалить указанный аккаунт */
 export function canDeleteUser(
   actor: User | null | undefined,
-  target: User | null | undefined
+  target: Pick<User, 'id' | 'email'> | null | undefined
 ): UserActionCheck {
   if (!isAdmin(actor)) {
     return { ok: false, error: 'Удалять пользователей может только администратор' };

@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { getStoredUsers } from '../../store/database';
+import { activeProfiles, useProfiles } from '../../store/profilesStore';
 import { Trophy, Upload } from 'lucide-react';
 
 export default function AdminResultsPage() {
   const { personalResults } = useAuth();
-  const users = getStoredUsers();
+  const users = activeProfiles(useProfiles());
   const [csvText, setCsvText] = useState('');
   const [imported, setImported] = useState(0);
 

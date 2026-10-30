@@ -1,12 +1,12 @@
 import { useAuth } from '../../context/AuthContext';
-import { getStoredUsers } from '../../store/database';
+import { activeProfiles, useProfiles } from '../../store/profilesStore';
 import { useTrainings } from '../../store/trainingsStore';
 import { visibleTrainings } from '../../lib/access';
 
 export default function TrainerStudentsPage() {
   const trainings = useTrainings();
   const { currentUser, registrations } = useAuth();
-  const users = getStoredUsers();
+  const users = activeProfiles(useProfiles());
 
   const myTrainings = visibleTrainings(trainings, currentUser);
   const myTrainingIds = new Set(myTrainings.map((t) => t.id));

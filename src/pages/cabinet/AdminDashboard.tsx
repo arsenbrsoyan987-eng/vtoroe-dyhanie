@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { getStoredUsers } from '../../store/database';
+import { activeProfiles, useProfiles } from '../../store/profilesStore';
 import { useTrainings } from '../../store/trainingsStore';
 import { downloadPublished } from '../../lib/publish';
 import { Users, ClipboardList, Calendar, Trophy, TrendingUp, Newspaper, PartyPopper, Download } from 'lucide-react';
@@ -10,7 +10,8 @@ export default function AdminDashboard() {
   const trainings = useTrainings();
   const { registrations } = useAuth();
   const { toast } = useToast();
-  const users = getStoredUsers();
+  // Счётчики считаются по общей базе и обновляются в реальном времени
+  const users = activeProfiles(useProfiles());
   const athletes = users.filter((u) => u.role === 'athlete').length;
   const trainers = users.filter((u) => u.role === 'trainer').length;
   const totalRegs = registrations.filter((r) => r.status !== 'cancelled').length;

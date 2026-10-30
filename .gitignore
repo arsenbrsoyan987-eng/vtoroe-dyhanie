@@ -28,6 +28,8 @@ dist-ssr
 .env
 .env.local
 .env.*.local
+# Генерируется в GitHub Actions из Secrets — в репозитории не нужен
+.env.production
 
 # Local Netlify folder
 .netlify
@@ -37,3 +39,6 @@ shots/
 
 # Черновики адресов для проверки индексации
 .sm.txt
+
+# Кэш Supabase CLI — временные файлы авторизации, в репозитории не нужны
+supabase/.temp/

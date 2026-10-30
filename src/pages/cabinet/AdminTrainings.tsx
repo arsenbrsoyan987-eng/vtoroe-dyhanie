@@ -9,7 +9,6 @@ import {
   updateTraining,
   useTrainings,
 } from '../../store/trainingsStore';
-import { getRegistrations, saveRegistrations } from '../../store/database';
 import { formatDate, isPastDate } from '../../lib/date';
 import Button from '../../components/ui/Button';
 import { Pencil, Plus, Trash2, X } from 'lucide-react';
@@ -77,7 +76,7 @@ export default function AdminTrainings() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     const direction = directions.find((d) => d.id === form.directionId);
     const trainer = trainers.find((t) => t.id === form.trainerId);
@@ -110,10 +109,8 @@ export default function AdminTrainings() {
     closeForm();
   };
 
-  const remove = (id: string, name: string) => {
-    removeTraining(id);
-    // Убираем «висящие» записи на удалённую тренировку
-    saveRegistrations(getRegistrations().filter((r) => r.trainingId !== id));
+  const remove = async (id: string, name: string) => {
+    await removeTraining(id);
     setConfirmId(null);
     toast(`Тренировка удалена: «${name}»`, 'info');
   };

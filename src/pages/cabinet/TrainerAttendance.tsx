@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useTrainings } from '../../store/trainingsStore';
-import { getStoredUsers } from '../../store/database';
+import { activeProfiles, useProfiles } from '../../store/profilesStore';
 import { visibleTrainings } from '../../lib/access';
 import { formatDate, isPastDate } from '../../lib/date';
 import { Check, Undo2 } from 'lucide-react';
@@ -9,7 +9,7 @@ import { Check, Undo2 } from 'lucide-react';
 export default function TrainerAttendancePage() {
   const trainings = useTrainings();
   const { currentUser, registrations, markAttended } = useAuth();
-  const users = getStoredUsers();
+  const users = activeProfiles(useProfiles());
   const [showPast, setShowPast] = useState(true);
 
   const myTrainings = visibleTrainings(trainings, currentUser).sort((a, b) =>
@@ -77,7 +77,7 @@ export default function TrainerAttendancePage() {
                           </div>
                         </div>
                         <button
-                          onClick={() => markAttended(reg.id)}
+                          onClick={() => void markAttended(reg.id)}
                           className={`flex items-center gap-1.5 rounded-sm px-3 py-1 text-xs transition-colors ${
                             reg.attended
                               ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30'

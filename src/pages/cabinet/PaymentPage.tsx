@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { getUsers } from '../../store/database';
+import { activeProfiles, useProfiles } from '../../store/profilesStore';
 import Button from '../../components/ui/Button';
 import { Check, Clock, ShieldCheck, Wallet } from 'lucide-react';
 
@@ -13,6 +13,8 @@ const plans = [
 
 export default function PaymentPage() {
   const { currentUser, addNotification } = useAuth();
+  const profiles = useProfiles();
+  const users = activeProfiles(profiles);
   const { toast } = useToast();
 
   const [selectedPlan, setSelectedPlan] = useState('monthly');
@@ -21,15 +23,15 @@ export default function PaymentPage() {
 
   const plan = plans.find((p) => p.id === selectedPlan);
 
-  const handleRequest = (e: React.FormEvent) => {
+  const handleRequest = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentUser || !plan) return;
 
     // Заявка уходит администраторам клуба — карточные данные не собираются
-    const admins = getUsers().filter((u) => u.role === 'admin');
+    const admins = users.filter((u) => u.role === 'admin');
     const recipients = admins.length > 0 ? admins : [];
-    recipients.forEach((admin) => {
-      addNotification({
+    for (const admin of recipients) {
+      await addNotification({
         userId: admin.id,
         title: 'Заявка на абонемент',
         message: `${currentUser.name} (${currentUser.email}) выбрал тариф «${plan.name}» — ${plan.price} ₽${plan.period}.${
@@ -38,7 +40,7 @@ export default function PaymentPage() {
         type: 'info',
         link: '/cabinet/admin/users',
       });
-    });
+    }
 
     setSent(true);
     toast('Заявка отправлена администратору');

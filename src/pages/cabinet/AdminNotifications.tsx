@@ -1,20 +1,25 @@
 import { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { getStoredUsers } from '../../store/database';
+import { useProfiles } from '../../store/profilesStore';
+import { activeProfiles } from '../../store/profilesStore';
 import { Bell } from 'lucide-react';
 
 export default function AdminNotificationsPage() {
   const { notifications, addNotification } = useAuth();
-  const users = getStoredUsers();
+  const profiles = useProfiles();
+  // Рассылка идёт по живому списку из общей базы, а не по локальным копиям
+  const users = activeProfiles(profiles);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ title: '', message: '', userId: 'all' });
 
-  const handleSend = (e: React.FormEvent) => {
+  const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (form.userId === 'all') {
-      users.forEach((u) => addNotification({ userId: u.id, title: form.title, message: form.message, type: 'info' }));
+      for (const u of users) {
+        await addNotification({ userId: u.id, title: form.title, message: form.message, type: 'info' });
+      }
     } else {
-      addNotification({ userId: form.userId, title: form.title, message: form.message, type: 'info' });
+      await addNotification({ userId: form.userId, title: form.title, message: form.message, type: 'info' });
     }
     setShowForm(false);
     setForm({ title: '', message: '', userId: 'all' });

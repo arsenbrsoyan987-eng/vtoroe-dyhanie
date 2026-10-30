@@ -35,8 +35,8 @@ export default function AthleteRegistrations() {
   const confirmedCount = (trainingId: string) =>
     registrations.filter((r) => r.trainingId === trainingId && r.status === 'confirmed').length;
 
-  const handleRegister = (trainingId: string, capacity: number, name: string) => {
-    const status = register(trainingId, capacity);
+  const handleRegister = async (trainingId: string, capacity: number, name: string) => {
+    const status = await register(trainingId, capacity);
     if (status === 'already') {
       toast('Вы уже записаны на эту тренировку', 'info');
     } else if (status === 'waitlist') {

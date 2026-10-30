@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
@@ -6,7 +6,7 @@ import Button from '../components/ui/Button';
 import { Eye, EyeOff, Lock, Mail, ShieldCheck } from 'lucide-react';
 
 export default function LoginPage() {
-  const { login, importAccount, ready } = useAuth();
+  const { login, sendPasswordReset } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
@@ -16,28 +16,8 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
-  const [inviteNotice, setInviteNotice] = useState('');
 
   const from = (location.state as { from?: string } | null)?.from ?? '/cabinet';
-
-  // Ссылка-приглашение добавляет аккаунт в этот браузер: данные клуба
-  // хранятся локально и не переносятся между устройствами автоматически.
-  useEffect(() => {
-    if (!ready) return;
-    const params = new URLSearchParams(location.search);
-    const token = params.get('invite');
-    if (!token) return;
-
-    const result = importAccount(token);
-    if (result.ok) {
-      setEmail(result.email);
-      setInviteNotice(`Доступ для ${result.email} добавлен на это устройство. Введите пароль, который передал администратор.`);
-    } else {
-      setError(result.error);
-    }
-    // Убираем токен из адресной строки, чтобы он не сохранился в истории
-    navigate('/login', { replace: true });
-  }, [ready, location.search, importAccount, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -126,25 +106,27 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {inviteNotice && (
-            <p className="rounded-sm border border-green-500/30 bg-green-500/10 px-3 py-2 text-xs text-green-300">
-              {inviteNotice}
-            </p>
-          )}
-
           {error && (
             <div role="alert" className="rounded-sm border border-red-500/30 bg-red-500/10 px-3 py-2">
               <p className="text-xs text-red-300">{error}</p>
-              <p className="mt-1.5 text-[11px] leading-relaxed text-red-300/70">
-                Аккаунт создаётся в конкретном браузере. Если доступ выдавали на другом
-                устройстве, попросите у администратора ссылку-приглашение.
-              </p>
             </div>
           )}
 
           <Button type="submit" variant="primary" className="w-full" disabled={busy}>
             {busy ? 'Проверяем…' : 'Войти'}
           </Button>
+
+          <button
+            type="button"
+            onClick={async () => {
+              const result = await sendPasswordReset(email);
+              if (result.ok) toast('Письмо со ссылкой для сброса отправлено', 'success');
+              else toast(result.error, 'error');
+            }}
+            className="mt-2 w-full text-center text-xs text-gray-500 hover:text-white transition-colors"
+          >
+            Забыли пароль?
+          </button>
 
           <p className="text-center text-xs text-gray-500">
             Нет аккаунта?{' '}

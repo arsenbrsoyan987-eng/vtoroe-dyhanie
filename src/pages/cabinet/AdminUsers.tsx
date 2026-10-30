@@ -1,26 +1,13 @@
 import { useMemo, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { getUsers, saveUsers, type User } from '../../store/database';
+import { useProfiles } from '../../store/profilesStore';
+import { supabase } from '../../lib/supabase';
+import type { User } from '../../store/database';
 import { canDeleteUser, isAdmin, isOwner } from '../../lib/permissions';
-import { inviteLink } from '../../lib/invite';
-import { hashPassword, passwordIssues } from '../../lib/crypto';
 import { useTrainers } from '../../store/trainersStore';
 import Button from '../../components/ui/Button';
-import { Check, Copy, KeyRound, Link2, Plus, Search, ShieldCheck, Trash2, X } from 'lucide-react';
-
-/** Временный пароль: читаемый, но соответствующий требованиям сложности */
-function generateTempPassword(): string {
-  const letters = 'abcdefghjkmnpqrstuvwxyz';
-  const digits = '23456789';
-  let tail = '';
-  for (let i = 0; i < 6; i++) {
-    tail += letters[Math.floor(Math.random() * letters.length)];
-  }
-  tail += digits[Math.floor(Math.random() * digits.length)];
-  tail += digits[Math.floor(Math.random() * digits.length)];
-  return `Vtoroe-${tail}`;
-}
+import { Check, Copy, Mail, Plus, Radio, Search, ShieldCheck, Trash2, X } from 'lucide-react';
 
 const ROLE_LABEL: Record<User['role'], string> = {
   athlete: 'Спортсмен',
@@ -34,30 +21,42 @@ const ROLE_STYLE: Record<User['role'], string> = {
   admin: 'bg-red-500/15 text-red-400',
 };
 
+const formatDate = (iso: string) =>
+  iso
+    ? new Date(`${iso}T12:00:00`).toLocaleDateString('ru-RU', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+      })
+    : '—';
+
 export default function AdminUsers() {
   const { currentUser, registrations, deleteUser } = useAuth();
   const { toast } = useToast();
 
+  // Список приходит из общей базы и обновляется по realtime:
+  // регистрация с телефона появляется здесь без перезагрузки
+  const profiles = useProfiles();
   const trainers = useTrainers();
-  const [users, setUsers] = useState<User[]>(getUsers());
+
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [form, setForm] = useState({
     name: '',
     email: '',
-    phone: '',
-    role: 'athlete' as User['role'],
-    password: '',
+    role: 'athlete' as Exclude<User['role'], 'admin'>,
     trainerId: '',
   });
-  const [resetInfo, setResetInfo] = useState<{ name: string; email: string; password: string } | null>(null);
+  const [invited, setInvited] = useState<{ email: string; role: string } | null>(null);
   const [copied, setCopied] = useState(false);
   const [confirmId, setConfirmId] = useState<string | null>(null);
 
   const field =
     'w-full rounded-sm border border-white/10 bg-primary px-3 py-2.5 text-sm text-white transition-colors placeholder:text-gray-600 focus:border-accent-red focus:outline-none';
   const label = 'mb-1.5 block text-xs uppercase tracking-wider text-gray-400';
+
+  const users = useMemo(() => profiles.filter((p) => !p.deleted), [profiles]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -66,47 +65,48 @@ export default function AdminUsers() {
       (u) =>
         u.name.toLowerCase().includes(q) ||
         u.email.toLowerCase().includes(q) ||
+        u.phone.includes(q) ||
         ROLE_LABEL[u.role].toLowerCase().includes(q)
     );
   }, [users, query]);
 
-  const createUser = async (e: React.FormEvent) => {
+  const athletes = users.filter((u) => u.role === 'athlete').length;
+
+  const invite = async (e: React.FormEvent) => {
     e.preventDefault();
     if (busy) return;
 
     const email = form.email.trim().toLowerCase();
+    if (!email) return;
     if (users.some((u) => u.email.toLowerCase() === email)) {
-      toast('Пользователь с таким email уже существует', 'error');
-      return;
-    }
-    const issues = passwordIssues(form.password);
-    if (issues.length > 0) {
-      toast(`Пароль слишком простой: нужен ${issues.join(', ')}`, 'error');
+      toast('Пользователь с таким email уже зарегистрирован', 'error');
       return;
     }
 
     setBusy(true);
-    const newUser: User = {
-      id: 'u-' + Date.now(),
-      name: form.name.trim(),
-      email,
-      phone: form.phone.trim(),
-      role: form.role,
-      ...(form.role === 'trainer' && form.trainerId ? { trainerId: form.trainerId } : {}),
-      passwordHash: await hashPassword(form.password),
-      created: new Date().toISOString().split('T')[0],
-      mustChangePassword: true,
-    };
-    const next = [...users, newUser];
-    saveUsers(next);
-    setUsers(next);
+    const { error } = await supabase.from('invitations').upsert(
+      {
+        email,
+        name: form.name.trim(),
+        role: form.role,
+        trainer_id: form.role === 'trainer' && form.trainerId ? form.trainerId : null,
+      },
+      { onConflict: 'email' }
+    );
     setBusy(false);
+
+    if (error) {
+      toast(error.message, 'error');
+      return;
+    }
+
+    setInvited({ email, role: ROLE_LABEL[form.role] });
     setOpen(false);
-    setForm({ name: '', email: '', phone: '', role: 'athlete', password: '', trainerId: '' });
-    toast(`Аккаунт создан: ${newUser.name}`);
+    setForm({ name: '', email: '', role: 'athlete', trainerId: '' });
+    toast('Приглашение сохранено — отправьте человеку ссылку на регистрацию');
   };
 
-  const changeRole = (id: string, role: User['role']) => {
+  const changeRole = async (id: string, role: User['role']) => {
     const target = users.find((u) => u.id === id);
     if (!target) return;
     if (isOwner(target)) {
@@ -117,45 +117,27 @@ export default function AdminUsers() {
       toast('Права администратора не выдаются', 'error');
       return;
     }
-    const next = users.map((u) => (u.id === id ? { ...u, role } : u));
-    saveUsers(next);
-    setUsers(next);
+
+    const { error } = await supabase.from('profiles').update({ role }).eq('id', id);
+    if (error) {
+      toast(error.message, 'error');
+      return;
+    }
     toast('Роль обновлена');
   };
 
-  const resetPassword = async (user: User) => {
-    const temp = generateTempPassword();
-    const passwordHash = await hashPassword(temp);
-    const next = users.map((u) =>
-      u.id === user.id ? { ...u, passwordHash, mustChangePassword: true } : u
-    );
-    saveUsers(next);
-    setUsers(next);
-    setCopied(false);
-    setResetInfo({ name: user.name, email: user.email, password: temp });
-    toast('Пароль сброшен — передайте временный пароль', 'info');
-  };
-
-  const copyInvite = async (user: User) => {
+  const copyRegisterLink = async (email?: string) => {
+    const link = `${window.location.origin}/register${email ? `?email=${encodeURIComponent(email)}` : ''}`;
     try {
-      await navigator.clipboard.writeText(inviteLink(user, window.location.origin));
-      toast('Ссылка для входа скопирована — отправьте её пользователю');
+      await navigator.clipboard.writeText(link);
+      setCopied(true);
+      toast('Ссылка на регистрацию скопирована');
     } catch {
       toast('Не удалось скопировать ссылку', 'error');
     }
   };
 
-  const copyResetPassword = async () => {
-    if (!resetInfo) return;
-    try {
-      await navigator.clipboard.writeText(resetInfo.password);
-      setCopied(true);
-    } catch {
-      toast('Не удалось скопировать — выделите пароль вручную', 'error');
-    }
-  };
-
-  const removeUser = (id: string, name: string) => {
+  const removeUser = async (id: string, name: string) => {
     const target = users.find((u) => u.id === id) ?? null;
     const check = canDeleteUser(currentUser, target);
     if (!check.ok) {
@@ -164,16 +146,13 @@ export default function AdminUsers() {
       return;
     }
 
-    // Удаление выполняет защищённый метод контекста: он ещё раз проверяет права
-    // и заодно чистит записи, уведомления и личные результаты.
-    const result = deleteUser(id);
+    const result = await deleteUser(id);
     if (!result.ok) {
       setConfirmId(null);
       toast(result.error, 'error');
       return;
     }
 
-    setUsers(getUsers());
     setConfirmId(null);
     toast(`Аккаунт удалён: ${name}`, 'info');
   };
@@ -217,7 +196,6 @@ export default function AdminUsers() {
   };
 
   const rowActions = (u: User) => {
-    // Удаление и сброс пароля доступны только администратору клуба
     if (!isAdmin(currentUser)) return null;
     if (u.id === currentUser?.id) {
       return <p className="text-right text-[11px] text-gray-600">Это вы</p>;
@@ -225,7 +203,7 @@ export default function AdminUsers() {
     if (confirmId === u.id) {
       return (
         <div className="flex flex-wrap items-center justify-end gap-2">
-          <span className="text-[11px] text-gray-400">Удалить аккаунт и его записи?</span>
+          <span className="text-[11px] text-gray-400">Удалить аккаунт?</span>
           <button
             onClick={() => removeUser(u.id, u.name)}
             className="rounded-sm bg-red-500/20 px-2 py-1 text-[11px] font-semibold text-red-300 transition-colors hover:bg-red-500/30"
@@ -244,20 +222,12 @@ export default function AdminUsers() {
     return (
       <div className="flex items-center justify-end gap-2">
         <button
-          onClick={() => copyInvite(u)}
+          onClick={() => copyRegisterLink(u.email)}
           className="rounded-sm p-1.5 text-gray-500 transition-colors hover:bg-white/5 hover:text-accent-blue"
-          aria-label={`Ссылка для входа ${u.name}`}
-          title="Скопировать ссылку для входа"
+          aria-label={`Ссылка на регистрацию для ${u.name}`}
+          title="Скопировать ссылку на регистрацию"
         >
-          <Link2 className="h-4 w-4" />
-        </button>
-        <button
-          onClick={() => resetPassword(u)}
-          className="rounded-sm p-1.5 text-gray-500 transition-colors hover:bg-white/5 hover:text-yellow-400"
-          aria-label={`Сбросить пароль ${u.name}`}
-          title="Сбросить пароль"
-        >
-          <KeyRound className="h-4 w-4" />
+          <Mail className="h-4 w-4" />
         </button>
         <button
           onClick={() => setConfirmId(u.id)}
@@ -272,7 +242,6 @@ export default function AdminUsers() {
     );
   };
 
-  // Дополнительная защита: страница доступна только владельцу клуба
   if (!isAdmin(currentUser)) {
     return (
       <div className="mx-auto max-w-xl rounded-sm border border-white/10 bg-surface p-6 text-center">
@@ -291,11 +260,11 @@ export default function AdminUsers() {
         <div>
           <h1 className="mb-1 text-2xl font-bold text-white">Пользователи</h1>
           <p className="text-sm text-gray-400">
-            {users.length} аккаунтов · управление доступами и ролями
+            {users.length} аккаунтов · {athletes} спортсменов
           </p>
-          <p className="mt-1 max-w-xl text-xs text-gray-600">
-            Кнопка «Удалить» стирает аккаунт вместе с записями на тренировки, уведомлениями
-            и личными результатами. Аккаунт владельца удалить нельзя.
+          <p className="mt-1 flex items-center gap-1.5 text-xs text-green-400">
+            <Radio className="h-3 w-3 animate-pulse" />
+            Список обновляется в реальном времени — новые регистрации появляются сами
           </p>
         </div>
         <Button onClick={() => setOpen((v) => !v)} variant={open ? 'outline' : 'primary'} size="sm">
@@ -305,40 +274,41 @@ export default function AdminUsers() {
             </>
           ) : (
             <>
-              <Plus className="mr-1.5 h-4 w-4" /> Новый пользователь
+              <Plus className="mr-1.5 h-4 w-4" /> Пригласить
             </>
           )}
         </Button>
       </div>
 
       {open && (
-        <form onSubmit={createUser} className="mb-6 space-y-4 rounded-sm border border-white/10 bg-surface p-6">
-          <h2 className="font-semibold text-white">Новый аккаунт</h2>
+        <form onSubmit={invite} className="mb-6 space-y-4 rounded-sm border border-white/10 bg-surface p-6">
+          <h2 className="font-semibold text-white">Приглашение</h2>
+          <p className="text-xs leading-relaxed text-gray-500">
+            Укажите email, с которым человек зарегистрируется. Роль и привязка к тренеру
+            применятся автоматически — пароль он придумает сам, письмо с подтверждением
+            придёт на почту.
+          </p>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label htmlFor="nu-name" className={label}>Имя и фамилия</label>
-              <input id="nu-name" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={field} />
+              <input id="nu-name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={field} placeholder="Иван Петров" />
             </div>
             <div>
-              <label htmlFor="nu-email" className={label}>Email (логин)</label>
-              <input id="nu-email" type="email" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className={field} />
-            </div>
-            <div>
-              <label htmlFor="nu-phone" className={label}>Телефон</label>
-              <input id="nu-phone" type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className={field} />
+              <label htmlFor="nu-email" className={label}>Email *</label>
+              <input id="nu-email" type="email" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className={field} placeholder="ivan@example.ru" />
             </div>
             <div>
               <label htmlFor="nu-role" className={label}>Роль</label>
-              <select id="nu-role" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value as User['role'] })} className={field}>
+              <select id="nu-role" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value as 'athlete' | 'trainer' })} className={field}>
                 <option value="athlete">Спортсмен</option>
                 <option value="trainer">Тренер</option>
               </select>
               <p className="mt-1 text-xs text-gray-600">
-                Права администратора закреплены за владельцем клуба и не выдаются.
+                Права администратора закреплены за владельцем клуба.
               </p>
             </div>
             {form.role === 'trainer' && (
-              <div className="sm:col-span-2">
+              <div>
                 <label htmlFor="nu-trainer" className={label}>Профиль тренера на сайте</label>
                 <select
                   id="nu-trainer"
@@ -351,57 +321,45 @@ export default function AdminUsers() {
                     <option key={t.id} value={t.id}>{t.name}</option>
                   ))}
                 </select>
-                <p className="mt-1 text-xs text-gray-600">
-                  От профиля зависит, какие тренировки увидит тренер в кабинете.
-                </p>
               </div>
             )}
-            <div className="sm:col-span-2">
-              <label htmlFor="nu-password" className={label}>Временный пароль</label>
-              <input id="nu-password" type="text" required value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} className={field} placeholder="Передайте сотруднику лично" />
-              <p className="mt-1 text-xs text-gray-600">
-                Пароль хешируется при сохранении. Попросите сменить его после первого входа.
-              </p>
-            </div>
           </div>
           <Button type="submit" variant="primary" size="sm" disabled={busy}>
-            {busy ? 'Создаём…' : 'Создать аккаунт'}
+            {busy ? 'Сохраняем…' : 'Сохранить приглашение'}
           </Button>
         </form>
       )}
 
-      {resetInfo && (
-        <div className="mb-4 rounded-sm border border-yellow-500/30 bg-yellow-500/10 p-4">
+      {invited && (
+        <div className="mb-4 rounded-sm border border-green-500/30 bg-green-500/10 p-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-yellow-200">
-                Временный пароль для {resetInfo.name}
+              <p className="text-sm font-semibold text-green-200">
+                Приглашение для {invited.email}
               </p>
-              <p className="mt-0.5 text-xs text-yellow-200/70">
-                Логин: {resetInfo.email} · показывается один раз
+              <p className="mt-0.5 text-xs text-green-200/70">
+                Роль: {invited.role} · применится при регистрации с этим email
               </p>
-              <code className="mt-2 block select-all break-all rounded-sm bg-black/40 px-3 py-2 font-mono text-sm text-white">
-                {resetInfo.password}
-              </code>
             </div>
             <div className="flex items-center gap-2">
               <button
-                onClick={copyResetPassword}
-                className="flex items-center gap-1.5 rounded-sm bg-yellow-500/20 px-3 py-1.5 text-xs font-semibold text-yellow-100 transition-colors hover:bg-yellow-500/30"
+                onClick={() => copyRegisterLink(invited.email)}
+                className="flex items-center gap-1.5 rounded-sm bg-green-500/20 px-3 py-1.5 text-xs font-semibold text-green-100 transition-colors hover:bg-green-500/30"
               >
                 {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-                {copied ? 'Скопировано' : 'Копировать'}
+                {copied ? 'Скопировано' : 'Ссылка на регистрацию'}
               </button>
               <button
-                onClick={() => setResetInfo(null)}
-                className="text-xs text-yellow-200/70 hover:text-yellow-100"
+                onClick={() => setInvited(null)}
+                className="text-xs text-green-200/70 hover:text-green-100"
               >
                 Закрыть
               </button>
             </div>
           </div>
-          <p className="mt-3 text-xs text-yellow-200/70">
-            Передайте пароль лично. При входе пользователю будет предложено сменить его.
+          <p className="mt-3 text-xs text-green-200/70">
+            Отправьте человеку ссылку. После регистрации и подтверждения почты он появится
+            в этом списке автоматически.
           </p>
         </div>
       )}
@@ -411,7 +369,7 @@ export default function AdminUsers() {
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Поиск по имени, email или роли"
+          placeholder="Поиск по имени, email, телефону или роли"
           className={`${field} pl-10`}
           aria-label="Поиск пользователей"
         />
@@ -425,6 +383,7 @@ export default function AdminUsers() {
               <th scope="col" className="hidden px-4 py-3 text-left text-xs font-medium text-gray-400 md:table-cell">Телефон</th>
               <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-400">Роль</th>
               <th scope="col" className="hidden px-4 py-3 text-left text-xs font-medium text-gray-400 sm:table-cell">Записей</th>
+              <th scope="col" className="hidden px-4 py-3 text-left text-xs font-medium text-gray-400 lg:table-cell">В клубе с</th>
               <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-400">
                 <span className="sr-only">Действия</span>
               </th>
@@ -445,13 +404,14 @@ export default function AdminUsers() {
                 <td className="hidden px-4 py-3 text-gray-400 md:table-cell">{u.phone || '—'}</td>
                 <td className="px-4 py-3">{roleControl(u)}</td>
                 <td className="hidden px-4 py-3 text-gray-400 sm:table-cell">{regCountOf(u.id)}</td>
+                <td className="hidden px-4 py-3 text-gray-500 lg:table-cell">{formatDate(u.created)}</td>
                 <td className="px-4 py-3">{rowActions(u)}</td>
               </tr>
             ))}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={5} className="bg-surface/50 px-4 py-10 text-center text-sm text-gray-500">
-                  Ничего не найдено
+                <td colSpan={6} className="bg-surface/50 px-4 py-10 text-center text-sm text-gray-500">
+                  {users.length === 0 ? 'Загрузка списка…' : 'Ничего не найдено'}
                 </td>
               </tr>
             )}
@@ -484,7 +444,7 @@ export default function AdminUsers() {
         ))}
         {filtered.length === 0 && (
           <li className="rounded-sm border border-white/10 bg-surface px-4 py-10 text-center text-sm text-gray-500">
-            Ничего не найдено
+            {users.length === 0 ? 'Загрузка списка…' : 'Ничего не найдено'}
           </li>
         )}
       </ul>

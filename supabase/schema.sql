@@ -1,18 +1,49 @@
 -- ============================================================
 --  «Второе дыхание» — схема базы данных для Supabase
 --  Выполните в Supabase → SQL Editor → New query → Run
+--  Файл идемпотентен: его можно запускать повторно.
 -- ============================================================
 
 -- ---------- Профили ----------
 create table if not exists public.profiles (
   id uuid primary key references auth.users (id) on delete cascade,
+  email text not null default '',
   name text not null default '',
   phone text not null default '',
   role text not null default 'athlete' check (role in ('athlete', 'trainer', 'admin')),
   trainer_id text,
   photo text,
+  must_change_password boolean not null default false,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+-- Догоняем колонки для проектов, созданных по прежней версии файла
+alter table public.profiles add column if not exists email text not null default '';
+alter table public.profiles add column if not exists must_change_password boolean not null default false;
+alter table public.profiles add column if not exists updated_at timestamptz not null default now();
+-- Мягкое удаление: аккаунт исчезает из списков, но вход блокируется осознанно
+alter table public.profiles add column if not exists deleted_at timestamptz;
+
+create index if not exists profiles_role_idx on public.profiles (role);
+create index if not exists profiles_created_idx on public.profiles (created_at desc);
+
+-- ---------- Приглашения ----------
+-- Администратор заранее сообщает email и роль: при регистрации триггер
+-- выдаёт их автоматически. Так тренер получает доступ без серверного ключа.
+create table if not exists public.invitations (
+  email text primary key,
+  name text not null default '',
+  role text not null default 'athlete' check (role in ('athlete', 'trainer')),
+  trainer_id text,
   created_at timestamptz not null default now()
 );
+
+alter table public.invitations enable row level security;
+
+drop policy if exists "invitations: только админ" on public.invitations;
+create policy "invitations: только админ" on public.invitations
+  for all using (public.is_admin()) with check (public.is_admin());
 
 -- ---------- Тренировки ----------
 create table if not exists public.trainings (
@@ -34,11 +65,15 @@ create table if not exists public.trainings (
   created_at timestamptz not null default now()
 );
 
+create index if not exists trainings_date_idx on public.trainings (date, time);
+
 -- ---------- Записи на тренировки ----------
+-- training_id без внешнего ключа: расписание публикуется файлом, и запись
+-- не должна падать, если тренировка ещё не попала в таблицу trainings.
 create table if not exists public.registrations (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references public.profiles (id) on delete cascade,
-  training_id text not null references public.trainings (id) on delete cascade,
+  training_id text not null,
   status text not null default 'confirmed' check (status in ('confirmed', 'waitlist', 'cancelled')),
   attended boolean not null default false,
   created_at timestamptz not null default now()
@@ -46,6 +81,11 @@ create table if not exists public.registrations (
 
 create index if not exists registrations_training_idx on public.registrations (training_id);
 create index if not exists registrations_user_idx on public.registrations (user_id);
+
+-- Одна активная запись на тренировку: повторная вставка не создаёт дубль
+create unique index if not exists registrations_unique_active
+  on public.registrations (user_id, training_id)
+  where status <> 'cancelled';
 
 -- ---------- Уведомления ----------
 create table if not exists public.notifications (
@@ -58,6 +98,8 @@ create table if not exists public.notifications (
   link text,
   created_at timestamptz not null default now()
 );
+
+create index if not exists notifications_user_idx on public.notifications (user_id, created_at desc);
 
 -- ---------- Личные результаты ----------
 create table if not exists public.results (
@@ -72,6 +114,8 @@ create table if not exists public.results (
   created_at timestamptz not null default now()
 );
 
+create index if not exists results_user_idx on public.results (user_id, date desc);
+
 -- ============================================================
 --  Проверка роли без рекурсии в политиках
 -- ============================================================
@@ -80,6 +124,7 @@ returns boolean
 language sql
 security definer
 set search_path = public
+stable
 as $$
   select exists (
     select 1 from public.profiles p
@@ -92,12 +137,32 @@ returns boolean
 language sql
 security definer
 set search_path = public
+stable
 as $$
   select exists (
     select 1
     from public.trainings t
     join public.profiles p on p.trainer_id = t.trainer_id
     where t.id = training and p.id = auth.uid()
+  );
+$$;
+
+-- Тренер видит профиль спортсмена, если тот записан на его тренировку
+create or replace function public.teaches(profile uuid)
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select exists (
+    select 1
+    from public.registrations r
+    join public.trainings t on t.id = r.training_id
+    join public.profiles me on me.id = auth.uid()
+    where r.user_id = profile
+      and me.trainer_id is not null
+      and t.trainer_id = me.trainer_id
   );
 $$;
 
@@ -110,24 +175,63 @@ returns trigger
 language plpgsql
 security definer
 set search_path = public
-as $$
+as $
+declare
+  invite public.invitations;
 begin
-  insert into public.profiles (id, name, phone, role)
+  select * into invite
+    from public.invitations
+   where lower(email) = lower(coalesce(new.email, ''))
+   limit 1;
+
+  insert into public.profiles (id, email, name, phone, role, trainer_id)
   values (
     new.id,
-    coalesce(new.raw_user_meta_data ->> 'name', ''),
+    coalesce(new.email, ''),
+    coalesce(nullif(new.raw_user_meta_data ->> 'name', ''), invite.name, ''),
     coalesce(new.raw_user_meta_data ->> 'phone', ''),
-    'athlete'
+    coalesce(invite.role, 'athlete'),
+    invite.trainer_id
   )
-  on conflict (id) do nothing;
+  on conflict (id) do update set email = excluded.email;
+
+  if invite.email is not null then
+    delete from public.invitations where email = invite.email;
+  end if;
+
   return new;
 end;
-$$;
+$;
 
 drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
+
+-- Роль, привязку к тренеру и email может менять только администратор.
+-- Без этого триггера любой пользователь поднял бы себе права одним UPDATE.
+create or replace function public.protect_profile_fields()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if auth.uid() is not null and not public.is_admin() then
+    new.role := old.role;
+    new.trainer_id := old.trainer_id;
+    new.email := old.email;
+    new.created_at := old.created_at;
+  end if;
+  new.updated_at := now();
+  return new;
+end;
+$$;
+
+drop trigger if exists protect_profile_fields on public.profiles;
+create trigger protect_profile_fields
+  before update on public.profiles
+  for each row execute function public.protect_profile_fields();
 
 -- ============================================================
 --  Row Level Security
@@ -139,9 +243,18 @@ alter table public.notifications enable row level security;
 alter table public.results enable row level security;
 
 -- ---------- profiles ----------
+-- Удалённый аккаунт не читается даже самим владельцем: при входе профиль
+-- не найдётся, и приложение разлогинит его с сообщением «аккаунт удалён».
 drop policy if exists "profiles: читать свой" on public.profiles;
 create policy "profiles: читать свой" on public.profiles
-  for select using (id = auth.uid() or public.is_admin());
+  for select using (
+    public.is_admin()
+    or (deleted_at is null and (id = auth.uid() or public.teaches(id)))
+  );
+
+drop policy if exists "profiles: создать свой" on public.profiles;
+create policy "profiles: создать свой" on public.profiles
+  for insert with check (id = auth.uid() and role = 'athlete');
 
 drop policy if exists "profiles: править свой" on public.profiles;
 create policy "profiles: править свой" on public.profiles
@@ -151,6 +264,10 @@ create policy "profiles: править свой" on public.profiles
 drop policy if exists "profiles: админ правит всех" on public.profiles;
 create policy "profiles: админ правит всех" on public.profiles
   for update using (public.is_admin()) with check (public.is_admin());
+
+drop policy if exists "profiles: админ удаляет" on public.profiles;
+create policy "profiles: админ удаляет" on public.profiles
+  for delete using (public.is_admin());
 
 -- ---------- trainings ----------
 drop policy if exists "trainings: читают все" on public.trainings;
@@ -201,6 +318,18 @@ drop policy if exists "notifications: админ рассылает" on public.n
 create policy "notifications: админ рассылает" on public.notifications
   for insert with check (public.is_admin());
 
+-- Спортсмен может написать администратору (заявка на абонемент),
+-- но не другому спортсмену
+drop policy if exists "notifications: письмо администратору" on public.notifications;
+create policy "notifications: письмо администратору" on public.notifications
+  for insert with check (
+    auth.uid() is not null
+    and exists (
+      select 1 from public.profiles p
+      where p.id = user_id and p.role = 'admin'
+    )
+  );
+
 drop policy if exists "notifications: отметить прочитанным" on public.notifications;
 create policy "notifications: отметить прочитанным" on public.notifications
   for update using (user_id = auth.uid() or public.is_admin());
@@ -227,9 +356,28 @@ create policy "results: удаляет свои" on public.results
   for delete using (user_id = auth.uid() or public.is_admin());
 
 -- ============================================================
---  ВАЖНО: после первого входа владельца назначьте ему роль admin.
---  Раскомментируйте и выполните (email можно заменить своим):
+--  Realtime: список пользователей и записи обновляются без перезагрузки
+-- ============================================================
+do $$
+declare
+  t text;
+begin
+  foreach t in array array['profiles', 'registrations', 'notifications', 'results', 'trainings']
+  loop
+    begin
+      execute format('alter publication supabase_realtime add table public.%I', t);
+    exception
+      when duplicate_object then null;
+      when undefined_object then null;
+    end;
+  end loop;
+end;
+$$;
+
+-- ============================================================
+--  ВАЖНО: после первой регистрации назначьте владельцу роль admin.
+--  Замените email на свой и выполните:
 -- ============================================================
 -- update public.profiles
 --    set role = 'admin', name = 'Брсоян Арсен Арменович'
---  where id = (select id from auth.users where email = 'arsenbrsoyan@yandex.ru');
+--  where email = 'arsenbrsoyan@yandex.ru';

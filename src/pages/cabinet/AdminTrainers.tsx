@@ -2,24 +2,14 @@ import { useMemo, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { useTrainers, addTrainer, updateTrainer, removeTrainer } from '../../store/trainersStore';
-import { useTrainings, saveTrainings } from '../../store/trainingsStore';
-import { getUsers, saveUsers, type User } from '../../store/database';
-import { hashPassword, passwordIssues } from '../../lib/crypto';
-import { inviteLink } from '../../lib/invite';
+import { useTrainings, updateTraining } from '../../store/trainingsStore';
+import { activeProfiles, useProfiles } from '../../store/profilesStore';
+import { supabase } from '../../lib/supabase';
+import type { User } from '../../store/database';
 import { directions } from '../../data/directions';
 import Button from '../../components/ui/Button';
 import ImageUpload from '../../components/ui/ImageUpload';
-import {
-  Check,
-  Copy,
-  KeyRound,
-  Link2,
-  Pencil,
-  Plus,
-  Trash2,
-  UserPlus,
-  X,
-} from 'lucide-react';
+import { Check, Copy, Link2, Mail, Pencil, Plus, Trash2, UserPlus, X } from 'lucide-react';
 
 const emptyForm = {
   name: '',
@@ -33,25 +23,24 @@ const emptyForm = {
   directions: [] as string[],
   createAccount: true,
   loginEmail: '',
-  password: '',
 };
 
 type FormState = typeof emptyForm;
 
-/** Читаемый временный пароль, проходящий проверку сложности */
-function generatePassword(): string {
-  const letters = 'abcdefghjkmnpqrstuvwxyz';
-  const digits = '23456789';
-  let tail = '';
-  for (let i = 0; i < 6; i++) tail += letters[Math.floor(Math.random() * letters.length)];
-  tail += digits[Math.floor(Math.random() * digits.length)];
-  tail += digits[Math.floor(Math.random() * digits.length)];
-  return `Vtoroe-${tail}`;
+/** Предложение логина из имени: тренер подтвердит или заменит его при регистрации */
+function suggestLogin(name: string): string {
+  const slug = name
+    .toLowerCase()
+    .replace(/[^a-zа-яё]/gi, '.')
+    .replace(/\.+/g, '.')
+    .replace(/^\.|\.$/g, '');
+  return `${slug || 'trainer'}@vtoroe-dyhanie.ru`;
 }
 
 export default function AdminTrainers() {
   const trainers = useTrainers();
   const trainings = useTrainings();
+  const profiles = useProfiles();
   const { currentUser } = useAuth();
   const { toast } = useToast();
 
@@ -60,21 +49,28 @@ export default function AdminTrainers() {
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(emptyForm);
   const [busy, setBusy] = useState(false);
-  const [credentials, setCredentials] = useState<{
-    name: string;
-    email: string;
-    password: string;
-  } | null>(null);
+  const [invite, setInvite] = useState<{ name: string; email: string } | null>(null);
   const [copied, setCopied] = useState(false);
 
-  const users = getUsers();
+  const users = useMemo(() => activeProfiles(profiles), [profiles]);
 
   const field =
     'w-full rounded-sm border border-white/10 bg-primary px-3 py-2.5 text-sm text-white transition-colors placeholder:text-gray-600 focus:border-accent-red focus:outline-none';
   const label = 'mb-1.5 block text-xs uppercase tracking-wider text-gray-400';
 
+  /** Аккаунт тренера в общей базе: роль trainer и привязка к профилю на сайте */
   const accountOf = (trainerId: string): User | undefined =>
     users.find((u) => u.trainerId === trainerId && u.role === 'trainer');
+
+  /** Email уже приглашён, но человек ещё не зарегистрировался */
+  const pendingInviteOf = async (email: string): Promise<boolean> => {
+    const { data, error } = await supabase
+      .from('invitations')
+      .select('email')
+      .eq('email', email)
+      .maybeSingle();
+    return !error && Boolean(data);
+  };
 
   const sorted = useMemo(
     () => [...trainers].sort((a, b) => a.name.localeCompare(b.name, 'ru')),
@@ -88,7 +84,7 @@ export default function AdminTrainers() {
   };
 
   const startCreate = () => {
-    setForm({ ...emptyForm, password: generatePassword() });
+    setForm({ ...emptyForm });
     setEditingId(null);
     setOpen(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -109,11 +105,28 @@ export default function AdminTrainers() {
       directions: t.directions,
       createAccount: false,
       loginEmail: accountOf(id)?.email ?? '',
-      password: '',
     });
     setEditingId(id);
     setOpen(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  /**
+   * Сохраняет приглашение в таблицу invitations: триггер в базе выдаст
+   * роль trainer и привязку к профилю, когда человек подтвердит регистрацию.
+   */
+  const saveInvite = async (email: string, name: string, trainerId: string) => {
+    const { error } = await supabase.from('invitations').upsert(
+      { email, name, role: 'trainer', trainer_id: trainerId },
+      { onConflict: 'email' }
+    );
+    if (error) {
+      toast(error.message, 'error');
+      return false;
+    }
+    setCopied(false);
+    setInvite({ name, email });
+    return true;
   };
 
   const submit = async (e: React.FormEvent) => {
@@ -142,22 +155,10 @@ export default function AdminTrainers() {
     };
 
     const loginEmail = form.loginEmail.trim().toLowerCase();
-    const allUsers = getUsers();
 
-    if (form.createAccount) {
-      if (!loginEmail) {
-        toast('Укажите email для входа тренера', 'error');
-        return;
-      }
-      if (allUsers.some((u) => u.email.toLowerCase() === loginEmail)) {
-        toast('Этот email уже занят другим аккаунтом', 'error');
-        return;
-      }
-      const issues = passwordIssues(form.password);
-      if (issues.length > 0) {
-        toast(`Пароль слишком простой: нужен ${issues.join(', ')}`, 'error');
-        return;
-      }
+    if (form.createAccount && !loginEmail) {
+      toast('Укажите email, с которым тренер будет входить', 'error');
+      return;
     }
 
     setBusy(true);
@@ -166,116 +167,106 @@ export default function AdminTrainers() {
 
     if (editingId) {
       updateTrainer(editingId, profile);
-      // Обновляем имя тренера в уже созданных тренировках
-      saveTrainings(
-        trainings.map((t) => (t.trainerId === editingId ? { ...t, trainer: name } : t))
-      );
+      // Имя тренера хранится и в тренировках: переименование разносим по расписанию
+      const affected = trainings.filter((t) => t.trainerId === editingId && t.trainer !== name);
+      for (const t of affected) {
+        await updateTraining(t.id, { trainer: name });
+      }
     } else {
       addTrainer({ id: trainerId, ...profile });
     }
 
     if (form.createAccount) {
-      const newUser: User = {
-        id: 'u-' + Date.now(),
-        name,
-        email: loginEmail,
-        phone: form.phone.trim(),
-        role: 'trainer',
-        trainerId,
-        passwordHash: await hashPassword(form.password),
-        created: new Date().toISOString().split('T')[0],
-        mustChangePassword: true,
-      };
-      saveUsers([...allUsers, newUser]);
-      setCopied(false);
-      setCredentials({ name, email: loginEmail, password: form.password });
-      toast(`Тренер добавлен, аккаунт создан: ${name}`);
-    } else {
-      toast(editingId ? 'Профиль тренера обновлён' : `Тренер добавлен: ${name}`);
+      if (users.some((u) => u.email.toLowerCase() === loginEmail)) {
+        toast('Этот email уже зарегистрирован — аккаунт привяжите в списке ниже', 'error');
+        setBusy(false);
+        return;
+      }
+      await saveInvite(loginEmail, name, trainerId);
     }
 
     setBusy(false);
+    toast(editingId ? `Профиль обновлён: ${name}` : `Тренер добавлен: ${name}`);
     closeForm();
   };
 
-  const createAccountFor = async (trainerId: string, name: string) => {
-    const email = window.prompt(
-      `Email (логин) для ${name}:`,
-      `${name.toLowerCase().replace(/[^a-zа-яё]/gi, '.').replace(/\.+/g, '.').replace(/^\.|\.$/g, '')}@vtoroe-dyhanie.ru`
-    );
+  /** Создаёт аккаунт уже существующему тренеру — по email из его профиля */
+  const createAccountFor = async (trainerId: string, name: string, fallbackEmail: string) => {
+    const email = window.prompt(`Email (логин) для ${name}:`, fallbackEmail || suggestLogin(name));
     if (!email) return;
 
     const loginEmail = email.trim().toLowerCase();
-    if (getUsers().some((u) => u.email.toLowerCase() === loginEmail)) {
-      toast('Этот email уже занят', 'error');
+    if (users.some((u) => u.email.toLowerCase() === loginEmail)) {
+      toast('Этот email уже зарегистрирован', 'error');
+      return;
+    }
+    if (await pendingInviteOf(loginEmail)) {
+      toast('Приглашение для этого email уже отправлено', 'info');
       return;
     }
 
-    const password = generatePassword();
-    const newUser: User = {
-      id: 'u-' + Date.now(),
-      name,
-      email: loginEmail,
-      phone: '',
-      role: 'trainer',
-      trainerId,
-      passwordHash: await hashPassword(password),
-      created: new Date().toISOString().split('T')[0],
-      mustChangePassword: true,
-    };
-    saveUsers([...getUsers(), newUser]);
-    setCopied(false);
-    setCredentials({ name, email: loginEmail, password });
-    toast('Аккаунт тренера создан');
+    if (await saveInvite(loginEmail, name, trainerId)) {
+      toast('Приглашение сохранено — отправьте тренеру ссылку');
+    }
   };
 
-  const resetPassword = async (user: User) => {
-    const password = generatePassword();
-    const passwordHash = await hashPassword(password);
-    saveUsers(
-      getUsers().map((u) =>
-        u.id === user.id ? { ...u, passwordHash, mustChangePassword: true } : u
-      )
+  /** Привязывает уже зарегистрированный аккаунт к профилю тренера */
+  const linkExistingAccount = async (trainerId: string, name: string) => {
+    const candidates = users.filter(
+      (u) => u.role === 'athlete' && !u.trainerId && u.email.toLowerCase() === suggestLogin(name).toLowerCase()
     );
-    setCopied(false);
-    setCredentials({ name: user.name, email: user.email, password });
-    toast('Пароль тренера сброшен', 'info');
+    const email = window.prompt(
+      `Email аккаунта, который станет тренером «${name}»:`,
+      candidates[0]?.email ?? ''
+    );
+    if (!email) return;
+
+    const target = users.find((u) => u.email.toLowerCase() === email.trim().toLowerCase());
+    if (!target) {
+      toast('Аккаунт с таким email ещё не зарегистрировался', 'error');
+      return;
+    }
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({ role: 'trainer', trainer_id: trainerId })
+      .eq('id', target.id);
+
+    if (error) {
+      toast(error.message, 'error');
+      return;
+    }
+    toast(`Аккаунт ${target.email} теперь тренер`);
   };
 
-  /** Копирует ссылку, открыв которую тренер получит доступ на своём устройстве */
-  const copyInviteLink = async (account: User) => {
-    const link = inviteLink(account, window.location.origin);
+  const copyRegisterLink = async (email: string) => {
+    const link = `${window.location.origin}/register?email=${encodeURIComponent(email)}`;
     try {
       await navigator.clipboard.writeText(link);
-      toast('Ссылка для входа скопирована — отправьте её тренеру');
+      setCopied(true);
+      toast('Ссылка на регистрацию скопирована — отправьте её тренеру');
     } catch {
       toast('Не удалось скопировать ссылку', 'error');
     }
   };
 
-  const copyCredentials = async () => {
-    if (!credentials) return;
-    try {
-      await navigator.clipboard.writeText(
-        `Логин: ${credentials.email}\nПароль: ${credentials.password}\nВход: ${window.location.origin}/login`
-      );
-      setCopied(true);
-    } catch {
-      toast('Не удалось скопировать — выделите вручную', 'error');
-    }
-  };
-
-  const remove = (id: string, name: string) => {
+  const remove = async (id: string, name: string) => {
     removeTrainer(id);
-    // Отвязываем аккаунт, чтобы он не остался без профиля
-    saveUsers(
-      getUsers().map((u) => (u.trainerId === id ? { ...u, trainerId: undefined } : u))
-    );
-    saveTrainings(
-      trainings.map((t) =>
-        t.trainerId === id ? { ...t, trainer: 'Не назначен', trainerId: '' } : t
-      )
-    );
+
+    // Отвязываем аккаунт, чтобы он не остался привязан к удалённому профилю
+    const account = accountOf(id);
+    if (account) {
+      await supabase.from('profiles').update({ trainer_id: null, role: 'athlete' }).eq('id', account.id);
+    }
+    // Отзываем неиспользованное приглашение
+    await supabase.from('invitations').delete().eq('trainer_id', id);
+
+    // Освобождаем тренировки этого тренера
+    const affected = trainings.filter((t) => t.trainerId === id);
+    for (const t of affected) {
+      await updateTraining(t.id, { trainer: 'Не назначен', trainerId: '' });
+    }
+
     setConfirmId(null);
     toast(`Тренер удалён: ${name}`, 'info');
   };
@@ -311,43 +302,35 @@ export default function AdminTrainers() {
         </div>
       )}
 
-      {credentials && (
-        <div className="mb-6 rounded-sm border border-yellow-500/30 bg-yellow-500/10 p-4">
+      {invite && (
+        <div className="mb-6 rounded-sm border border-green-500/30 bg-green-500/10 p-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-yellow-200">
-                Доступ для {credentials.name}
+              <p className="text-sm font-semibold text-green-200">Приглашение для {invite.name}</p>
+              <p className="mt-0.5 text-xs text-green-200/70">
+                Роль тренера привяжется автоматически при регистрации с email{' '}
+                {invite.email}
               </p>
-              <p className="mt-0.5 text-xs text-yellow-200/70">
-                Показывается один раз — передайте тренеру лично
-              </p>
-              <div className="mt-2 space-y-1">
-                <code className="block select-all break-all rounded-sm bg-black/40 px-3 py-1.5 font-mono text-sm text-white">
-                  {credentials.email}
-                </code>
-                <code className="block select-all break-all rounded-sm bg-black/40 px-3 py-1.5 font-mono text-sm text-white">
-                  {credentials.password}
-                </code>
-              </div>
             </div>
             <div className="flex items-center gap-2">
               <button
-                onClick={copyCredentials}
-                className="flex items-center gap-1.5 rounded-sm bg-yellow-500/20 px-3 py-1.5 text-xs font-semibold text-yellow-100 transition-colors hover:bg-yellow-500/30"
+                onClick={() => copyRegisterLink(invite.email)}
+                className="flex items-center gap-1.5 rounded-sm bg-green-500/20 px-3 py-1.5 text-xs font-semibold text-green-100 transition-colors hover:bg-green-500/30"
               >
                 {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-                {copied ? 'Скопировано' : 'Копировать всё'}
+                {copied ? 'Скопировано' : 'Ссылка на регистрацию'}
               </button>
               <button
-                onClick={() => setCredentials(null)}
-                className="text-xs text-yellow-200/70 hover:text-yellow-100"
+                onClick={() => setInvite(null)}
+                className="text-xs text-green-200/70 hover:text-green-100"
               >
                 Закрыть
               </button>
             </div>
           </div>
-          <p className="mt-3 text-xs text-yellow-200/70">
-            При первом входе тренер увидит баннер «Смените стартовый пароль».
+          <p className="mt-3 text-xs text-green-200/70">
+            Пароль тренер придумывает сам, доступ появляется на любом его устройстве.
+            Пока он не зарегистрируется, вход в кабинет ему недоступен.
           </p>
         </div>
       )}
@@ -376,7 +359,7 @@ export default function AdminTrainers() {
               <input id="tr-phone" type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className={field} placeholder="+7 900 000-00-00" />
             </div>
             <div>
-              <label htmlFor="tr-email" className={label}>Контактный email</label>
+              <label htmlFor="tr-email" className={label}>Контактный email на сайте</label>
               <input id="tr-email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className={field} placeholder="тренер@vtoroe-dyhanie.ru" />
             </div>
             <div className="sm:col-span-2">
@@ -435,43 +418,25 @@ export default function AdminTrainers() {
                   onChange={(e) => setForm({ ...form, createAccount: e.target.checked })}
                   className="h-4 w-4 accent-accent-red"
                 />
-                Сразу создать аккаунт для входа в кабинет
+                Сразу пригласить тренера в кабинет
               </label>
 
               {form.createAccount && (
                 <div className="mt-4 grid gap-4 sm:grid-cols-2">
                   <div>
-                    <label htmlFor="tr-login" className={label}>Логин (email) *</label>
+                    <label htmlFor="tr-login" className={label}>Email для входа *</label>
                     <input
                       id="tr-login"
                       type="email"
                       value={form.loginEmail}
                       onChange={(e) => setForm({ ...form, loginEmail: e.target.value })}
                       className={field}
-                      placeholder="ivan@vtoroe-dyhanie.ru"
+                      placeholder={suggestLogin(form.name || 'тренера')}
                     />
                   </div>
-                  <div>
-                    <label htmlFor="tr-pass" className={label}>Пароль *</label>
-                    <div className="flex gap-2">
-                      <input
-                        id="tr-pass"
-                        value={form.password}
-                        onChange={(e) => setForm({ ...form, password: e.target.value })}
-                        className={field}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setForm({ ...form, password: generatePassword() })}
-                        className="shrink-0 rounded-sm bg-white/10 px-3 text-xs text-gray-300 transition-colors hover:bg-white/20 hover:text-white"
-                        title="Сгенерировать пароль"
-                      >
-                        <KeyRound className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
-                  <p className="text-xs text-gray-600 sm:col-span-2">
-                    Пароль покажем один раз после сохранения. Тренер сменит его при первом входе.
+                  <p className="self-end text-xs leading-relaxed text-gray-600 sm:col-span-1">
+                    На этот email придёт ссылка регистрации: тренер сам придумает пароль
+                    и получит роль тренера автоматически.
                   </p>
                 </div>
               )}
@@ -525,41 +490,42 @@ export default function AdminTrainers() {
                   </div>
                   <p className="mt-1.5 text-xs">
                     {account ? (
-                      <span className="text-green-400">Аккаунт: {account.email}</span>
+                      <span className="text-green-400">Входит в кабинет: {account.email}</span>
                     ) : (
                       <span className="text-yellow-500">Аккаунта нет — тренер не может войти</span>
                     )}
                   </p>
                 </div>
 
-                <div className="flex shrink-0 items-center gap-3">
+                <div className="flex shrink-0 flex-wrap items-center gap-3">
                   {account ? (
+                    <button
+                      onClick={() => copyRegisterLink(account.email)}
+                      className="flex items-center gap-1.5 rounded-sm bg-accent-blue/10 px-2.5 py-1.5 text-xs text-accent-blue transition-colors hover:bg-accent-blue/20"
+                      aria-label={`Ссылка на вход для ${t.name}`}
+                      title="Ссылка на страницу входа — отправьте её тренеру"
+                    >
+                      <Link2 className="h-3.5 w-3.5" />
+                      Ссылка для входа
+                    </button>
+                  ) : (
                     <>
                       <button
-                        onClick={() => copyInviteLink(account)}
-                        className="flex items-center gap-1.5 rounded-sm bg-accent-blue/10 px-2.5 py-1.5 text-xs text-accent-blue transition-colors hover:bg-accent-blue/20"
-                        aria-label={`Ссылка для входа для ${t.name}`}
-                        title="Ссылка добавит аккаунт в браузер тренера"
+                        onClick={() => createAccountFor(t.id, t.name, t.email)}
+                        className="flex items-center gap-1.5 rounded-sm bg-green-500/10 px-2.5 py-1.5 text-xs text-green-400 transition-colors hover:bg-green-500/20"
                       >
-                        <Link2 className="h-3.5 w-3.5" />
-                        Ссылка для входа
+                        <UserPlus className="h-3.5 w-3.5" />
+                        Пригласить
                       </button>
                       <button
-                        onClick={() => resetPassword(account)}
-                        className="flex items-center gap-1.5 rounded-sm bg-yellow-500/10 px-2.5 py-1.5 text-xs text-yellow-400 transition-colors hover:bg-yellow-500/20"
+                        onClick={() => linkExistingAccount(t.id, t.name)}
+                        className="flex items-center gap-1.5 rounded-sm bg-white/5 px-2.5 py-1.5 text-xs text-gray-300 transition-colors hover:bg-white/10 hover:text-white"
+                        title="Если человек уже зарегистрировался как спортсмен"
                       >
-                        <KeyRound className="h-3.5 w-3.5" />
-                        Сбросить пароль
+                        <Mail className="h-3.5 w-3.5" />
+                        Привязать аккаунт
                       </button>
                     </>
-                  ) : (
-                    <button
-                      onClick={() => createAccountFor(t.id, t.name)}
-                      className="flex items-center gap-1.5 rounded-sm bg-green-500/10 px-2.5 py-1.5 text-xs text-green-400 transition-colors hover:bg-green-500/20"
-                    >
-                      <UserPlus className="h-3.5 w-3.5" />
-                      Создать аккаунт
-                    </button>
                   )}
 
                   <button
@@ -616,9 +582,8 @@ export default function AdminTrainers() {
           своё расписание, спортсмены и посещаемость. Вы вошли как {currentUser?.name}.
         </p>
         <p className="rounded-sm border border-white/10 bg-surface/60 px-3 py-2">
-          Важно: аккаунты хранятся в браузере, в котором вы их создали. Чтобы тренер вошёл
-          со своего компьютера или телефона, нажмите «Ссылка для входа» и отправьте ему ссылку —
-          она добавит доступ в его браузер. Пароль передайте отдельным сообщением.
+          Важно: доступы общие, они в облаке. Пригласите тренера по ссылке на регистрацию —
+          он придёт с любого своего устройства и попадёт в список «Пользователи» автоматически.
         </p>
       </div>
     </div>
