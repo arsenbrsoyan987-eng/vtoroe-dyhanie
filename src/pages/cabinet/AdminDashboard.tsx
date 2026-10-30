@@ -1,17 +1,25 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
 import { getStoredUsers } from '../../store/database';
 import { useTrainings } from '../../store/trainingsStore';
-import { Users, ClipboardList, Calendar, Trophy, TrendingUp, Newspaper, PartyPopper } from 'lucide-react';
+import { downloadPublished } from '../../lib/publish';
+import { Users, ClipboardList, Calendar, Trophy, TrendingUp, Newspaper, PartyPopper, Download } from 'lucide-react';
 
 export default function AdminDashboard() {
   const trainings = useTrainings();
   const { registrations } = useAuth();
+  const { toast } = useToast();
   const users = getStoredUsers();
   const athletes = users.filter((u) => u.role === 'athlete').length;
   const trainers = users.filter((u) => u.role === 'trainer').length;
   const totalRegs = registrations.filter((r) => r.status !== 'cancelled').length;
   const totalAttended = registrations.filter((r) => r.attended).length;
+
+  const handlePublish = () => {
+    downloadPublished();
+    toast('Файл published.json скачан — отправьте его разработчику');
+  };
 
   return (
     <div>
@@ -47,7 +55,7 @@ export default function AdminDashboard() {
       </div>
 
       <h2 className="text-lg font-bold text-white mb-4">Быстрые действия</h2>
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
         <Link to="/cabinet/admin/users" className="bg-surface border border-white/10 rounded-sm p-4 hover:border-accent-red/30 transition-colors text-center block group">
           <Users className="w-6 h-6 text-gray-400 group-hover:text-accent-red mx-auto mb-2 transition-colors" />
           <div className="text-white text-sm">Пользователи</div>
@@ -76,6 +84,22 @@ export default function AdminDashboard() {
           <Trophy className="w-6 h-6 text-gray-400 group-hover:text-accent-red mx-auto mb-2 transition-colors" />
           <div className="text-white text-sm">Результаты</div>
         </Link>
+        <button
+          type="button"
+          onClick={handlePublish}
+          className="bg-surface border border-accent-red/40 rounded-sm p-4 hover:border-accent-red transition-colors text-center block group"
+        >
+          <Download className="w-6 h-6 text-accent-red mx-auto mb-2" />
+          <div className="text-white text-sm">Опубликовать</div>
+        </button>
+      </div>
+
+      <div className="mt-4 rounded-sm border border-accent-blue/30 bg-accent-blue/10 px-4 py-3">
+        <p className="text-xs leading-relaxed text-blue-200">
+          Кнопка «Опубликовать» скачивает файл <code className="font-mono">published.json</code> со
+          всеми тренерами, тренировками, новостями и мероприятиями. Пока файл не
+          загружен на сайт, ваши правки видны только в этом браузере.
+        </p>
       </div>
 
       {/* Recent registrations */}

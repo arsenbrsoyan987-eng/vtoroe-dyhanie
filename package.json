@@ -14,7 +14,8 @@
     "check:seo": "node scripts/check-seo.cjs",
     "check:mobile": "node scripts/check-mobile.cjs",
     "check:hydration": "node scripts/check-hydration.cjs",
-    "check:cabinet": "node scripts/check-cabinet.cjs"
+    "check:cabinet": "node scripts/check-cabinet.cjs",
+    "publish:data": "node scripts/publish-data.cjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.118.0",

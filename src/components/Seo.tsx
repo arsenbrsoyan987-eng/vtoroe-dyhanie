@@ -18,6 +18,9 @@ function isNoindex(pathname: string) {
   );
 }
 
+/** Карточка удалена, а адрес остался в карте сайта: показывать нечего */
+const DETAIL_ROUTE = /^\/(trainers|schedule|events|news)\/[^/]+$/;
+
 /**
  * Подставляет заголовок и описание под текущий маршрут.
  * Один компонент на всё приложение: страницы не нужно править по одной.
@@ -121,6 +124,13 @@ export default function Seo() {
 
     if (isNoindex(pathname)) {
       applySeo({ path: pathname, noindex: true });
+      return;
+    }
+
+    // Запись удалили, а адрес остался в sitemap.xml: страница отдаёт «не найдено».
+    // Держать её в индексе нельзя — иначе сайт копит битые ссылки.
+    if (DETAIL_ROUTE.test(pathname)) {
+      applySeo({ title: 'Страница не найдена', path: pathname, noindex: true });
       return;
     }
 

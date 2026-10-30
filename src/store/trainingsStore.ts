@@ -1,8 +1,10 @@
 import { useSyncExternalStore } from 'react';
 import { trainings as seedTrainings } from '../data/trainings';
+import { publishedOr } from '../data/published';
 import type { Training } from '../types';
 
 const KEY = 'db_trainings';
+const INITIAL = publishedOr<Training>('trainings', seedTrainings);
 const listeners = new Set<() => void>();
 let cache: Training[] | null = null;
 
@@ -10,9 +12,9 @@ function read(): Training[] {
   if (cache) return cache;
   try {
     const raw = localStorage.getItem(KEY);
-    cache = raw ? (JSON.parse(raw) as Training[]) : seedTrainings;
+    cache = raw ? (JSON.parse(raw) as Training[]) : INITIAL;
   } catch {
-    cache = seedTrainings;
+    cache = INITIAL;
   }
   return cache;
 }
@@ -49,7 +51,7 @@ export function updateTraining(id: string, patch: Partial<Training>) {
 }
 
 export function resetTrainings() {
-  cache = seedTrainings;
+  cache = INITIAL;
   localStorage.removeItem(KEY);
   emit();
 }

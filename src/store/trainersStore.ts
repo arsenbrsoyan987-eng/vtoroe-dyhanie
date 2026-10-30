@@ -1,8 +1,12 @@
 import { useSyncExternalStore } from 'react';
 import { trainers as seedTrainers } from '../data/trainers';
+import { publishedOr } from '../data/published';
 import type { Trainer } from '../types';
 
 const KEY = 'db_trainers';
+// Опубликованные данные важнее демо-заглушек: их видят все посетители,
+// а локальные правки в localStorage остаются черновиком владельца.
+const INITIAL = publishedOr<Trainer>('trainers', seedTrainers);
 const listeners = new Set<() => void>();
 let cache: Trainer[] | null = null;
 
@@ -10,9 +14,9 @@ function read(): Trainer[] {
   if (cache) return cache;
   try {
     const raw = localStorage.getItem(KEY);
-    cache = raw ? (JSON.parse(raw) as Trainer[]) : seedTrainers;
+    cache = raw ? (JSON.parse(raw) as Trainer[]) : INITIAL;
   } catch {
-    cache = seedTrainers;
+    cache = INITIAL;
   }
   return cache;
 }

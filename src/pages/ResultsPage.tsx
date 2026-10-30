@@ -1,8 +1,9 @@
 import SectionTitle from '../components/ui/SectionTitle';
-import { results } from '../data/news';
+import { useResults } from '../store/resultsStore';
 import { anyPlaceholder } from '../lib/placeholder';
 
 export default function ResultsPage() {
+  const results = useResults();
   // Протоколы со «[Имя спортсмена]» в публичной таблице — хуже, чем пустая
   // страница: выглядит как неработающий сайт. Показываем только реальные строки.
   const real = results.filter(

@@ -81,8 +81,33 @@ function routesFromSitemap() {
  */
 const EXTRA_ROUTES = ['/login/', '/register/', '/cabinet/'];
 
+/**
+ * Адреса карточек из опубликованных данных.
+ *
+ * sitemap.xml в public/ — статический файл, а тренеров и тренировки владелец
+ * добавляет через админку. Без этого новые записи не попадали в карту сайта
+ * (а удалённые оставались в ней навсегда).
+ */
+function routesFromPublished() {
+  const file = path.join(__dirname, '..', 'src', 'data', 'published.json');
+  if (!fs.existsSync(file)) return [];
+
+  const data = JSON.parse(fs.readFileSync(file, 'utf8'));
+  const routes = [];
+  const add = (prefix, list) => {
+    for (const item of Array.isArray(list) ? list : []) {
+      if (item && item.id) routes.push(`/${prefix}/${item.id}/`);
+    }
+  };
+  add('trainers', data.trainers);
+  add('schedule', data.trainings);
+  add('events', data.events);
+  add('news', data.news);
+  return routes;
+}
+
 /** Оставляет в карте сайта только страницы, которые мы разрешили индексировать */
-function rewriteSitemap(noindexRoutes) {
+function rewriteSitemap(noindexRoutes, extraRoutes) {
   const file = path.join(DIST, 'sitemap.xml');
   const xml = fs.readFileSync(file, 'utf8');
   const blocked = new Set(noindexRoutes);
@@ -96,6 +121,15 @@ function rewriteSitemap(noindexRoutes) {
       return !blocked.has(route) && !blocked.has(route.replace(/\/$/, ''));
     });
 
+  const known = new Set(
+    kept.map((block) => new URL(block.match(/<loc>(.*?)<\/loc>/)[1]).pathname)
+  );
+  for (const route of extraRoutes) {
+    if (blocked.has(route) || known.has(route)) continue;
+    kept.push(`  <url>\n    <loc>${SITE_URL}${route}</loc>\n    <priority>0.6</priority>\n  </url>`);
+    known.add(route);
+  }
+
   const head = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
   fs.writeFileSync(file, `${head}${kept.join('\n')}\n</urlset>\n`, 'utf8');
   return { total: kept.length, removed: blocked.size };
@@ -108,7 +142,10 @@ function rewriteSitemap(noindexRoutes) {
     process.exit(1);
   }
 
-  const routes = [...routesFromSitemap(), ...EXTRA_ROUTES];
+  // Карточки из админки могут отсутствовать в статическом sitemap.xml —
+  // добавляем их, иначе новый тренер не получит готовую страницу
+  const publishedRoutes = routesFromPublished();
+  const routes = [...new Set([...routesFromSitemap(), ...publishedRoutes, ...EXTRA_ROUTES])];
 
   // 404.html делаем из пустого шаблона: GitHub Pages отдаст его для любого
   // неизвестного адреса, а маршрут нарисует уже React.
@@ -180,7 +217,7 @@ function rewriteSitemap(noindexRoutes) {
   await browser.close();
   server.close();
 
-  const sitemap = rewriteSitemap(noindexRoutes);
+  const sitemap = rewriteSitemap(noindexRoutes, publishedRoutes);
   console.log(`\nКарта сайта: ${sitemap.total} адресов (убрано ${sitemap.removed}).`);
   console.log(`Пререндер: ${ok} страниц готово, ${failed} с ошибкой.`);
   // Полный провал — повод остановить деплой. Частичный не блокирует сайт:
