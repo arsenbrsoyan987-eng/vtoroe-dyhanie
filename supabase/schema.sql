@@ -39,12 +39,6 @@ create table if not exists public.invitations (
   created_at timestamptz not null default now()
 );
 
-alter table public.invitations enable row level security;
-
-drop policy if exists "invitations: только админ" on public.invitations;
-create policy "invitations: только админ" on public.invitations
-  for all using (public.is_admin()) with check (public.is_admin());
-
 -- ---------- Тренировки ----------
 create table if not exists public.trainings (
   id text primary key,
@@ -175,7 +169,7 @@ returns trigger
 language plpgsql
 security definer
 set search_path = public
-as $
+as $func$
 declare
   invite public.invitations;
 begin
@@ -201,7 +195,7 @@ begin
 
   return new;
 end;
-$;
+$func$;
 
 drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
@@ -354,6 +348,15 @@ create policy "results: правит свои" on public.results
 drop policy if exists "results: удаляет свои" on public.results;
 create policy "results: удаляет свои" on public.results
   for delete using (user_id = auth.uid() or public.is_admin());
+
+-- ---------- invitations ----------
+-- Политика создаётся здесь, а не рядом с таблицей: она ссылается на
+-- public.is_admin(), которая определяется ниже по файлу.
+alter table public.invitations enable row level security;
+
+drop policy if exists "invitations: только админ" on public.invitations;
+create policy "invitations: только админ" on public.invitations
+  for all using (public.is_admin()) with check (public.is_admin());
 
 -- ============================================================
 --  Realtime: список пользователей и записи обновляются без перезагрузки
