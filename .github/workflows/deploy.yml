@@ -31,6 +31,12 @@ jobs:
       - name: Install deps
         run: npm ci
 
+      # Ошибка в supabase/schema.sql откатывает весь скрипт в SQL Editor,
+      # поэтому ловим её до деплоя: схема проверяется на парность
+      # долларовых кавычек и завершённость операторов
+      - name: Check schema
+        run: npm run check:schema
+
       - name: Set environment
         run: |
           echo "VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }}" >> .env.production

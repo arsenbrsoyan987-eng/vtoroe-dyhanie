@@ -177,12 +177,12 @@ language sql
 security definer
 set search_path = public
 stable
-as $$
+as $admin$
   select exists (
     select 1 from public.profiles p
     where p.id = auth.uid() and p.role = 'admin'
   );
-$$;
+$admin$;
 
 create or replace function public.is_trainer_of(training text)
 returns boolean
@@ -190,14 +190,14 @@ language sql
 security definer
 set search_path = public
 stable
-as $
+as $fn$
   select exists (
     select 1
     from public.trainings t
     join public.profiles p on p.trainer_id = t.trainer_id
     where t.id = training and p.id = auth.uid()
   );
-$;
+$fn$;
 
 -- Роль тренера без обращения к profiles из политик напрямую
 create or replace function public.is_trainer()
@@ -206,12 +206,12 @@ language sql
 security definer
 set search_path = public
 stable
-as $
+as $fn$
   select exists (
     select 1 from public.profiles p
     where p.id = auth.uid() and p.role in ('trainer', 'admin')
   );
-$;
+$fn$;
 
 -- trainer_id моего профиля: по нему тренер закрепляет тренировку за собой
 create or replace function public.my_trainer_id()
@@ -220,9 +220,9 @@ language sql
 security definer
 set search_path = public
 stable
-as $
+as $fn$
   select p.trainer_id from public.profiles p where p.id = auth.uid();
-$;
+$fn$;
 
 -- Тренер видит профиль спортсмена, если тот записан на его тренировку
 create or replace function public.teaches(profile uuid)
@@ -231,7 +231,7 @@ language sql
 security definer
 set search_path = public
 stable
-as $$
+as $teaches$
   select exists (
     select 1
     from public.registrations r
@@ -241,7 +241,7 @@ as $$
       and me.trainer_id is not null
       and t.trainer_id = me.trainer_id
   );
-$$;
+$teaches$;
 
 -- ============================================================
 --  Профиль создаётся автоматически при регистрации.
@@ -292,7 +292,7 @@ returns trigger
 language plpgsql
 security definer
 set search_path = public
-as $$
+as $protect$
 begin
   if auth.uid() is not null and not public.is_admin() then
     new.role := old.role;
@@ -303,7 +303,7 @@ begin
   new.updated_at := now();
   return new;
 end;
-$$;
+$protect$;
 
 drop trigger if exists protect_profile_fields on public.profiles;
 create trigger protect_profile_fields
@@ -526,7 +526,7 @@ create policy "invitations: только админ" on public.invitations
 -- ============================================================
 --  Realtime: список пользователей и записи обновляются без перезагрузки
 -- ============================================================
-do $
+do $do$
 declare
   t text;
 begin
@@ -540,37 +540,56 @@ begin
     end;
   end loop;
 end;
-$;
+$do$;
 
 -- ============================================================
 --  Storage: фотографии тренировок
 --  Публичный бакет (снимки и так показываются на сайте), а загружать
 --  и удалять файлы может только администратор или тренер этой тренировки.
 --  Путь файла: <training_id>/<uuid>.jpg — по первой папке проверяем права.
+--
+--  Всё в DO с перехватом ошибки: таблица storage.objects принадлежит
+--  supabase_storage_admin, и если у роли из SQL Editor нет на неё прав,
+--  падать должна только эта часть, а не вся схема.
+--  DDL внутри plpgsql выполняется через EXECUTE — иначе синтаксическая ошибка.
 -- ============================================================
-insert into storage.buckets (id, name, public)
-values ('training-photos', 'training-photos', true)
-on conflict (id) do update set public = true;
+do $storage$
+begin
+  begin
+    insert into storage.buckets (id, name, public)
+    values ('training-photos', 'training-photos', true)
+    on conflict (id) do update set public = true;
+  exception
+    when others then
+      raise notice 'storage: бакет не создан (%)', sqlerrm;
+  end;
 
-drop policy if exists "storage: фото тренировок читают все" on storage.objects;
-create policy "storage: фото тренировок читают все" on storage.objects
-  for select using (bucket_id = 'training-photos');
+  begin
+    execute $pol$drop policy if exists "storage: фото тренировок читают все" on storage.objects$pol$;
+    execute $pol$create policy "storage: фото тренировок читают все" on storage.objects
+      for select using (bucket_id = 'training-photos')$pol$;
 
-drop policy if exists "storage: фото тренировок загружают" on storage.objects;
-create policy "storage: фото тренировок загружают" on storage.objects
-  for insert with check (
-    bucket_id = 'training-photos'
-    and auth.uid() is not null
-    and (public.is_admin() or public.is_trainer_of((storage.foldername(name))[1]))
-  );
+    execute $pol$drop policy if exists "storage: фото тренировок загружают" on storage.objects$pol$;
+    execute $pol$create policy "storage: фото тренировок загружают" on storage.objects
+      for insert with check (
+        bucket_id = 'training-photos'
+        and auth.uid() is not null
+        and (public.is_admin() or public.is_trainer_of((storage.foldername(name))[1]))
+      )$pol$;
 
-drop policy if exists "storage: фото тренировок удаляют" on storage.objects;
-create policy "storage: фото тренировок удаляют" on storage.objects
-  for delete using (
-    bucket_id = 'training-photos'
-    and auth.uid() is not null
-    and (public.is_admin() or public.is_trainer_of((storage.foldername(name))[1]))
-  );
+    execute $pol$drop policy if exists "storage: фото тренировок удаляют" on storage.objects$pol$;
+    execute $pol$create policy "storage: фото тренировок удаляют" on storage.objects
+      for delete using (
+        bucket_id = 'training-photos'
+        and auth.uid() is not null
+        and (public.is_admin() or public.is_trainer_of((storage.foldername(name))[1]))
+      )$pol$;
+  exception
+    when others then
+      raise notice 'storage: политики не созданы (%)', sqlerrm;
+  end;
+end;
+$storage$;
 
 -- ============================================================
 --  ВАЖНО: после первой регистрации назначьте владельцу роль admin.
