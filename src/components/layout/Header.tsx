@@ -8,6 +8,7 @@ const navLinks = [
   { path: '/directions', label: 'Направления' },
   { path: '/schedule', label: 'Расписание' },
   { path: '/trainers', label: 'Тренеры' },
+  { path: '/camps', label: 'Кэмпы' },
   { path: '/events', label: 'Мероприятия' },
   { path: '/routes', label: 'Маршруты' },
   { path: '/news', label: 'Новости' },

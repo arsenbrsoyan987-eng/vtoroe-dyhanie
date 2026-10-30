@@ -1,7 +1,8 @@
 import { getTrainers } from '../store/trainersStore';
 import { getTrainings } from '../store/trainingsStore';
 import { eventsStore } from '../store/eventsStore';
-import { newsStore } from '../store/newsStore';
+import { getNews } from '../store/newsStore';
+import { getCamps } from '../store/campsStore';
 import { testimonialsStore } from '../store/testimonialsStore';
 import { resultsStore } from '../store/resultsStore';
 import type { PublishedData } from '../data/published';
@@ -20,9 +21,10 @@ export function collectPublished(): PublishedData {
     trainers: getTrainers(),
     trainings: getTrainings(),
     events: eventsStore.get(),
-    news: newsStore.get(),
+    news: getNews(),
     testimonials: testimonialsStore.get(),
     results: resultsStore.get(),
+    camps: getCamps(),
   };
 }
 

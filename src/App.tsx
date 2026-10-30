@@ -12,6 +12,8 @@ import TrainersPage from './pages/TrainersPage';
 import TrainerDetailPage from './pages/TrainerDetailPage';
 import EventsPage from './pages/EventsPage';
 import EventDetailPage from './pages/EventDetailPage';
+import CampsPage from './pages/CampsPage';
+import CampDetailPage from './pages/CampDetailPage';
 import RoutesPage from './pages/RoutesPage';
 import NewsPage from './pages/NewsPage';
 import NewsDetailPage from './pages/NewsDetailPage';
@@ -41,6 +43,8 @@ const AdminNews = lazy(() => import('./pages/cabinet/AdminNews'));
 const AdminEvents = lazy(() => import('./pages/cabinet/AdminEvents'));
 const AdminTestimonials = lazy(() => import('./pages/cabinet/AdminTestimonials'));
 const AdminTrainings = lazy(() => import('./pages/cabinet/AdminTrainings'));
+const AdminCamps = lazy(() => import('./pages/cabinet/AdminCamps'));
+const TrainerPhotos = lazy(() => import('./pages/cabinet/TrainerPhotos'));
 const AdminResults = lazy(() => import('./pages/cabinet/AdminResults'));
 const AdminNotifications = lazy(() => import('./pages/cabinet/AdminNotifications'));
 const PaymentPage = lazy(() => import('./pages/cabinet/PaymentPage'));
@@ -71,6 +75,8 @@ export default function App() {
               <Route path="trainers/:id" element={<TrainerDetailPage />} />
               <Route path="events" element={<EventsPage />} />
               <Route path="events/:id" element={<EventDetailPage />} />
+              <Route path="camps" element={<CampsPage />} />
+              <Route path="camps/:id" element={<CampDetailPage />} />
               <Route path="routes" element={<RoutesPage />} />
               <Route path="news" element={<NewsPage />} />
               <Route path="news/:id" element={<NewsDetailPage />} />
@@ -160,6 +166,14 @@ export default function App() {
                     </ProtectedRoute>
                   }
                 />
+                <Route
+                  path="photos"
+                  element={
+                    <ProtectedRoute roles={['trainer', 'admin']}>
+                      <TrainerPhotos />
+                    </ProtectedRoute>
+                  }
+                />
 
                 {/* Администратор */}
                 <Route
@@ -173,7 +187,7 @@ export default function App() {
                 <Route
                   path="admin/news"
                   element={
-                    <ProtectedRoute roles={['admin']}>
+                    <ProtectedRoute roles={['trainer', 'admin']}>
                       <AdminNews />
                     </ProtectedRoute>
                   }
@@ -205,8 +219,16 @@ export default function App() {
                 <Route
                   path="admin/trainings"
                   element={
-                    <ProtectedRoute roles={['admin']}>
+                    <ProtectedRoute roles={['trainer', 'admin']}>
                       <AdminTrainings />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="admin/camps"
+                  element={
+                    <ProtectedRoute roles={['admin']}>
+                      <AdminCamps />
                     </ProtectedRoute>
                   }
                 />

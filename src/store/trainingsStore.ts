@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react';
 import { supabase } from '../lib/supabase';
+import { deleteStorageFile } from '../lib/upload';
 import { publishedOr } from '../data/published';
 import { trainings as seedTrainings } from '../data/trainings';
 import type { Training } from '../types';
@@ -144,8 +145,20 @@ export async function updateTraining(id: string, patch: Partial<Training>): Prom
 }
 
 export async function removeTraining(id: string): Promise<void> {
-  // Сначала записи: они ссылаются на тренировку
+  // Сначала записи и фото: они ссылаются на тренировку
   await supabase.from('registrations').delete().eq('training_id', id);
+
+  // Файлы в Storage не удаляются каскадом — убираем их вручную,
+  // иначе бакет копит снимки удалённых тренировок
+  const { data: files } = await supabase
+    .from('training_photos')
+    .select('url')
+    .eq('training_id', id);
+  await Promise.all(
+    ((files ?? []) as { url: string }[]).map((f) => deleteStorageFile(f.url).catch(() => {}))
+  );
+  await supabase.from('training_photos').delete().eq('training_id', id);
+
   const { error } = await supabase.from('trainings').delete().eq('id', id);
   if (error) throw error;
   await reloadTrainings();

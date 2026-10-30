@@ -1,5 +1,6 @@
 import publishedJson from './published.json';
 import type {
+  Camp,
   Event,
   NewsItem,
   SportResult,
@@ -24,6 +25,7 @@ export interface PublishedData {
   news: NewsItem[];
   testimonials: Testimonial[];
   results: SportResult[];
+  camps?: Camp[];
 }
 
 export const published = publishedJson as PublishedData;

@@ -4,7 +4,7 @@ import { useToast } from '../../context/ToastContext';
 import { activeProfiles, useProfiles } from '../../store/profilesStore';
 import { useTrainings } from '../../store/trainingsStore';
 import { downloadPublished } from '../../lib/publish';
-import { Users, ClipboardList, Calendar, Trophy, TrendingUp, Newspaper, PartyPopper, Download } from 'lucide-react';
+import { Camera, Users, ClipboardList, Calendar, Trophy, TrendingUp, Newspaper, PartyPopper, Download, Tent } from 'lucide-react';
 
 export default function AdminDashboard() {
   const trainings = useTrainings();
@@ -81,6 +81,14 @@ export default function AdminDashboard() {
           <PartyPopper className="w-6 h-6 text-gray-400 group-hover:text-accent-red mx-auto mb-2 transition-colors" />
           <div className="text-white text-sm">Мероприятия</div>
         </Link>
+        <Link to="/cabinet/admin/camps" className="bg-surface border border-white/10 rounded-sm p-4 hover:border-accent-red/30 transition-colors text-center block group">
+          <Tent className="w-6 h-6 text-gray-400 group-hover:text-accent-red mx-auto mb-2 transition-colors" />
+          <div className="text-white text-sm">Кэмпы</div>
+        </Link>
+        <Link to="/cabinet/photos" className="bg-surface border border-white/10 rounded-sm p-4 hover:border-accent-red/30 transition-colors text-center block group">
+          <Camera className="w-6 h-6 text-gray-400 group-hover:text-accent-red mx-auto mb-2 transition-colors" />
+          <div className="text-white text-sm">Фото</div>
+        </Link>
         <Link to="/cabinet/admin/results" className="bg-surface border border-white/10 rounded-sm p-4 hover:border-accent-red/30 transition-colors text-center block group">
           <Trophy className="w-6 h-6 text-gray-400 group-hover:text-accent-red mx-auto mb-2 transition-colors" />
           <div className="text-white text-sm">Результаты</div>
@@ -97,10 +105,11 @@ export default function AdminDashboard() {
 
       <div className="mt-4 rounded-sm border border-accent-blue/30 bg-accent-blue/10 px-4 py-3">
         <p className="text-xs leading-relaxed text-blue-200">
-          Кнопка «Опубликовать» скачивает файл <code className="font-mono">published.json</code> со
-          всеми тренерами, тренировками, новостями и мероприятиями. Пока файл не
-          загружен на сайт, ваши правки видны только в этом браузере. Чтобы их
-          увидели все: скачайте файл и выполните в папке проекта{' '}
+          Тренеры, тренировки, новости, кэмпы и фото тренировок сохраняются сразу
+          в базе — правки видны всем посетителям без публикации файла. Кнопка
+          «Опубликовать» нужна для мероприятий, отзывов и результатов: она
+          скачивает <code className="font-mono">published.json</code>, который
+          затем коммитится в репозиторий командой{' '}
           <code className="font-mono">npm run publish</code>.
         </p>
       </div>

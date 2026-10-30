@@ -15,7 +15,7 @@ const ROOT = path.resolve(__dirname, '..');
 const TARGET = path.join(ROOT, 'src', 'data', 'published.json');
 const IMAGES = path.join(ROOT, 'public', 'images', 'uploads');
 
-const KEYS = ['trainers', 'trainings', 'events', 'news', 'testimonials', 'results'];
+const KEYS = ['trainers', 'trainings', 'events', 'news', 'testimonials', 'results', 'camps'];
 
 /** Фото, загруженное через админку, лежит в JSON как data URL — раздувает бандл */
 function isDataUrl(value) {

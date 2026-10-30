@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { newsStore, useNews } from '../../store/newsStore';
+import { addNews, removeNews, updateNews, useNews } from '../../store/newsStore';
 import { todayISO } from '../../lib/date';
 import Button from '../../components/ui/Button';
 import ImageUpload from '../../components/ui/ImageUpload';
@@ -20,20 +21,29 @@ const emptyForm = {
 
 export default function AdminNews() {
   const items = useNews();
+  const { currentUser } = useAuth();
   const { toast } = useToast();
 
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [confirmId, setConfirmId] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
   const [form, setForm] = useState(emptyForm);
+
+  const isAdmin = currentUser?.role === 'admin';
+  // Тренер ведёт свои публикации, администратор — все
+  const mine = useMemo(
+    () => (isAdmin ? items : items.filter((n) => n.authorId === currentUser?.id)),
+    [items, isAdmin, currentUser?.id]
+  );
 
   const field =
     'w-full rounded-sm border border-white/10 bg-primary px-3 py-2.5 text-sm text-white transition-colors placeholder:text-gray-600 focus:border-accent-red focus:outline-none';
   const label = 'mb-1.5 block text-xs uppercase tracking-wider text-gray-400';
 
   const sorted = useMemo(
-    () => [...items].sort((a, b) => b.date.localeCompare(a.date)),
-    [items]
+    () => [...mine].sort((a, b) => b.date.localeCompare(a.date)),
+    [mine]
   );
 
   const closeForm = () => {
@@ -65,7 +75,7 @@ export default function AdminNews() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     const title = form.title.trim();
     if (!title) {
@@ -79,25 +89,41 @@ export default function AdminNews() {
       content: form.content.trim(),
       date: form.date,
       category: form.category,
-      image:
-        form.image ||
-        '/images/about.svg',
+      image: form.image || '/images/about.svg',
     };
 
-    if (editingId) {
-      newsStore.update(editingId, payload);
-      toast('Новость обновлена');
-    } else {
-      newsStore.add({ id: 'news-' + Date.now(), ...payload });
-      toast(`Новость опубликована: «${title}»`);
+    setBusy(true);
+    try {
+      if (editingId) {
+        await updateNews(editingId, payload);
+        toast('Новость обновлена');
+      } else {
+        await addNews({
+          id: 'news-' + Date.now(),
+          ...payload,
+          ...(currentUser ? { authorId: currentUser.id, authorName: currentUser.name } : {}),
+        });
+        toast(`Новость опубликована: «${title}»`);
+      }
+      closeForm();
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Не удалось сохранить новость', 'error');
+    } finally {
+      setBusy(false);
     }
-    closeForm();
   };
 
-  const remove = (id: string, title: string) => {
-    newsStore.remove(id);
-    setConfirmId(null);
-    toast(`Новость удалена: «${title}»`, 'info');
+  const remove = async (id: string, title: string) => {
+    setBusy(true);
+    try {
+      await removeNews(id);
+      setConfirmId(null);
+      toast(`Новость удалена: «${title}»`, 'info');
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Не удалось удалить новость', 'error');
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -106,7 +132,8 @@ export default function AdminNews() {
         <div>
           <h1 className="mb-1 text-2xl font-bold text-white">Новости</h1>
           <p className="text-sm text-gray-400">
-            {items.length} публикаций · сразу появляются на сайте
+            {sorted.length} публикаций · сразу появляются на сайте
+            {!isAdmin && ' · тренер правит только свои'}
           </p>
         </div>
         <Button onClick={() => (open ? closeForm() : startCreate())} variant={open ? 'outline' : 'primary'} size="sm">
@@ -198,7 +225,7 @@ export default function AdminNews() {
           />
 
           <div className="flex items-center gap-3">
-            <Button type="submit" variant="primary" size="sm">
+            <Button type="submit" variant="primary" size="sm" disabled={busy}>
               {editingId ? 'Сохранить' : 'Опубликовать'}
             </Button>
             <button type="button" onClick={closeForm} className="text-xs text-gray-400 hover:text-white">
@@ -231,6 +258,11 @@ export default function AdminNews() {
                     year: 'numeric',
                   })}
                 </span>
+                {isAdmin && n.authorName && (
+                  <span className="text-[10px] uppercase tracking-wide text-gray-600">
+                    {n.authorName}
+                  </span>
+                )}
               </div>
               <p className="truncate font-medium text-white">{n.title}</p>
               <p className="truncate text-xs text-gray-500">{n.summary || '—'}</p>
@@ -257,7 +289,8 @@ export default function AdminNews() {
                 <div className="flex items-center gap-2">
                   <span className="text-[11px] text-gray-400">Удалить?</span>
                   <button
-                    onClick={() => remove(n.id, n.title)}
+                    onClick={() => void remove(n.id, n.title)}
+                    disabled={busy}
                     className="rounded-sm bg-red-500/20 px-2 py-1 text-[11px] font-semibold text-red-300 hover:bg-red-500/30"
                   >
                     Да

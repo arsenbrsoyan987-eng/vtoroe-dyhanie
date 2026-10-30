@@ -103,6 +103,7 @@ function routesFromPublished() {
   add('schedule', data.trainings);
   add('events', data.events);
   add('news', data.news);
+  add('camps', data.camps);
   return routes;
 }
 

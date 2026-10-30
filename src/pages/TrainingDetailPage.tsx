@@ -2,24 +2,17 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { useTrainings } from '../store/trainingsStore';
+import { usePhotosOf } from '../store/trainingPhotosStore';
 import { formatDate, isPastDate } from '../lib/date';
 import { displayValue, realValue } from '../lib/placeholder';
 import Button from '../components/ui/Button';
-import {
-  ArrowLeft,
-  CalendarDays,
-  CheckCircle2,
-  Clock,
-  MapPin,
-  Timer,
-  User,
-  Users,
-} from 'lucide-react';
+import { ArrowLeft, CalendarDays, Camera, CheckCircle2, Clock, MapPin, Timer, User, Users } from 'lucide-react';
 
 export default function TrainingDetailPage() {
   const { id } = useParams<{ id: string }>();
   const trainings = useTrainings();
   const training = trainings.find((t) => t.id === id);
+  const photos = usePhotosOf(training?.id);
   const { currentUser, registrations, register, cancelRegistration } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -206,6 +199,36 @@ export default function TrainingDetailPage() {
             )}
           </div>
         </div>
+
+        {/* Отчёт с занятия: фото загружает тренер после тренировки */}
+        {photos.length > 0 && (
+          <section className="mt-8">
+            <h2 className="mb-3 flex items-center gap-2 text-xs uppercase tracking-wider text-gray-500">
+              <Camera className="h-3.5 w-3.5" />
+              Как прошла тренировка · {photos.length} фото
+            </h2>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              {photos.map((photo) => (
+                <figure
+                  key={photo.id}
+                  className="overflow-hidden rounded-sm border border-white/10 bg-surface"
+                >
+                  <img
+                    src={photo.url}
+                    alt={photo.caption || training.name}
+                    className="aspect-[4/3] w-full object-cover"
+                    loading="lazy"
+                  />
+                  {photo.caption && (
+                    <figcaption className="px-3 py-2 text-xs text-gray-400">
+                      {photo.caption}
+                    </figcaption>
+                  )}
+                </figure>
+              ))}
+            </div>
+          </section>
+        )}
       </div>
     </div>
   );

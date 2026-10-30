@@ -91,6 +91,41 @@ export interface NewsItem {
   date: string;
   category: string;
   image: string;
+  /** id автора: тренер может править только свои новости */
+  authorId?: string;
+  authorName?: string;
+}
+
+/** Тренировочный сбор: публикует только владелец клуба */
+export interface Camp {
+  id: string;
+  name: string;
+  location: string;
+  /** Дата начала, YYYY-MM-DD */
+  startDate: string;
+  /** Дата окончания; пусто — однодневный сбор */
+  endDate?: string;
+  description: string;
+  fullDescription: string;
+  price: string;
+  program: string[];
+  includes: string[];
+  image: string;
+  images: string[];
+  registrationOpen: boolean;
+  contact: string;
+  published: boolean;
+}
+
+/** Фото с прошедшей тренировки */
+export interface TrainingPhoto {
+  id: string;
+  trainingId: string;
+  url: string;
+  caption: string;
+  authorId?: string;
+  authorName: string;
+  createdAt: string;
 }
 
 export interface SportResult {

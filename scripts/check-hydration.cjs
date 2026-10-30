@@ -8,7 +8,7 @@
 const puppeteer = require('puppeteer-core');
 
 const BASE = 'http://localhost:5199';
-const ROUTES = ['/', '/trainers/trainer-2', '/schedule/training-3', '/directions/trail', '/events/event-2'];
+const ROUTES = ['/', '/trainers/trainer-2', '/schedule/training-3', '/directions/trail', '/events/event-2', '/camps'];
 
 (async () => {
   const browser = await puppeteer.launch({

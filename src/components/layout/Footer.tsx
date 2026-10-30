@@ -33,6 +33,7 @@ export default function Footer() {
                 { to: '/directions', label: 'Направления' },
                 { to: '/schedule', label: 'Расписание' },
                 { to: '/trainers', label: 'Тренеры' },
+                { to: '/camps', label: 'Кэмпы' },
                 { to: '/events', label: 'Мероприятия' },
                 { to: '/routes', label: 'Маршруты' },
                 { to: '/news', label: 'Новости' },

@@ -61,6 +61,64 @@ create table if not exists public.trainings (
 
 create index if not exists trainings_date_idx on public.trainings (date, time);
 
+-- ---------- Кэмпы ----------
+-- Тренировочные сборы публикует только владелец клуба: отдельная таблица,
+-- а не мероприятия, потому что у сборов своя программа, стоимость и срок.
+create table if not exists public.camps (
+  id text primary key,
+  name text not null,
+  location text not null default '',
+  start_date date not null,
+  end_date date,
+  description text not null default '',
+  full_description text not null default '',
+  price text not null default '',
+  program text[] not null default '{}',
+  includes text[] not null default '{}',
+  image text not null default '',
+  images text[] not null default '{}',
+  registration_open boolean not null default true,
+  contact text not null default '',
+  published boolean not null default true,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists camps_start_idx on public.camps (start_date desc);
+
+-- ---------- Фотографии тренировок ----------
+-- Отчёт с прошедшего занятия: тренер загружает снимки прямо с телефона,
+-- они сразу появляются в галерее на странице тренировки.
+create table if not exists public.training_photos (
+  id uuid primary key default gen_random_uuid(),
+  training_id text not null,
+  url text not null,
+  caption text not null default '',
+  author_id uuid references public.profiles (id) on delete set null,
+  author_name text not null default '',
+  created_at timestamptz not null default now()
+);
+
+create index if not exists training_photos_training_idx
+  on public.training_photos (training_id, created_at desc);
+
+-- ---------- Новости ----------
+-- Новости пишут администратор и тренеры. Автор сохраняется, чтобы тренер
+-- мог править и удалять только свои публикации.
+create table if not exists public.news (
+  id text primary key,
+  title text not null,
+  summary text not null default '',
+  content text not null default '',
+  date date not null default current_date,
+  category text not null default 'Клуб',
+  image text not null default '',
+  author_id uuid references public.profiles (id) on delete set null,
+  author_name text not null default '',
+  created_at timestamptz not null default now()
+);
+
+create index if not exists news_date_idx on public.news (date desc);
+
 -- ---------- Записи на тренировки ----------
 -- training_id без внешнего ключа: расписание публикуется файлом, и запись
 -- не должна падать, если тренировка ещё не попала в таблицу trainings.
@@ -132,14 +190,39 @@ language sql
 security definer
 set search_path = public
 stable
-as $$
+as $
   select exists (
     select 1
     from public.trainings t
     join public.profiles p on p.trainer_id = t.trainer_id
     where t.id = training and p.id = auth.uid()
   );
-$$;
+$;
+
+-- Роль тренера без обращения к profiles из политик напрямую
+create or replace function public.is_trainer()
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $
+  select exists (
+    select 1 from public.profiles p
+    where p.id = auth.uid() and p.role in ('trainer', 'admin')
+  );
+$;
+
+-- trainer_id моего профиля: по нему тренер закрепляет тренировку за собой
+create or replace function public.my_trainer_id()
+returns text
+language sql
+security definer
+set search_path = public
+stable
+as $
+  select p.trainer_id from public.profiles p where p.id = auth.uid();
+$;
 
 -- Тренер видит профиль спортсмена, если тот записан на его тренировку
 create or replace function public.teaches(profile uuid)
@@ -235,6 +318,9 @@ alter table public.trainings enable row level security;
 alter table public.registrations enable row level security;
 alter table public.notifications enable row level security;
 alter table public.results enable row level security;
+alter table public.camps enable row level security;
+alter table public.training_photos enable row level security;
+alter table public.news enable row level security;
 
 -- ---------- profiles ----------
 -- Удалённый аккаунт не читается даже самим владельцем: при входе профиль
@@ -272,13 +358,92 @@ drop policy if exists "trainings: админ создаёт" on public.trainings
 create policy "trainings: админ создаёт" on public.trainings
   for insert with check (public.is_admin());
 
+-- Тренер ведёт расписание сам, но только по своим занятиям:
+-- закрепить тренировку за чужим trainer_id нельзя.
+drop policy if exists "trainings: тренер создаёт свои" on public.trainings;
+create policy "trainings: тренер создаёт свои" on public.trainings
+  for insert with check (
+    public.is_admin()
+    or (public.is_trainer() and trainer_id = public.my_trainer_id())
+  );
+
 drop policy if exists "trainings: админ и тренер правят" on public.trainings;
 create policy "trainings: админ и тренер правят" on public.trainings
-  for update using (public.is_admin() or public.is_trainer_of(id));
+  for update using (public.is_admin() or public.is_trainer_of(id))
+  -- Тренер не может «перевесить» занятие на чужой trainer_id
+  with check (
+    public.is_admin()
+    or (public.is_trainer_of(id) and trainer_id = public.my_trainer_id())
+  );
 
 drop policy if exists "trainings: админ удаляет" on public.trainings;
 create policy "trainings: админ удаляет" on public.trainings
+  for delete using (public.is_admin() or public.is_trainer_of(id));
+
+-- ---------- camps ----------
+-- Читают все (публичный раздел), создаёт и меняет только владелец клуба.
+drop policy if exists "camps: читают все" on public.camps;
+create policy "camps: читают все" on public.camps
+  for select using (true);
+
+drop policy if exists "camps: админ создаёт" on public.camps;
+create policy "camps: админ создаёт" on public.camps
+  for insert with check (public.is_admin());
+
+drop policy if exists "camps: админ правит" on public.camps;
+create policy "camps: админ правит" on public.camps
+  for update using (public.is_admin()) with check (public.is_admin());
+
+drop policy if exists "camps: админ удаляет" on public.camps;
+create policy "camps: админ удаляет" on public.camps
   for delete using (public.is_admin());
+
+-- ---------- training_photos ----------
+drop policy if exists "photos: читают все" on public.training_photos;
+create policy "photos: читают все" on public.training_photos
+  for select using (true);
+
+-- Загрузить фото может администратор или тренер этой тренировки
+drop policy if exists "photos: админ и тренер загружают" on public.training_photos;
+create policy "photos: админ и тренер загружают" on public.training_photos
+  for insert with check (
+    public.is_admin()
+    or (public.is_trainer_of(training_id) and author_id = auth.uid())
+  );
+
+drop policy if exists "photos: правка подписи" on public.training_photos;
+create policy "photos: правка подписи" on public.training_photos
+  for update using (
+    public.is_admin() or (author_id = auth.uid() and public.is_trainer_of(training_id))
+  );
+
+drop policy if exists "photos: удаляет автор и админ" on public.training_photos;
+create policy "photos: удаляет автор и админ" on public.training_photos
+  for delete using (
+    public.is_admin()
+    or author_id = auth.uid()
+    or public.is_trainer_of(training_id)
+  );
+
+-- ---------- news ----------
+drop policy if exists "news: читают все" on public.news;
+create policy "news: читают все" on public.news
+  for select using (true);
+
+-- Тренер публикует новости от своего имени, автор подставляется сам
+drop policy if exists "news: админ и тренер создают" on public.news;
+create policy "news: админ и тренер создают" on public.news
+  for insert with check (
+    public.is_admin() or (public.is_trainer() and author_id = auth.uid())
+  );
+
+drop policy if exists "news: автор и админ правят" on public.news;
+create policy "news: автор и админ правят" on public.news
+  for update using (public.is_admin() or author_id = auth.uid());
+
+drop policy if exists "news: автор и админ удаляют" on public.news;
+create policy "news: автор и админ удаляют" on public.news
+  for delete using (public.is_admin() or author_id = auth.uid());
 
 -- ---------- registrations ----------
 drop policy if exists "registrations: свои, тренеру и админу" on public.registrations;
@@ -301,7 +466,7 @@ create policy "registrations: отмена и отметка" on public.registra
 
 drop policy if exists "registrations: админ удаляет" on public.registrations;
 create policy "registrations: админ удаляет" on public.registrations
-  for delete using (public.is_admin());
+  for delete using (public.is_admin() or public.is_trainer_of(training_id));
 
 -- ---------- notifications ----------
 drop policy if exists "notifications: свои" on public.notifications;
@@ -361,11 +526,11 @@ create policy "invitations: только админ" on public.invitations
 -- ============================================================
 --  Realtime: список пользователей и записи обновляются без перезагрузки
 -- ============================================================
-do $$
+do $
 declare
   t text;
 begin
-  foreach t in array array['profiles', 'registrations', 'notifications', 'results', 'trainings']
+  foreach t in array array['profiles', 'registrations', 'notifications', 'results', 'trainings', 'camps', 'training_photos', 'news']
   loop
     begin
       execute format('alter publication supabase_realtime add table public.%I', t);
@@ -375,7 +540,37 @@ begin
     end;
   end loop;
 end;
-$$;
+$;
+
+-- ============================================================
+--  Storage: фотографии тренировок
+--  Публичный бакет (снимки и так показываются на сайте), а загружать
+--  и удалять файлы может только администратор или тренер этой тренировки.
+--  Путь файла: <training_id>/<uuid>.jpg — по первой папке проверяем права.
+-- ============================================================
+insert into storage.buckets (id, name, public)
+values ('training-photos', 'training-photos', true)
+on conflict (id) do update set public = true;
+
+drop policy if exists "storage: фото тренировок читают все" on storage.objects;
+create policy "storage: фото тренировок читают все" on storage.objects
+  for select using (bucket_id = 'training-photos');
+
+drop policy if exists "storage: фото тренировок загружают" on storage.objects;
+create policy "storage: фото тренировок загружают" on storage.objects
+  for insert with check (
+    bucket_id = 'training-photos'
+    and auth.uid() is not null
+    and (public.is_admin() or public.is_trainer_of((storage.foldername(name))[1]))
+  );
+
+drop policy if exists "storage: фото тренировок удаляют" on storage.objects;
+create policy "storage: фото тренировок удаляют" on storage.objects
+  for delete using (
+    bucket_id = 'training-photos'
+    and auth.uid() is not null
+    and (public.is_admin() or public.is_trainer_of((storage.foldername(name))[1]))
+  );
 
 -- ============================================================
 --  ВАЖНО: после первой регистрации назначьте владельцу роль admin.

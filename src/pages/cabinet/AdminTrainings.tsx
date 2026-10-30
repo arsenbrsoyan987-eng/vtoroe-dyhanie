@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { directions } from '../../data/directions';
@@ -9,9 +10,10 @@ import {
   updateTraining,
   useTrainings,
 } from '../../store/trainingsStore';
+import { visibleTrainings } from '../../lib/access';
 import { formatDate, isPastDate } from '../../lib/date';
 import Button from '../../components/ui/Button';
-import { Pencil, Plus, Trash2, X } from 'lucide-react';
+import { Camera, Pencil, Plus, Trash2, X } from 'lucide-react';
 
 const LEVELS = ['Начинающий', 'Средний', 'Продвинутый', 'Все уровни'];
 
@@ -31,10 +33,16 @@ const emptyForm = {
 type FormState = typeof emptyForm;
 
 export default function AdminTrainings() {
-  const trainings = useTrainings();
+  const all = useTrainings();
   const trainers = useTrainers();
-  const { registrations } = useAuth();
+  const { currentUser, registrations } = useAuth();
   const { toast } = useToast();
+
+  const isAdmin = currentUser?.role === 'admin';
+  // Тренер видит и правит только свои занятия, администратор — все
+  const trainings = useMemo(() => visibleTrainings(all, currentUser), [all, currentUser]);
+  // Без привязки к карточке тренера база не даст создать занятие
+  const unlinkedTrainer = !isAdmin && !currentUser?.trainerId;
 
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -44,6 +52,13 @@ export default function AdminTrainings() {
   const field =
     'w-full rounded-sm border border-white/10 bg-primary px-3 py-2.5 text-sm text-white transition-colors placeholder:text-gray-600 focus:border-accent-red focus:outline-none';
   const label = 'mb-1.5 block text-xs uppercase tracking-wider text-gray-400';
+
+  /** Тренер не выбирает тренера — занятие всегда закрепляется за ним */
+  const openCreate = () => {
+    setForm({ ...emptyForm, trainerId: currentUser?.trainerId ?? '' });
+    setEditingId(null);
+    setOpen(true);
+  };
 
   const sorted = useMemo(
     () => [...trainings].sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time)),
@@ -79,7 +94,9 @@ export default function AdminTrainings() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     const direction = directions.find((d) => d.id === form.directionId);
-    const trainer = trainers.find((t) => t.id === form.trainerId);
+    // Тренер закрепляет тренировку за собой: чужой trainer_id база не примет
+    const trainerId = isAdmin ? form.trainerId : (currentUser?.trainerId ?? '');
+    const trainer = trainers.find((t) => t.id === trainerId);
 
     const patch = {
       name: form.name.trim(),
@@ -88,8 +105,8 @@ export default function AdminTrainings() {
       date: form.date,
       time: form.time,
       location: form.location.trim(),
-      trainer: trainer?.name ?? 'Не назначен',
-      trainerId: form.trainerId,
+      trainer: trainer?.name ?? (isAdmin ? 'Не назначен' : (currentUser?.name ?? '')),
+      trainerId,
       duration: form.duration,
       level: form.level,
       spotsAvailable: Number(form.spots) || 0,
@@ -98,21 +115,28 @@ export default function AdminTrainings() {
       image: direction?.imageUrl ?? '',
     };
 
-    if (editingId) {
-      updateTraining(editingId, patch);
-      toast(`Тренировка обновлена: «${patch.name}»`);
-    } else {
-      addTraining({ id: 'training-' + Date.now(), ...patch });
-      toast(`Тренировка добавлена: «${patch.name}»`);
+    try {
+      if (editingId) {
+        await updateTraining(editingId, patch);
+        toast(`Тренировка обновлена: «${patch.name}»`);
+      } else {
+        await addTraining({ id: 'training-' + Date.now(), ...patch });
+        toast(`Тренировка добавлена: «${patch.name}»`);
+      }
+      closeForm();
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Не удалось сохранить тренировку', 'error');
     }
-
-    closeForm();
   };
 
   const remove = async (id: string, name: string) => {
-    await removeTraining(id);
-    setConfirmId(null);
-    toast(`Тренировка удалена: «${name}»`, 'info');
+    try {
+      await removeTraining(id);
+      setConfirmId(null);
+      toast(`Тренировка удалена: «${name}»`, 'info');
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Не удалось удалить тренировку', 'error');
+    }
   };
 
   return (
@@ -122,12 +146,14 @@ export default function AdminTrainings() {
           <h1 className="mb-1 text-2xl font-bold text-white">Расписание</h1>
           <p className="text-sm text-gray-400">
             {trainings.length} тренировок · изменения сразу видны на сайте
+            {!isAdmin && ' · показаны только ваши занятия'}
           </p>
         </div>
         <Button
-          onClick={() => (open ? closeForm() : setOpen(true))}
+          onClick={() => (open ? closeForm() : openCreate())}
           variant={open ? 'outline' : 'primary'}
           size="sm"
+          disabled={!open && unlinkedTrainer}
         >
           {open ? (
             <>
@@ -140,6 +166,14 @@ export default function AdminTrainings() {
           )}
         </Button>
       </div>
+
+      {unlinkedTrainer && (
+        <div className="mb-6 rounded-sm border border-yellow-500/30 bg-yellow-500/10 px-4 py-3 text-xs leading-relaxed text-yellow-200">
+          Аккаунт не привязан к карточке тренера, поэтому создать тренировку не
+          получится — база отклонит запись. Попросите администратора указать вашу
+          карточку в разделе «Тренеры».
+        </div>
+      )}
 
       {open && (
         <form onSubmit={submit} className="mb-6 space-y-4 rounded-sm border border-white/10 bg-surface p-6">
@@ -161,12 +195,18 @@ export default function AdminTrainings() {
             </div>
             <div>
               <label htmlFor="t-trainer" className={label}>Тренер</label>
-              <select id="t-trainer" value={form.trainerId} onChange={(e) => setForm({ ...form, trainerId: e.target.value })} className={field}>
-                <option value="">Не назначен</option>
-                {trainers.map((t) => (
-                  <option key={t.id} value={t.id}>{t.name}</option>
-                ))}
-              </select>
+              {isAdmin ? (
+                <select id="t-trainer" value={form.trainerId} onChange={(e) => setForm({ ...form, trainerId: e.target.value })} className={field}>
+                  <option value="">Не назначен</option>
+                  {trainers.map((t) => (
+                    <option key={t.id} value={t.id}>{t.name}</option>
+                  ))}
+                </select>
+              ) : (
+                <p className="rounded-sm border border-white/10 bg-primary px-3 py-2.5 text-sm text-gray-400">
+                  {currentUser?.name} — занятие закрепляется за вами
+                </p>
+              )}
             </div>
             <div>
               <label htmlFor="t-date" className={label}>Дата</label>
@@ -284,6 +324,16 @@ export default function AdminTrainings() {
                       </div>
                     ) : (
                       <div className="flex items-center justify-end gap-3">
+                        {done && (
+                          <Link
+                            to="/cabinet/photos"
+                            className="text-gray-500 transition-colors hover:text-accent-blue"
+                            aria-label={`Фото тренировки ${t.name}`}
+                            title="Фото с тренировки"
+                          >
+                            <Camera className="h-4 w-4" />
+                          </Link>
+                        )}
                         <button
                           onClick={() => startEdit(t.id)}
                           className="text-gray-500 transition-colors hover:text-accent-blue"

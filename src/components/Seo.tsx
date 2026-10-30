@@ -5,6 +5,7 @@ import { useTrainers } from '../store/trainersStore';
 import { useTrainings } from '../store/trainingsStore';
 import { useEvents } from '../store/eventsStore';
 import { useNews } from '../store/newsStore';
+import { useCamps } from '../store/campsStore';
 import { directions } from '../data/directions';
 import { realValue } from '../lib/placeholder';
 
@@ -19,7 +20,7 @@ function isNoindex(pathname: string) {
 }
 
 /** Карточка удалена, а адрес остался в карте сайта: показывать нечего */
-const DETAIL_ROUTE = /^\/(trainers|schedule|events|news)\/[^/]+$/;
+const DETAIL_ROUTE = /^\/(trainers|schedule|events|news|camps)\/[^/]+$/;
 
 /**
  * Подставляет заголовок и описание под текущий маршрут.
@@ -35,6 +36,7 @@ export default function Seo() {
   const trainings = useTrainings();
   const events = useEvents();
   const news = useNews();
+  const camps = useCamps();
 
   useEffect(() => {
     // Детальные страницы: заголовок собираем из данных карточки
@@ -122,6 +124,21 @@ export default function Seo() {
       }
     }
 
+    const campMatch = pathname.match(/^\/camps\/([^/]+)$/);
+    if (campMatch) {
+      const camp = camps.find((c) => c.id === campMatch[1]);
+      if (camp && camp.published) {
+        const where = camp.location ? `, ${camp.location}` : '';
+        applySeo({
+          title: `${camp.name} — тренировочный кэмп`,
+          description: `${camp.name}: ${camp.startDate}${where}. ${camp.description}`.slice(0, 300),
+          path: pathname,
+          image: camp.image,
+        });
+        return;
+      }
+    }
+
     if (isNoindex(pathname)) {
       applySeo({ path: pathname, noindex: true });
       return;
@@ -143,7 +160,7 @@ export default function Seo() {
 
     // Неизвестный маршрут — отдаём общие метаданные главной
     applySeo({ path: '/' });
-  }, [pathname, trainers, trainings, events, news]);
+  }, [pathname, trainers, trainings, events, news, camps]);
 
   return null;
 }

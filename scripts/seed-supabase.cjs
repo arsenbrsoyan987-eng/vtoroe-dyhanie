@@ -1,9 +1,9 @@
 /*
- * Переносит расписание из src/data/published.json в таблицу public.trainings.
+ * Переносит данные из src/data/published.json в Supabase.
  *
- * Расписание переехало в базу: записи спортсменов ссылаются на id тренировки,
- * а тренер видит только свои занятия (RLS). Скрипт нужен один раз при переходе
- * и потом — если расписание правили файлом, а не через админку.
+ * Расписание и новости переехали в базу: записи спортсменов ссылаются на id
+ * тренировки, а тренер видит только свои занятия (RLS). Скрипт нужен при
+ * переходе и потом — если данные правили файлом, а не через админку.
  *
  * Запуск:
  *   SUPABASE_URL=https://xxx.supabase.co SUPABASE_SECRET_KEY=sb_secret_... \
@@ -25,14 +25,8 @@ if (!URL_BASE || !SECRET) {
 
 const file = path.join(__dirname, '..', 'src', 'data', 'published.json');
 const data = JSON.parse(fs.readFileSync(file, 'utf8'));
-const trainings = Array.isArray(data.trainings) ? data.trainings : [];
 
-if (trainings.length === 0) {
-  console.log('В published.json нет тренировок — переносить нечего.');
-  process.exit(0);
-}
-
-const rows = trainings.map((t) => ({
+const trainingRows = (Array.isArray(data.trainings) ? data.trainings : []).map((t) => ({
   id: t.id,
   name: t.name,
   direction_id: t.directionId || 'running',
@@ -50,8 +44,43 @@ const rows = trainings.map((t) => ({
   image: t.image || '',
 }));
 
-(async () => {
-  const res = await fetch(`${URL_BASE}/rest/v1/trainings?on_conflict=id`, {
+const newsRows = (Array.isArray(data.news) ? data.news : []).map((n) => ({
+  id: n.id,
+  title: n.title,
+  summary: n.summary || '',
+  content: n.content || '',
+  date: (n.date || '').slice(0, 10) || new Date().toISOString().slice(0, 10),
+  category: n.category || 'Клуб',
+  image: n.image || '',
+  author_name: n.authorName || '',
+}));
+
+const campRows = (Array.isArray(data.camps) ? data.camps : []).map((c) => ({
+  id: c.id,
+  name: c.name,
+  location: c.location || '',
+  start_date: (c.startDate || '').slice(0, 10),
+  end_date: c.endDate ? c.endDate.slice(0, 10) : null,
+  description: c.description || '',
+  full_description: c.fullDescription || '',
+  price: c.price || '',
+  program: Array.isArray(c.program) ? c.program : [],
+  includes: Array.isArray(c.includes) ? c.includes : [],
+  image: c.image || '',
+  images: Array.isArray(c.images) ? c.images : [],
+  registration_open: c.registrationOpen !== false,
+  contact: c.contact || '',
+  published: c.published !== false,
+}));
+
+/** Вставляет строки пачками: PostgREST не любит гигантские тела запросов */
+async function upsert(table, rows) {
+  if (rows.length === 0) {
+    console.log(`${table}: нечего переносить`);
+    return;
+  }
+
+  const res = await fetch(`${URL_BASE}/rest/v1/${table}?on_conflict=id`, {
     method: 'POST',
     headers: {
       apikey: SECRET,
@@ -63,9 +92,16 @@ const rows = trainings.map((t) => ({
   });
 
   if (!res.ok) {
-    console.error(`Ошибка ${res.status}: ${await res.text()}`);
-    process.exit(1);
+    console.error(`${table}: ошибка ${res.status} — ${await res.text()}`);
+    process.exitCode = 1;
+    return;
   }
 
-  console.log(`Перенесено тренировок: ${rows.length}`);
+  console.log(`${table}: перенесено ${rows.length}`);
+}
+
+(async () => {
+  await upsert('trainings', trainingRows);
+  await upsert('news', newsRows);
+  await upsert('camps', campRows);
 })();
