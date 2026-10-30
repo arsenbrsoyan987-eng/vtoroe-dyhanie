@@ -50,11 +50,11 @@ function fail(message) {
 }
 
 /**
- * Сравнивает выгрузку с тем, что уже в репозитории, не считая отметку времени.
- * Проверяем ДО записи в проект: иначе повторный запуск оставлял бы
- * изменённый published.json и лишний коммит.
+ * Сравнивает записанный файл с тем, что уже в репозитории, не считая отметку
+ * времени. Выгрузка из админки содержит фото как data URL, поэтому сравнивать
+ * исходник с репозиторием бессмысленно — только результат publish-data.
  */
-function alreadyPublished(source) {
+function sameAsCommitted() {
   let head;
   try {
     head = git(['show', 'HEAD:src/data/published.json']);
@@ -72,11 +72,8 @@ function alreadyPublished(source) {
     }
   };
 
-  try {
-    return strip(head) === strip(fs.readFileSync(source, 'utf8'));
-  } catch {
-    return false;
-  }
+  const current = fs.readFileSync(path.join(ROOT, 'src', 'data', 'published.json'), 'utf8');
+  return strip(head) === strip(current);
 }
 
 const source = pickSource();
@@ -90,12 +87,14 @@ if (!fs.existsSync(source)) {
 
 console.log(`Источник: ${source}`);
 
-if (alreadyPublished(source)) {
+run('node', ['scripts/publish-data.cjs', source], 'Переношу данные и фото в проект');
+
+if (sameAsCommitted()) {
+  run('git', ['checkout', '--', 'src/data/published.json'], 'Данные не изменились — откатываю файл');
   console.log('\n✓ Эти данные уже на сайте — публиковать нечего.');
   process.exit(0);
 }
 
-run('node', ['scripts/publish-data.cjs', source], 'Переношу данные и фото в проект');
 run('npm', ['run', 'build'], 'Собираю сайт');
 run('npm', ['run', 'prerender'], 'Готовлю HTML для всех страниц');
 
