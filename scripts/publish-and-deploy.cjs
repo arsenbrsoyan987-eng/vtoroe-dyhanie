@@ -49,6 +49,36 @@ function fail(message) {
   process.exit(1);
 }
 
+/**
+ * Сравнивает выгрузку с тем, что уже в репозитории, не считая отметку времени.
+ * Проверяем ДО записи в проект: иначе повторный запуск оставлял бы
+ * изменённый published.json и лишний коммит.
+ */
+function alreadyPublished(source) {
+  let head;
+  try {
+    head = git(['show', 'HEAD:src/data/published.json']);
+  } catch {
+    return false;
+  }
+
+  const strip = (raw) => {
+    try {
+      const parsed = JSON.parse(raw);
+      delete parsed.updatedAt;
+      return JSON.stringify(parsed);
+    } catch {
+      return raw;
+    }
+  };
+
+  try {
+    return strip(head) === strip(fs.readFileSync(source, 'utf8'));
+  } catch {
+    return false;
+  }
+}
+
 const source = pickSource();
 if (!fs.existsSync(source)) {
   fail(
@@ -59,6 +89,11 @@ if (!fs.existsSync(source)) {
 }
 
 console.log(`Источник: ${source}`);
+
+if (alreadyPublished(source)) {
+  console.log('\n✓ Эти данные уже на сайте — публиковать нечего.');
+  process.exit(0);
+}
 
 run('node', ['scripts/publish-data.cjs', source], 'Переношу данные и фото в проект');
 run('npm', ['run', 'build'], 'Собираю сайт');

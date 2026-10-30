@@ -18,7 +18,7 @@ export default function AdminDashboard() {
 
   const handlePublish = () => {
     downloadPublished();
-    toast('Файл published.json скачан — отправьте его разработчику');
+    toast('Файл published.json скачан — выполните npm run publish');
   };
 
   return (
@@ -98,7 +98,9 @@ export default function AdminDashboard() {
         <p className="text-xs leading-relaxed text-blue-200">
           Кнопка «Опубликовать» скачивает файл <code className="font-mono">published.json</code> со
           всеми тренерами, тренировками, новостями и мероприятиями. Пока файл не
-          загружен на сайт, ваши правки видны только в этом браузере.
+          загружен на сайт, ваши правки видны только в этом браузере. Чтобы их
+          увидели все: скачайте файл и выполните в папке проекта{' '}
+          <code className="font-mono">npm run publish</code>.
         </p>
       </div>
 

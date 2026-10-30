@@ -71,7 +71,7 @@ try {
   process.exit(1);
 }
 
-const result = { updatedAt: new Date().toISOString() };
+const result = { updatedAt: typeof data.updatedAt === 'string' ? data.updatedAt : new Date().toISOString() };
 let total = 0;
 let images = 0;
 
