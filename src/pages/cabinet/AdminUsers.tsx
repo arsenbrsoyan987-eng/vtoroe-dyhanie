@@ -248,7 +248,7 @@ export default function AdminUsers() {
         <ShieldCheck className="mx-auto mb-3 h-8 w-8 text-gray-500" />
         <h1 className="mb-1 text-lg font-semibold text-white">Доступ только администратору</h1>
         <p className="text-sm text-gray-400">
-          Управлять пользователями клуба может только владелец аккаунта.
+          Управлять пользователями школы может только владелец аккаунта.
         </p>
       </div>
     );
@@ -304,7 +304,7 @@ export default function AdminUsers() {
                 <option value="trainer">Тренер</option>
               </select>
               <p className="mt-1 text-xs text-gray-600">
-                Права администратора закреплены за владельцем клуба.
+                Права администратора закреплены за владельцем школы.
               </p>
             </div>
             {form.role === 'trainer' && (
@@ -383,7 +383,7 @@ export default function AdminUsers() {
               <th scope="col" className="hidden px-4 py-3 text-left text-xs font-medium text-gray-400 md:table-cell">Телефон</th>
               <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-400">Роль</th>
               <th scope="col" className="hidden px-4 py-3 text-left text-xs font-medium text-gray-400 sm:table-cell">Записей</th>
-              <th scope="col" className="hidden px-4 py-3 text-left text-xs font-medium text-gray-400 lg:table-cell">В клубе с</th>
+              <th scope="col" className="hidden px-4 py-3 text-left text-xs font-medium text-gray-400 lg:table-cell">В школе с</th>
               <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-400">
                 <span className="sr-only">Действия</span>
               </th>

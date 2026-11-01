@@ -97,7 +97,7 @@ export default function AccountSettings() {
               <label htmlFor="email" className={label}>Email (логин)</label>
               <input id="email" value={currentUser.email} disabled className={`${field} cursor-not-allowed opacity-60`} />
               <p className="mt-1 text-xs text-gray-600">
-                Логин меняет только администратор клуба
+                Логин меняет только администратор школы
               </p>
             </div>
             <Button type="submit" variant="primary" size="sm">Сохранить профиль</Button>
@@ -170,7 +170,7 @@ export default function AccountSettings() {
             <dd className="text-white">{ROLE_LABEL[currentUser.role]}</dd>
           </div>
           <div className="flex justify-between sm:block">
-            <dt className="text-gray-400">В клубе с</dt>
+            <dt className="text-gray-400">В школе с</dt>
             <dd className="text-white">
               {new Date(currentUser.created).toLocaleDateString('ru-RU', {
                 day: 'numeric',

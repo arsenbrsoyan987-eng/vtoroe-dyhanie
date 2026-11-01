@@ -8,14 +8,14 @@ import Button from '../../components/ui/Button';
 import ImageUpload from '../../components/ui/ImageUpload';
 import { ExternalLink, Pencil, Plus, Trash2, X } from 'lucide-react';
 
-const CATEGORIES = ['События', 'Результаты', 'Клуб', 'Тренировки', 'Анонс'];
+const CATEGORIES = ['События', 'Результаты', 'Школа', 'Тренировки', 'Анонс'];
 
 const emptyForm = {
   title: '',
   summary: '',
   content: '',
   date: todayISO(),
-  category: 'Клуб',
+  category: 'Школа',
   image: '',
 };
 

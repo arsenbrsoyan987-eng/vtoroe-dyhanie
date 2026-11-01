@@ -96,7 +96,7 @@ export interface NewsItem {
   authorName?: string;
 }
 
-/** Тренировочный сбор: публикует только владелец клуба */
+/** Тренировочный сбор: публикует только владелец школы */
 export interface Camp {
   id: string;
   name: string;

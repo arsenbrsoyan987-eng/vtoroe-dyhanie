@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { displayValue, realValue } from '../lib/placeholder';
 
 const categoryLabels: Record<string, string> = {
-  training: 'Клубная тренировка',
+  training: 'Школьная тренировка',
   competition: 'Соревнование',
   hike: 'Поход',
   camp: 'Сборы',

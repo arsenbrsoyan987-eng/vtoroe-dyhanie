@@ -25,7 +25,7 @@ export default function AdminDashboard() {
   return (
     <div>
       <h1 className="text-2xl font-bold text-white mb-2">Панель администратора</h1>
-      <p className="text-gray-400 text-sm mb-8">Управление клубом «Второе дыхание»</p>
+      <p className="text-gray-400 text-sm mb-8">Управление школаом «Второе дыхание»</p>
 
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
         <div className="bg-surface border border-white/10 rounded-sm p-5">

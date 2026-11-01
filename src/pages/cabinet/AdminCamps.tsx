@@ -244,7 +244,7 @@ export default function AdminCamps() {
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
               className={`${field} resize-none`}
-              placeholder="Несколько дней бега и ОФП на природе с тренерами клуба"
+              placeholder="Несколько дней бега и ОФП на природе с тренерами школы"
             />
           </div>
 

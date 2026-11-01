@@ -108,6 +108,35 @@ function grid(w, h, color) {
   return `${lines}  <polygon points="${pts}" stroke="${color}" stroke-width="3" opacity="0.3"/>`;
 }
 
+/** Лыжи: две параллельные лыжни со следами палок */
+function skiTracks(w, h, color) {
+  const y1 = h * 0.62;
+  const y2 = h * 0.78;
+  const pole = (x, y) =>
+    `  <circle cx="${n(x)}" cy="${n(y)}" r="4" stroke="${color}" stroke-width="2" opacity="0.3"/>`;
+  return `  <path d="M0 ${n(y1)} Q${n(w * 0.5)} ${n(y1 - h * 0.12)} ${n(w)} ${n(y1)}" stroke="${color}" stroke-width="4" opacity="0.35"/>
+  <path d="M0 ${n(y2)} Q${n(w * 0.5)} ${n(y2 - h * 0.12)} ${n(w)} ${n(y2)}" stroke="${color}" stroke-width="4" opacity="0.35"/>
+${pole(w * 0.22, y1 - h * 0.09)}
+${pole(w * 0.48, y1 - h * 0.12)}
+${pole(w * 0.74, y1 - h * 0.09)}
+${pole(w * 0.34, y2 - h * 0.08)}
+${pole(w * 0.62, y2 - h * 0.11)}`;
+}
+
+/** Триатлон: волна (плавание), колесо (вело), беговая штрих-линия */
+function triathlon(w, h, color) {
+  const wave = (y, opacity) =>
+    `  <path d="M${n(w * 0.08)} ${n(y)} Q${n(w * 0.22)} ${n(y - h * 0.06)} ${n(w * 0.36)} ${n(y)} T${n(w * 0.92)} ${n(y)}" stroke="${color}" stroke-width="3" opacity="${opacity}"/>`;
+  const cx = w * 0.62;
+  const cy = h * 0.62;
+  const r = h * 0.16;
+  return `${wave(h * 0.3, 0.35)}
+${wave(h * 0.4, 0.22)}
+  <circle cx="${n(cx)}" cy="${n(cy)}" r="${n(r)}" stroke="${color}" stroke-width="3" opacity="0.3"/>
+  <circle cx="${n(cx)}" cy="${n(cy)}" r="${n(r * 0.15)}" fill="${color}" opacity="0.3"/>
+  <path d="M${n(w * 0.1)} ${n(h * 0.86)} L${n(w * 0.2)} ${n(h * 0.8)} M${n(w * 0.26)} ${n(h * 0.86)} L${n(w * 0.36)} ${n(h * 0.8)} M${n(w * 0.42)} ${n(h * 0.86)} L${n(w * 0.52)} ${n(h * 0.8)}" stroke="${color}" stroke-width="5" stroke-linecap="round" opacity="0.3"/>`;
+}
+
 /** Маршрут: ломаная с точками */
 function trail(w, h, color) {
   const d = `M${w * 0.08} ${h * 0.82} L${w * 0.28} ${h * 0.55} L${w * 0.46} ${h * 0.7} L${w * 0.66} ${h * 0.32} L${w * 0.9} ${h * 0.46}`;
@@ -200,6 +229,8 @@ const files = {
   'cycling.svg': () => svg(800, 600, 'g', '#1a160a', '#0a0a0a', wheels(800, 600, '#facc15'), '#eab308'),
   'hiking.svg': () => svg(800, 600, 'g', '#140a1a', '#0a0a0a', trees(800, 600, '#c084fc'), '#a855f7'),
   'functional.svg': () => svg(800, 600, 'g', '#1a0f0a', '#0a0a0a', grid(800, 600, '#fb923c'), '#f97316'),
+  'ski.svg': () => svg(800, 600, 'g', '#0a1420', '#0a0a0a', skiTracks(800, 600, '#7dd3fc'), '#38bdf8'),
+  'triathlon.svg': () => svg(800, 600, 'g', '#0a1a1a', '#0a0a0a', triathlon(800, 600, '#5eead4'), '#2dd4bf'),
   'route.svg': () => svg(600, 400, 'g', '#1a140a', '#0a0a0a', trail(600, 400, '#fcd34d'), '#fbbf24'),
   'event.svg': () => svg(800, 500, 'g', '#1a0a14', '#0a0a0a', calendar(800, 500, '#f9a8d4'), '#f472b6'),
   'news.svg': () => svg(600, 400, 'g', '#0a1a14', '#0a0a0a', article(600, 400, '#86efac'), '#4ade80'),

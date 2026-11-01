@@ -96,7 +96,7 @@ export default function RoutesPage() {
         </div>
 
         <p className="text-gray-500 text-sm text-center mt-8">
-          Треки присылаем участникам перед выездом — в Telegram-канале клуба.
+          Треки присылаем участникам перед выездом — в Telegram-канале школы.
         </p>
       </div>
     </div>

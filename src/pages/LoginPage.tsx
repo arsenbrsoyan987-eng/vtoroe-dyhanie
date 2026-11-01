@@ -45,7 +45,7 @@ export default function LoginPage() {
           </div>
           <h1 className="text-3xl font-bold text-white">Вход в кабинет</h1>
           <p className="mt-2 text-sm text-gray-400">
-            Доступ для спортсменов, тренеров и администрации клуба
+            Доступ для спортсменов, тренеров и администрации школы
           </p>
         </div>
 
@@ -137,7 +137,7 @@ export default function LoginPage() {
         </form>
 
         <p className="mt-6 text-center text-xs leading-relaxed text-gray-600">
-          Доступы выдаёт администратор клуба. Пароли хранятся в виде хеша
+          Доступы выдаёт администратор школы. Пароли хранятся в виде хеша
           и не отображаются в интерфейсе.
         </p>
       </div>

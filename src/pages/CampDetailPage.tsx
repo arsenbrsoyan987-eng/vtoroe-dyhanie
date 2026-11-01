@@ -154,7 +154,7 @@ export default function CampDetailPage() {
               </Button>
             ) : (
               <p className="text-sm text-gray-500">
-                Набор на этот сбор закрыт. Следите за анонсами в Telegram-канале клуба.
+                Набор на этот сбор закрыт. Следите за анонсами в Telegram-канале школы.
               </p>
             )}
           </div>

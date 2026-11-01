@@ -52,7 +52,7 @@ export default function Header() {
             <span className="flex items-center rounded-md bg-white px-2 py-1 transition-all hover:ring-2 hover:ring-accent-red/50">
               <img
                 src="/logo.jpg"
-                alt="Логотип клуба «Второе дыхание»"
+                alt="Логотип школы «Второе дыхание»"
                 className="h-10 w-auto object-contain lg:h-12"
               />
             </span>

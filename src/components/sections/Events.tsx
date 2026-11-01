@@ -5,7 +5,7 @@ import { useEvents } from '../../store/eventsStore';
 import { isFilled, realValue } from '../../lib/placeholder';
 
 const categoryLabels: Record<string, string> = {
-  training: 'Клубная тренировка',
+  training: 'Школьная тренировка',
   competition: 'Соревнование',
   hike: 'Поход',
   camp: 'Сборы',
@@ -25,7 +25,7 @@ export default function Events() {
     <section className="py-20 lg:py-28 bg-primary">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row md:items-end md:justify-between mb-12">
-          <SectionTitle subtitle="Календарь" title="Мероприятия клуба" />
+          <SectionTitle subtitle="Календарь" title="Мероприятия школы" />
           <Button to="/events" variant="outline" size="sm" className="mb-12 md:mb-12 shrink-0">
             Все мероприятия
           </Button>
@@ -35,7 +35,7 @@ export default function Events() {
           <div className="rounded-sm border border-white/10 bg-surface p-10 text-center">
             <p className="text-sm text-gray-400">
               Календарь событий на сезон формируется. Ближайшие старты и выезды
-              анонсируем в Telegram-канале клуба.
+              анонсируем в Telegram-канале школы.
             </p>
           </div>
         ) : (

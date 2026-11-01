@@ -48,7 +48,7 @@ export default function RegisterPage() {
     });
 
     if (result.ok) {
-      toast('Аккаунт создан — добро пожаловать в клуб!');
+      toast('Аккаунт создан — добро пожаловать в школу!');
       navigate('/cabinet', { replace: true });
     } else {
       setError(result.error);
@@ -66,7 +66,7 @@ export default function RegisterPage() {
         <div className="mb-8 text-center">
           <h1 className="text-3xl font-bold text-white">Регистрация</h1>
           <p className="mt-2 text-sm text-gray-400">
-            Присоединяйтесь к сообществу «Второе дыхание»
+            Присоединяйтесь к школе «Второе дыхание»
           </p>
         </div>
 
@@ -170,7 +170,7 @@ export default function RegisterPage() {
           </Button>
 
           <p className="text-center text-xs text-gray-500">
-            Тренером можно стать по приглашению администратора клуба.
+            Тренером можно стать по приглашению администратора школы.
           </p>
 
           <p className="text-center text-xs text-gray-500">

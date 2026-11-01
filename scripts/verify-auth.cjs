@@ -62,7 +62,7 @@ function log(name, ok, extra = '') {
     const owner = users.find((u) => u.role === 'admin');
     users.push({
       id: 'u-old-admin',
-      name: 'Админ Клуба',
+      name: 'Админ Школы',
       email: 'admin@club.ru',
       phone: '+7 900 000-00-00',
       role: 'admin',

@@ -6,6 +6,8 @@ const TILES = [
   { src: '/images/running.svg', alt: 'Бег', span: 'col-span-2 row-span-2' },
   { src: '/images/trail.svg', alt: 'Трейлраннинг', span: '' },
   { src: '/images/cycling.svg', alt: 'Велоспорт', span: '' },
+  { src: '/images/ski.svg', alt: 'Лыжные гонки', span: '' },
+  { src: '/images/triathlon.svg', alt: 'Триатлон', span: '' },
   { src: '/images/hiking.svg', alt: 'Походы', span: '' },
   { src: '/images/functional.svg', alt: 'Функциональная подготовка', span: '' },
 ];
@@ -28,7 +30,7 @@ export default function Gallery() {
           ))}
         </div>
         <p className="text-gray-500 text-sm text-center mt-6">
-          {directions.length} направления клуба — от городских пробежек до
+          {directions.length} направления школы — от городских пробежек до
           многодневных походов.
         </p>
       </div>

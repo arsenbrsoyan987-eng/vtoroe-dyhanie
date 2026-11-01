@@ -250,7 +250,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const profile = await loadProfile(data.session);
     if (!profile) {
       await supabase.auth.signOut();
-      return { ok: false, error: 'Аккаунт удалён или недоступен — обратитесь в клуб' };
+      return { ok: false, error: 'аккаунт удалён или недоступен — обратитесь в школу' };
     }
 
     setCurrentUser(profile);

@@ -26,7 +26,7 @@ export default function Hero() {
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           <Button to="/register" variant="primary" size="lg">
-            Присоединиться к клубу
+            Присоединиться к школе
           </Button>
           <Button to="/schedule" variant="outline" size="lg">
             Расписание тренировок

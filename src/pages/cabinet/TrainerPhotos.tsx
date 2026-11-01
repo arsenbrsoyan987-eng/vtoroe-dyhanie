@@ -71,7 +71,7 @@ export default function TrainerPhotos() {
 
       {mine.length === 0 ? (
         <div className="rounded-sm border border-white/10 bg-surface p-8 text-center text-sm text-gray-400">
-          За вами пока не закреплено тренировок. Обратитесь к администратору клуба.
+          За вами пока не закреплено тренировок. Обратитесь к администратору школы.
         </div>
       ) : (
         <>

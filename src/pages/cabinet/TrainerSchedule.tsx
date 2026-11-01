@@ -24,7 +24,7 @@ export default function TrainerSchedulePage() {
       {mine.length === 0 && (
         <div className="rounded-sm border border-white/10 bg-surface p-8 text-center">
           <p className="text-sm text-gray-400">
-            За вами пока не закреплено ни одной тренировки. Обратитесь к администратору клуба.
+            За вами пока не закреплено ни одной тренировки. Обратитесь к администратору школы.
           </p>
         </div>
       )}

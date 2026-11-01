@@ -6,7 +6,7 @@ import { isFilled, realValue } from '../lib/placeholder';
 
 const categories = [
   { id: 'all', label: 'Все' },
-  { id: 'training', label: 'Клубные тренировки' },
+  { id: 'training', label: 'Школьные тренировки' },
   { id: 'competition', label: 'Соревнования' },
   { id: 'hike', label: 'Походы и выезды' },
   { id: 'camp', label: 'Тренировочные сборы' },
@@ -14,7 +14,7 @@ const categories = [
 ];
 
 const categoryLabels: Record<string, string> = {
-  training: 'Клубная тренировка',
+  training: 'Школьная тренировка',
   competition: 'Соревнование',
   hike: 'Поход',
   camp: 'Сборы',
@@ -38,7 +38,7 @@ export default function EventsPage() {
           <div className="rounded-sm border border-white/10 bg-surface px-6 py-16 text-center">
             <p className="mx-auto max-w-lg text-sm leading-relaxed text-gray-400">
               Календарь на сезон ещё формируется. Анонсы стартов, походов и
-              сборов публикуем в Telegram-канале клуба — там же сбор заявок.
+              сборов публикуем в Telegram-канале школы — там же сбор заявок.
             </p>
           </div>
         ) : (

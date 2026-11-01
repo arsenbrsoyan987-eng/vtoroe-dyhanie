@@ -1,11 +1,11 @@
 import { OWNER_EMAIL, type User } from '../store/database';
 
-/** Роль «администратор» есть только у владельца клуба */
+/** Роль «администратор» есть только у владельца школы */
 export function isAdmin(user: User | null | undefined): boolean {
   return user?.role === 'admin';
 }
 
-/** Владелец клуба — единственный, кого нельзя удалить или понизить */
+/** Владелец школы — единственный, кого нельзя удалить или понизить */
 export function isOwner(user: Pick<User, 'email'> | null | undefined): boolean {
   if (!user?.email) return false;
   return user.email.toLowerCase() === OWNER_EMAIL;

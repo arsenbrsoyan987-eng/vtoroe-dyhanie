@@ -34,7 +34,7 @@ function fromRow(row: NewsRow): NewsItem {
     summary: row.summary ?? '',
     content: row.content ?? '',
     date: (row.date ?? '').slice(0, 10),
-    category: row.category || 'Клуб',
+    category: row.category || 'Школа',
     image: row.image ?? '',
     ...(row.author_id ? { authorId: row.author_id } : {}),
     ...(row.author_name ? { authorName: row.author_name } : {}),

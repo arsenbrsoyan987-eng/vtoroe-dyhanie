@@ -40,7 +40,7 @@ function log(name, ok, extra = '') {
     ['/trainers', 'Тренерский состав'],
     ['/events', 'Мероприятия и соревнования'],
     ['/routes', 'Наши маршруты'],
-    ['/news', 'Новости клуба'],
+    ['/news', 'Новости школы'],
     ['/results', 'Спортивные результаты'],
   ]) {
     await go(path);
@@ -89,7 +89,7 @@ function log(name, ok, extra = '') {
   if (newsHref) {
     await go(newsHref);
     const t = await page.evaluate(() => document.body.innerText);
-    log('Новость открывается', t.includes('Новости клуба'));
+    log('Новость открывается', t.includes('Новости школы'));
   }
 
   // 1f. Политика конфиденциальности
@@ -143,7 +143,7 @@ function log(name, ok, extra = '') {
     log(`Админ: ${path}`, t.includes(needle));
   }
 
-  // 6b. Удаление пользователя клуба
+  // 6b. Удаление пользователя школы
   await go('/cabinet/admin/users');
   await page.evaluate(() => {
     const btn = [...document.querySelectorAll('button')].find((b) =>
@@ -198,7 +198,7 @@ function log(name, ok, extra = '') {
     return users.filter((u) => u.role === 'admin').map((u) => u.email);
   });
   log(
-    'В клубе один администратор',
+    'В школе один администратор',
     singleAdmin.length === 1 && singleAdmin[0] === 'arsenbrsoyan@yandex.ru',
     singleAdmin.join(', ')
   );
@@ -320,7 +320,7 @@ function log(name, ok, extra = '') {
     btn && btn.click();
   });
   await page.waitForFunction(() => document.querySelector('#n-title'), { timeout: 8000 });
-  await fill('#n-title', 'Смоук-новость клуба');
+  await fill('#n-title', 'Смоук-новость школы');
   await fill('#n-summary', 'Проверка публикации из админки.');
   await page.evaluate(() => {
     const btn = [...document.querySelectorAll('button')].find(
@@ -330,11 +330,11 @@ function log(name, ok, extra = '') {
   });
   await new Promise((r) => setTimeout(r, 900));
   text = await page.evaluate(() => document.body.innerText);
-  log('Новость создана в админке', text.includes('Смоук-новость клуба'));
+  log('Новость создана в админке', text.includes('Смоук-новость школы'));
 
   await go('/news');
   text = await page.evaluate(() => document.body.innerText);
-  log('Новость видна на сайте', text.includes('Смоук-новость клуба'));
+  log('Новость видна на сайте', text.includes('Смоук-новость школы'));
 
   // 8. Появилась в публичном расписании
   await go('/schedule');

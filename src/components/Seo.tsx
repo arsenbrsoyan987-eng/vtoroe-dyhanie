@@ -82,7 +82,7 @@ export default function Seo() {
             `${training.name}: ${training.date}, ${training.time}.`,
             where ? `Место: ${where}.` : '',
             who ? `Тренер: ${who}.` : '',
-            `Уровень: ${training.level}. Запись на тренировку клуба «Второе дыхание».`,
+            `Уровень: ${training.level}. Запись на тренировку школы «Второе дыхание».`,
           ]
             .filter(Boolean)
             .join(' '),

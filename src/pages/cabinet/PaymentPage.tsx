@@ -6,7 +6,7 @@ import Button from '../../components/ui/Button';
 import { Check, Clock, ShieldCheck, Wallet } from 'lucide-react';
 
 const plans = [
-  { id: 'monthly', name: 'Ежемесячный', price: '990', period: '/мес', features: ['Доступ к групповым тренировкам', 'Участие в клубных событиях', 'Личный кабинет'] },
+  { id: 'monthly', name: 'Ежемесячный', price: '990', period: '/мес', features: ['Доступ к групповым тренировкам', 'Участие в школьных событиях', 'Личный кабинет'] },
   { id: 'quarterly', name: 'Квартальный', price: '2 490', period: '/3 мес', features: ['Всё из ежемесячного', 'Экономия 20%', 'Приоритетная запись'] },
   { id: 'yearly', name: 'Годовой', price: '7 990', period: '/год', features: ['Всё из квартального', 'Экономия 33%', 'Персональная консультация тренера', 'Эксклюзивные мероприятия'] },
 ];
@@ -27,7 +27,7 @@ export default function PaymentPage() {
     e.preventDefault();
     if (!currentUser || !plan) return;
 
-    // Заявка уходит администраторам клуба — карточные данные не собираются
+    // Заявка уходит администраторам школы — карточные данные не собираются
     const admins = users.filter((u) => u.role === 'admin');
     const recipients = admins.length > 0 ? admins : [];
     for (const admin of recipients) {
@@ -68,7 +68,7 @@ export default function PaymentPage() {
     <div className="mx-auto max-w-3xl">
       <h1 className="mb-2 text-center text-2xl font-bold text-white">Абонемент</h1>
       <p className="mb-8 text-center text-sm text-gray-400">
-        Выберите тариф — мы отправим заявку администратору клуба
+        Выберите тариф — мы отправим заявку администратору школы
       </p>
 
       <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -132,7 +132,7 @@ export default function PaymentPage() {
           <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-green-400" />
           <p className="text-xs text-gray-500">
             Мы не запрашиваем и не храним данные банковских карт. Ссылку на оплату
-            присылает администратор клуба.
+            присылает администратор школы.
           </p>
         </div>
 

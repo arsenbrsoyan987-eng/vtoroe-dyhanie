@@ -57,7 +57,7 @@ export default function TrainerDashboard() {
       {upcoming.length === 0 ? (
         <div className="rounded-sm border border-white/10 bg-surface p-8 text-center">
           <p className="text-sm text-gray-400">
-            Предстоящих тренировок нет. Если это ошибка — напишите администратору клуба.
+            Предстоящих тренировок нет. Если это ошибка — напишите администратору школы.
           </p>
         </div>
       ) : (

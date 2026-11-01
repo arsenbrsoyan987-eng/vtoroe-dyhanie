@@ -14,14 +14,14 @@ export default function NewsPage() {
   return (
     <div className="py-16 lg:py-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <SectionTitle subtitle="Медиа" title="Новости клуба" align="center" as="h1" />
+        <SectionTitle subtitle="Медиа" title="Новости школы" align="center" as="h1" />
 
         {sorted.length === 0 ? (
           <div className="rounded-sm border border-white/10 bg-surface px-6 py-16 text-center">
             <p className="mx-auto max-w-lg text-sm leading-relaxed text-gray-400">
               Отчёты о стартах, анонсы тренировок и истории участников
               публикуем по мере появления. Самое свежее — в Telegram-канале
-              клуба.
+              школы.
             </p>
           </div>
         ) : (

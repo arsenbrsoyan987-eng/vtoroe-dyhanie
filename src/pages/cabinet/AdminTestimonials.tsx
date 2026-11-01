@@ -147,7 +147,7 @@ export default function AdminTestimonials() {
               value={form.text}
               onChange={(e) => setForm({ ...form, text: e.target.value })}
               className={`${field} resize-none`}
-              placeholder="Что даёт клуб, как проходят тренировки, за что благодарны"
+              placeholder="Что даёт школа, как проходят тренировки, за что благодарны"
             />
           </div>
 

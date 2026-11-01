@@ -32,7 +32,7 @@ export default function NewsDetailPage() {
           className="mb-6 inline-flex items-center gap-1.5 text-xs uppercase tracking-wider text-gray-400 transition-colors hover:text-white"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
-          Новости клуба
+          Новости школы
         </Link>
 
         <div className="mb-4 flex flex-wrap items-center gap-3">

@@ -62,7 +62,7 @@ create table if not exists public.trainings (
 create index if not exists trainings_date_idx on public.trainings (date, time);
 
 -- ---------- Кэмпы ----------
--- Тренировочные сборы публикует только владелец клуба: отдельная таблица,
+-- Тренировочные сборы публикует только владелец школы: отдельная таблица,
 -- а не мероприятия, потому что у сборов своя программа, стоимость и срок.
 create table if not exists public.camps (
   id text primary key,
@@ -110,7 +110,7 @@ create table if not exists public.news (
   summary text not null default '',
   content text not null default '',
   date date not null default current_date,
-  category text not null default 'Клуб',
+  category text not null default 'Школа',
   image text not null default '',
   author_id uuid references public.profiles (id) on delete set null,
   author_name text not null default '',
@@ -381,7 +381,7 @@ create policy "trainings: админ удаляет" on public.trainings
   for delete using (public.is_admin() or public.is_trainer_of(id));
 
 -- ---------- camps ----------
--- Читают все (публичный раздел), создаёт и меняет только владелец клуба.
+-- Читают все (публичный раздел), создаёт и меняет только владелец школы.
 drop policy if exists "camps: читают все" on public.camps;
 create policy "camps: читают все" on public.camps
   for select using (true);

@@ -15,7 +15,7 @@ export default function CTA() {
       <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <h2 className="text-3xl md:text-5xl font-bold text-white mb-6 leading-tight">
           Стань частью{' '}
-          <span className="text-accent-red">нашего сообщества</span>
+          <span className="text-accent-red">нашей школы</span>
         </h2>
         <p className="text-gray-300 text-lg md:text-xl mb-10 max-w-2xl mx-auto">
           Присоединяйся к тренировкам, находи новых друзей и достигай целей

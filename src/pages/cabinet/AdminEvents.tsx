@@ -9,7 +9,7 @@ import ImageUpload from '../../components/ui/ImageUpload';
 import { ExternalLink, Pencil, Plus, Trash2, X } from 'lucide-react';
 
 const CATEGORIES: Array<{ id: EventCategory; label: string }> = [
-  { id: 'training', label: 'Клубная тренировка' },
+  { id: 'training', label: 'Школьная тренировка' },
   { id: 'competition', label: 'Соревнование' },
   { id: 'hike', label: 'Поход' },
   { id: 'camp', label: 'Сборы' },
@@ -246,7 +246,7 @@ export default function AdminEvents() {
                 value={form.price}
                 onChange={(e) => setForm({ ...form, price: e.target.value })}
                 className={field}
-                placeholder="Бесплатно для участников клуба"
+                placeholder="Бесплатно для участников школы"
               />
             </div>
             <div>

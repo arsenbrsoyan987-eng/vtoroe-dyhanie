@@ -36,7 +36,7 @@ export default function AdminResultsPage() {
           <Trophy className="w-8 h-8 text-yellow-400" />
           <div>
             <h1 className="text-2xl font-bold text-white">Результаты</h1>
-            <p className="text-gray-400 text-sm">Достижения спортсменов клуба</p>
+            <p className="text-gray-400 text-sm">Достижения спортсменов школы</p>
           </div>
         </div>
         <button onClick={() => setCsvText(csvText ? '' : 'name,event,date,distance,time,place\nИванов,Марафон,2026-10-01,42.195,3:15:20,1')} className="bg-accent-blue text-white text-sm px-4 py-2 rounded-sm hover:bg-accent-blue-hover transition-colors flex items-center gap-2">
