@@ -4,6 +4,7 @@ import { useToast } from '../context/ToastContext';
 import { useTrainings } from '../store/trainingsStore';
 import { usePhotosOf } from '../store/trainingPhotosStore';
 import { formatDate, isPastDate } from '../lib/date';
+import { isVideoUrl } from '../lib/upload';
 import { displayValue, realValue } from '../lib/placeholder';
 import Button from '../components/ui/Button';
 import { ArrowLeft, CalendarDays, Camera, CheckCircle2, Clock, MapPin, Timer, User, Users } from 'lucide-react';
@@ -200,12 +201,12 @@ export default function TrainingDetailPage() {
           </div>
         </div>
 
-        {/* Отчёт с занятия: фото загружает тренер после тренировки */}
+        {/* Отчёт с занятия: фото и видео загружает тренер после тренировки */}
         {photos.length > 0 && (
           <section className="mt-8">
             <h2 className="mb-3 flex items-center gap-2 text-xs uppercase tracking-wider text-gray-500">
               <Camera className="h-3.5 w-3.5" />
-              Как прошла тренировка · {photos.length} фото
+              Как прошла тренировка · {photos.length} фото и видео
             </h2>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
               {photos.map((photo) => (
@@ -213,12 +214,22 @@ export default function TrainingDetailPage() {
                   key={photo.id}
                   className="overflow-hidden rounded-sm border border-white/10 bg-surface"
                 >
-                  <img
-                    src={photo.url}
-                    alt={photo.caption || training.name}
-                    className="aspect-[4/3] w-full object-cover"
-                    loading="lazy"
-                  />
+                  {isVideoUrl(photo.url) ? (
+                    <video
+                      src={photo.url}
+                      controls
+                      preload="metadata"
+                      playsInline
+                      className="aspect-[4/3] w-full bg-black object-cover"
+                    />
+                  ) : (
+                    <img
+                      src={photo.url}
+                      alt={photo.caption || training.name}
+                      className="aspect-[4/3] w-full object-cover"
+                      loading="lazy"
+                    />
+                  )}
                   {photo.caption && (
                     <figcaption className="px-3 py-2 text-xs text-gray-400">
                       {photo.caption}

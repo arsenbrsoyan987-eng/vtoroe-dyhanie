@@ -46,7 +46,6 @@ export default function AdminTrainings() {
 
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [confirmId, setConfirmId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(emptyForm);
 
   const field =
@@ -132,7 +131,6 @@ export default function AdminTrainings() {
   const remove = async (id: string, name: string) => {
     try {
       await removeTraining(id);
-      setConfirmId(null);
       toast(`Тренировка удалена: «${name}»`, 'info');
     } catch (err) {
       toast(err instanceof Error ? err.message : 'Не удалось удалить тренировку', 'error');
@@ -306,52 +304,38 @@ export default function AdminTrainings() {
                     )}
                   </td>
                   <td className="px-4 py-3">
-                    {confirmId === t.id ? (
-                      <div className="flex items-center justify-end gap-2">
-                        <span className="text-[11px] text-gray-400">Удалить?</span>
-                        <button
-                          onClick={() => remove(t.id, t.name)}
-                          className="rounded-sm bg-red-500/20 px-2 py-1 text-[11px] font-semibold text-red-300 hover:bg-red-500/30"
-                        >
-                          Да
-                        </button>
-                        <button
-                          onClick={() => setConfirmId(null)}
-                          className="rounded-sm px-2 py-1 text-[11px] text-gray-400 hover:text-white"
-                        >
-                          Нет
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-end gap-3">
-                        {done && (
-                          <Link
-                            to="/cabinet/photos"
-                            className="text-gray-500 transition-colors hover:text-accent-blue"
-                            aria-label={`Фото тренировки ${t.name}`}
-                            title="Фото с тренировки"
-                          >
-                            <Camera className="h-4 w-4" />
-                          </Link>
-                        )}
-                        <button
-                          onClick={() => startEdit(t.id)}
+                    <div className="flex items-center justify-end gap-3">
+                      {done && (
+                        <Link
+                          to="/cabinet/photos"
                           className="text-gray-500 transition-colors hover:text-accent-blue"
-                          aria-label={`Редактировать ${t.name}`}
-                          title="Редактировать"
+                          aria-label={`Фото тренировки ${t.name}`}
+                          title="Фото с тренировки"
                         >
-                          <Pencil className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => setConfirmId(t.id)}
-                          className="text-gray-500 transition-colors hover:text-red-400"
-                          aria-label={`Удалить ${t.name}`}
-                          title="Удалить"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    )}
+                          <Camera className="h-4 w-4" />
+                        </Link>
+                      )}
+                      <button
+                        onClick={() => startEdit(t.id)}
+                        className="text-gray-500 transition-colors hover:text-accent-blue"
+                        aria-label={`Редактировать ${t.name}`}
+                        title="Редактировать"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (window.confirm(`Удалить тренировку «${t.name}»?`)) {
+                            remove(t.id, t.name);
+                          }
+                        }}
+                        className="text-gray-500 transition-colors hover:text-red-400"
+                        aria-label={`Удалить ${t.name}`}
+                        title="Удалить"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               );

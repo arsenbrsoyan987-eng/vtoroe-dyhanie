@@ -7,14 +7,14 @@ import {
   removeTrainingPhoto,
   useTrainingPhotos,
 } from '../../store/trainingPhotosStore';
-import { deleteStorageFile } from '../../lib/upload';
+import { deleteStorageFile, isVideoUrl } from '../../lib/upload';
 import { visibleTrainings } from '../../lib/access';
 import { formatDate, isPastDate } from '../../lib/date';
 import PhotoUploader from '../../components/ui/PhotoUploader';
 import { Camera, Trash2 } from 'lucide-react';
 
 /**
- * Фотографии тренировок: тренер выбирает своё занятие и загружает снимки.
+ * Фото и видео тренировок: тренер выбирает своё занятие и загружает файлы.
  * Права проверяет база — в списке и так только свои тренировки.
  */
 export default function TrainerPhotos() {
@@ -62,9 +62,9 @@ export default function TrainerPhotos() {
   return (
     <div className="mx-auto max-w-4xl">
       <div className="mb-6">
-        <h1 className="mb-1 text-2xl font-bold text-white">Фото тренировок</h1>
+        <h1 className="mb-1 text-2xl font-bold text-white">Фото и видео тренировок</h1>
         <p className="text-sm text-gray-400">
-          {photos.filter((p) => mine.some((t) => t.id === p.trainingId)).length} фото · сразу
+          {photos.filter((p) => mine.some((t) => t.id === p.trainingId)).length} фото и видео · сразу
           появляются в галерее на странице тренировки
         </p>
       </div>
@@ -110,7 +110,7 @@ export default function TrainerPhotos() {
             <div className="rounded-sm border border-white/10 bg-surface p-8 text-center">
               <Camera className="mx-auto mb-3 h-6 w-6 text-gray-600" />
               <p className="text-sm text-gray-400">
-                Для этой тренировки фото ещё нет. Загрузите первые — они появятся
+                Фото и видео для этой тренировки ещё нет. Загрузите первые — они появятся
                 в галерее на сайте.
               </p>
             </div>
@@ -121,16 +121,26 @@ export default function TrainerPhotos() {
                   key={photo.id}
                   className="group relative overflow-hidden rounded-sm border border-white/10 bg-surface"
                 >
-                  <img
-                    src={photo.url}
-                    alt={photo.caption || 'Фото тренировки'}
-                    className="aspect-[4/3] w-full object-cover"
-                    loading="lazy"
-                  />
+                  {isVideoUrl(photo.url) ? (
+                    <video
+                      src={photo.url}
+                      controls
+                      preload="metadata"
+                      playsInline
+                      className="aspect-[4/3] w-full bg-black object-cover"
+                    />
+                  ) : (
+                    <img
+                      src={photo.url}
+                      alt={photo.caption || 'Фото тренировки'}
+                      className="aspect-[4/3] w-full object-cover"
+                      loading="lazy"
+                    />
+                  )}
                   <button
                     onClick={() => void remove(photo.id, photo.url)}
                     className="absolute right-2 top-2 rounded-sm bg-black/70 p-1.5 text-gray-300 opacity-0 transition-opacity hover:text-red-400 group-hover:opacity-100 focus:opacity-100"
-                    aria-label="Удалить фото"
+                    aria-label="Удалить файл"
                     title="Удалить"
                   >
                     <Trash2 className="h-3.5 w-3.5" />

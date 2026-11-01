@@ -14,6 +14,19 @@ export const PHOTO_BUCKET = 'training-photos';
 const MAX_SIDE = 1600;
 const QUALITY = 0.82;
 const MAX_FILE_MB = 20;
+/** Видео не пережимаем, поэтому потолок выше — лимит бесплатного тарифа Supabase */
+const MAX_VIDEO_MB = 50;
+
+const VIDEO_EXTENSIONS = ['.mp4', '.mov', '.webm', '.m4v'];
+
+/**
+ * Медиа может быть фото или видео: различаем по расширению в URL.
+ * Пути генерируем сами (см. uploadTrainingMedia), поэтому расширение всегда известно.
+ */
+export function isVideoUrl(url: string): boolean {
+  const clean = url.split('?')[0].toLowerCase();
+  return VIDEO_EXTENSIONS.some((ext) => clean.endsWith(ext));
+}
 
 /** Сжимает фото до разумного веса: снимки с телефона весят по 4–8 МБ */
 function compress(file: File): Promise<Blob> {
@@ -55,24 +68,40 @@ function randomName() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+/** Расширение файла по MIME, чтобы путь в бакете соответствовал содержимому */
+function videoExtension(file: File): string {
+  const fromName = file.name.toLowerCase().match(/\.(mp4|mov|webm|m4v)$/)?.[1];
+  if (fromName) return fromName;
+  const fromType = file.type.split('/')[1]?.split(';')[0];
+  return fromType === 'quicktime' ? 'mov' : (fromType ?? 'mp4');
+}
+
 /**
- * Загружает фото тренировки и возвращает публичный URL.
+ * Загружает фото или видео тренировки и возвращает публичный URL.
  * Путь начинается с id тренировки: по первой папке RLS проверяет,
  * что файл грузит тренер именно этого занятия.
  */
-export async function uploadTrainingPhoto(trainingId: string, file: File): Promise<string> {
-  if (!file.type.startsWith('image/')) {
-    throw new Error('Нужен файл изображения: JPG, PNG или WEBP');
-  }
-  if (file.size > MAX_FILE_MB * 1024 * 1024) {
-    throw new Error(`Файл больше ${MAX_FILE_MB} МБ — выберите фото поменьше`);
+export async function uploadTrainingMedia(trainingId: string, file: File): Promise<string> {
+  const isVideo = file.type.startsWith('video/');
+  const isImage = file.type.startsWith('image/');
+
+  if (!isVideo && !isImage) {
+    throw new Error('Нужен файл фото (JPG, PNG, WEBP) или видео (MP4, MOV, WEBM)');
   }
 
-  const blob = await compress(file);
-  const path = `${trainingId}/${randomName()}.jpg`;
+  const limitMb = isVideo ? MAX_VIDEO_MB : MAX_FILE_MB;
+  if (file.size > limitMb * 1024 * 1024) {
+    throw new Error(`Файл больше ${limitMb} МБ — выберите файл поменьше`);
+  }
+
+  // Видео отдаём как есть: пережатие в браузере требует WebCodecs и долго
+  const blob: Blob = isVideo ? file : await compress(file);
+  const path = isVideo
+    ? `${trainingId}/${randomName()}.${videoExtension(file)}`
+    : `${trainingId}/${randomName()}.jpg`;
 
   const { error } = await supabase.storage.from(PHOTO_BUCKET).upload(path, blob, {
-    contentType: 'image/jpeg',
+    contentType: isVideo ? `video/${videoExtension(file) === 'mov' ? 'quicktime' : videoExtension(file)}` : 'image/jpeg',
     cacheControl: '31536000',
     upsert: false,
   });

@@ -1,10 +1,10 @@
 import { useRef, useState } from 'react';
 import { useToast } from '../../context/ToastContext';
-import { uploadTrainingPhoto } from '../../lib/upload';
+import { uploadTrainingMedia } from '../../lib/upload';
 import { ImagePlus, Loader2 } from 'lucide-react';
 
 interface PhotoUploaderProps {
-  /** Тренировка, к которой относятся снимки: id уходит в путь файла */
+  /** Тренировка, к которой относятся файлы: id уходит в путь файла */
   trainingId: string;
   /** Вызывается после успешной загрузки каждого файла */
   onUploaded: (url: string) => Promise<void> | void;
@@ -12,8 +12,8 @@ interface PhotoUploaderProps {
 }
 
 /**
- * Загрузка нескольких фото за один раз: тренер снимает занятие на телефон
- * и закидывает всё сразу. Файлы сжимаются и уходят в Supabase Storage.
+ * Загрузка фото и видео с занятия: тренер снимает на телефон и закидывает
+ * всё сразу. Снимки сжимаются, видео уходит как есть — оба в Supabase Storage.
  */
 export default function PhotoUploader({ trainingId, onUploaded, disabled }: PhotoUploaderProps) {
   const { toast } = useToast();
@@ -30,11 +30,11 @@ export default function PhotoUploader({ trainingId, onUploaded, disabled }: Phot
 
     for (const file of list) {
       try {
-        const url = await uploadTrainingPhoto(trainingId, file);
+        const url = await uploadTrainingMedia(trainingId, file);
         await onUploaded(url);
         uploaded += 1;
       } catch (err) {
-        toast(err instanceof Error ? err.message : 'Не удалось загрузить фото', 'error');
+        toast(err instanceof Error ? err.message : 'Не удалось загрузить файл', 'error');
       } finally {
         setProgress((p) => (p ? { ...p, done: p.done + 1 } : p));
       }
@@ -44,7 +44,7 @@ export default function PhotoUploader({ trainingId, onUploaded, disabled }: Phot
     if (inputRef.current) inputRef.current.value = '';
     if (uploaded > 0) {
       toast(
-        uploaded === 1 ? 'Фото добавлено в галерею' : `Загружено фото: ${uploaded}`
+        uploaded === 1 ? 'Файл добавлен в галерею' : `Загружено файлов: ${uploaded}`
       );
     }
   };
@@ -93,10 +93,10 @@ export default function PhotoUploader({ trainingId, onUploaded, disabled }: Phot
           <>
             <ImagePlus className="h-5 w-5 text-gray-400" />
             <span className="text-xs text-gray-300">
-              Перетащите фото или нажмите, чтобы выбрать
+              Перетащите фото или видео, либо нажмите, чтобы выбрать
             </span>
             <span className="text-[10px] text-gray-600">
-              Можно выбрать сразу несколько · JPG, PNG, WEBP · сожмём автоматически
+              Можно выбрать несколько сразу · фото до 20 МБ сожмём · видео до 50 МБ (MP4, MOV, WEBM)
             </span>
           </>
         )}
@@ -105,7 +105,7 @@ export default function PhotoUploader({ trainingId, onUploaded, disabled }: Phot
       <input
         ref={inputRef}
         type="file"
-        accept="image/*"
+        accept="image/*,video/*"
         multiple
         className="hidden"
         onChange={(e) => void handleFiles(e.target.files)}
