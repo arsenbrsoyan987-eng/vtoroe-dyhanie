@@ -49,7 +49,18 @@ export default function DirectionDetailPage() {
             <div className="lg:col-span-2 space-y-12">
               <div>
                 <h2 className="text-2xl font-bold text-white mb-4">О направлении</h2>
-                <p className="text-gray-300 leading-relaxed">{direction.fullDescription}</p>
+                {/* Описание ведётся абзацами через пустую строку */}
+                <div className="space-y-4">
+                  {direction.fullDescription
+                    .split(/\n{2,}/)
+                    .map((paragraph) => paragraph.trim())
+                    .filter(Boolean)
+                    .map((paragraph) => (
+                      <p key={paragraph} className="text-gray-300 leading-relaxed">
+                        {paragraph}
+                      </p>
+                    ))}
+                </div>
               </div>
 
               <div>
