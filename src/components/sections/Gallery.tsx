@@ -1,15 +1,15 @@
 import SectionTitle from '../ui/SectionTitle';
 import { directions } from '../../data/directions';
 
-/** Плитки направлений: фото-заглушки заменяются реальными фото из админки */
+/** Плитки направлений: реальные фото, при желании заменяются снимками из админки */
 const TILES = [
-  { src: '/images/running.svg', alt: 'Бег', span: 'col-span-2 row-span-2' },
-  { src: '/images/trail.svg', alt: 'Трейлраннинг', span: '' },
-  { src: '/images/cycling.svg', alt: 'Велоспорт', span: '' },
-  { src: '/images/ski.svg', alt: 'Лыжные гонки', span: '' },
-  { src: '/images/triathlon.svg', alt: 'Триатлон', span: '' },
-  { src: '/images/hiking.svg', alt: 'Походы', span: '' },
-  { src: '/images/functional.svg', alt: 'Функциональная подготовка', span: '' },
+  { src: '/images/running.jpg', alt: 'Бег', span: 'col-span-2 row-span-2' },
+  { src: '/images/trail.jpg', alt: 'Трейлраннинг', span: '' },
+  { src: '/images/cycling.jpg', alt: 'Велоспорт', span: '' },
+  { src: '/images/ski.jpg', alt: 'Лыжные гонки', span: '' },
+  { src: '/images/triathlon.jpg', alt: 'Триатлон', span: '' },
+  { src: '/images/hiking.jpg', alt: 'Походы', span: '' },
+  { src: '/images/functional.jpg', alt: 'Функциональная подготовка', span: '' },
 ];
 
 export default function Gallery() {
