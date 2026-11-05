@@ -4,7 +4,7 @@
  * открывалась свежая версия) и stale-while-revalidate для статики.
  * При изменении логики обязательно увеличивайте CACHE_VERSION.
  */
-const CACHE_VERSION = 'v6';
+const CACHE_VERSION = 'v7';
 const CACHE_NAME = `vtoroe-dyhanie-${CACHE_VERSION}`;
 const BASE = '';
 const PRECACHE = [
@@ -80,6 +80,10 @@ self.addEventListener('fetch', (event) => {
           return response;
         })
         .catch(() => cached);
+
+      // JS-бандлы всегда берём из сети — они меняются при каждом деплое
+      if (request.url.endsWith('.js')) return network;
+
       return cached || network;
     })
   );
