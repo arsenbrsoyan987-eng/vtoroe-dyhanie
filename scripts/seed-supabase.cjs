@@ -73,6 +73,55 @@ const campRows = (Array.isArray(data.camps) ? data.camps : []).map((c) => ({
   published: c.published !== false,
 }));
 
+const trainerRows = (Array.isArray(data.trainers) ? data.trainers : []).map((t) => ({
+  id: t.id,
+  name: t.name || '',
+  photo: t.photo || '',
+  specialization: t.specialization || '',
+  experience: t.experience || '',
+  biography: t.biography || '',
+  directions: Array.isArray(t.directions) ? t.directions : [],
+  certifications: Array.isArray(t.certifications) ? t.certifications : [],
+  phone: t.phone || '',
+  email: t.email || '',
+}));
+
+const eventRows = (Array.isArray(data.events) ? data.events : []).map((e) => ({
+  id: e.id,
+  name: e.name || '',
+  category: e.category || 'competition',
+  date: (e.date || '').slice(0, 10),
+  time: e.time || '',
+  location: e.location || '',
+  description: e.description || '',
+  full_description: e.fullDescription || '',
+  images: Array.isArray(e.images) ? e.images : [],
+  registration_open: e.registrationOpen !== false,
+  registration_deadline: e.registrationDeadline ? e.registrationDeadline.slice(0, 10) : null,
+  price: e.price || '',
+  requirements: Array.isArray(e.requirements) ? e.requirements : [],
+}));
+
+const testimonialRows = (Array.isArray(data.testimonials) ? data.testimonials : []).map((t) => ({
+  id: t.id,
+  name: t.name || '',
+  photo: t.photo || '',
+  text: t.text || '',
+  achievement: t.achievement || '',
+  direction: t.direction || '',
+}));
+
+const sportResultRows = (Array.isArray(data.results) ? data.results : []).map((r) => ({
+  id: r.id,
+  athlete_name: r.athleteName || '',
+  event: r.event || '',
+  date: (r.date || '').slice(0, 10),
+  discipline: r.discipline || '',
+  result: r.result || '',
+  place: r.place || '',
+  protocol_url: r.protocolUrl || '',
+}));
+
 /** Вставляет строки пачками: PostgREST не любит гигантские тела запросов */
 async function upsert(table, rows) {
   if (rows.length === 0) {
@@ -104,4 +153,8 @@ async function upsert(table, rows) {
   await upsert('trainings', trainingRows);
   await upsert('news', newsRows);
   await upsert('camps', campRows);
+  await upsert('trainers', trainerRows);
+  await upsert('events', eventRows);
+  await upsert('testimonials', testimonialRows);
+  await upsert('sport_results', sportResultRows);
 })();

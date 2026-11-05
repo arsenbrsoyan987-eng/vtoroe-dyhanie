@@ -84,7 +84,7 @@ export default function AdminEvents() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     const name = form.name.trim();
     if (!name) {
@@ -111,17 +111,17 @@ export default function AdminEvents() {
     };
 
     if (editingId) {
-      eventsStore.update(editingId, payload);
+      await eventsStore.update(editingId, payload);
       toast('Мероприятие обновлено');
     } else {
-      eventsStore.add({ id: 'event-' + Date.now(), ...payload });
+      await eventsStore.add({ id: 'event-' + Date.now(), ...payload });
       toast(`Мероприятие создано: «${name}»`);
     }
     closeForm();
   };
 
-  const remove = (id: string, name: string) => {
-    eventsStore.remove(id);
+  const remove = async (id: string, name: string) => {
+    await eventsStore.remove(id);
     setConfirmId(null);
     toast(`Мероприятие удалено: «${name}»`, 'info');
   };

@@ -166,14 +166,14 @@ export default function AdminTrainers() {
     const trainerId = editingId ?? 'trainer-' + Date.now();
 
     if (editingId) {
-      updateTrainer(editingId, profile);
+      await updateTrainer(editingId, profile);
       // Имя тренера хранится и в тренировках: переименование разносим по расписанию
       const affected = trainings.filter((t) => t.trainerId === editingId && t.trainer !== name);
       for (const t of affected) {
         await updateTraining(t.id, { trainer: name });
       }
     } else {
-      addTrainer({ id: trainerId, ...profile });
+      await addTrainer({ id: trainerId, ...profile });
     }
 
     if (form.createAccount) {
@@ -251,7 +251,7 @@ export default function AdminTrainers() {
   };
 
   const remove = async (id: string, name: string) => {
-    removeTrainer(id);
+    await removeTrainer(id);
 
     // Отвязываем аккаунт, чтобы он не остался привязан к удалённому профилю
     const account = accountOf(id);

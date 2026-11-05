@@ -54,7 +54,7 @@ export default function AdminTestimonials() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     const name = form.name.trim();
     if (!name || !form.text.trim()) {
@@ -71,17 +71,17 @@ export default function AdminTestimonials() {
     };
 
     if (editingId) {
-      testimonialsStore.update(editingId, payload);
+      await testimonialsStore.update(editingId, payload);
       toast('Отзыв обновлён');
     } else {
-      testimonialsStore.add({ id: 'testimonial-' + Date.now(), ...payload });
+      await testimonialsStore.add({ id: 'testimonial-' + Date.now(), ...payload });
       toast(`Отзыв добавлен: ${name}`);
     }
     closeForm();
   };
 
-  const remove = (id: string, name: string) => {
-    testimonialsStore.remove(id);
+  const remove = async (id: string, name: string) => {
+    await testimonialsStore.remove(id);
     setConfirmId(null);
     toast(`Отзыв удалён: ${name}`, 'info');
   };

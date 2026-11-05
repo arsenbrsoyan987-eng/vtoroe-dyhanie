@@ -168,6 +168,73 @@ create table if not exists public.results (
 
 create index if not exists results_user_idx on public.results (user_id, date desc);
 
+-- ---------- Тренеры ----------
+-- Карточки тренеров правятся из админки и сразу видны всем посетителям.
+create table if not exists public.trainers (
+  id text primary key,
+  name text not null,
+  photo text not null default '',
+  specialization text not null default '',
+  experience text not null default '',
+  biography text not null default '',
+  directions text[] not null default '{}',
+  certifications text[] not null default '{}',
+  phone text not null default '',
+  email text not null default '',
+  created_at timestamptz not null default now()
+);
+
+create index if not exists trainers_created_idx on public.trainers (created_at);
+
+-- ---------- Мероприятия ----------
+create table if not exists public.events (
+  id text primary key,
+  name text not null,
+  category text not null default 'competition'
+    check (category in ('training', 'competition', 'hike', 'camp', 'public')),
+  date date not null,
+  time text not null default '',
+  location text not null default '',
+  description text not null default '',
+  full_description text not null default '',
+  images text[] not null default '{}',
+  registration_open boolean not null default true,
+  registration_deadline date,
+  price text not null default '',
+  requirements text[] not null default '{}',
+  created_at timestamptz not null default now()
+);
+
+create index if not exists events_date_idx on public.events (date desc);
+
+-- ---------- Отзывы ----------
+create table if not exists public.testimonials (
+  id text primary key,
+  name text not null,
+  photo text not null default '',
+  text text not null default '',
+  achievement text not null default '',
+  direction text not null default '',
+  created_at timestamptz not null default now()
+);
+
+-- ---------- Публичные спортивные результаты ----------
+-- Отдельно от public.results: там личные заметки спортсмена, здесь —
+-- протокольные результаты школы, которые показываются на странице «Результаты».
+create table if not exists public.sport_results (
+  id text primary key,
+  athlete_name text not null,
+  event text not null default '',
+  date date not null,
+  discipline text not null default '',
+  result text not null default '',
+  place text not null default '',
+  protocol_url text not null default '',
+  created_at timestamptz not null default now()
+);
+
+create index if not exists sport_results_date_idx on public.sport_results (date desc);
+
 -- ============================================================
 --  Проверка роли без рекурсии в политиках
 -- ============================================================
@@ -321,6 +388,10 @@ alter table public.results enable row level security;
 alter table public.camps enable row level security;
 alter table public.training_photos enable row level security;
 alter table public.news enable row level security;
+alter table public.trainers enable row level security;
+alter table public.events enable row level security;
+alter table public.testimonials enable row level security;
+alter table public.sport_results enable row level security;
 
 -- ---------- profiles ----------
 -- Удалённый аккаунт не читается даже самим владельцем: при входе профиль
@@ -523,6 +594,78 @@ drop policy if exists "invitations: только админ" on public.invitatio
 create policy "invitations: только админ" on public.invitations
   for all using (public.is_admin()) with check (public.is_admin());
 
+-- ---------- trainers ----------
+-- Читают все посетители, правит только владелец школы.
+drop policy if exists "trainers: читают все" on public.trainers;
+create policy "trainers: читают все" on public.trainers
+  for select using (true);
+
+drop policy if exists "trainers: админ создаёт" on public.trainers;
+create policy "trainers: админ создаёт" on public.trainers
+  for insert with check (public.is_admin());
+
+drop policy if exists "trainers: админ правит" on public.trainers;
+create policy "trainers: админ правит" on public.trainers
+  for update using (public.is_admin()) with check (public.is_admin());
+
+drop policy if exists "trainers: админ удаляет" on public.trainers;
+create policy "trainers: админ удаляет" on public.trainers
+  for delete using (public.is_admin());
+
+-- ---------- events ----------
+-- Читают все, правит только владелец.
+drop policy if exists "events: читают все" on public.events;
+create policy "events: читают все" on public.events
+  for select using (true);
+
+drop policy if exists "events: админ создаёт" on public.events;
+create policy "events: админ создаёт" on public.events
+  for insert with check (public.is_admin());
+
+drop policy if exists "events: админ правит" on public.events;
+create policy "events: админ правит" on public.events
+  for update using (public.is_admin()) with check (public.is_admin());
+
+drop policy if exists "events: админ удаляет" on public.events;
+create policy "events: админ удаляет" on public.events
+  for delete using (public.is_admin());
+
+-- ---------- testimonials ----------
+-- Читают все, правит только владелец.
+drop policy if exists "testimonials: читают все" on public.testimonials;
+create policy "testimonials: читают все" on public.testimonials
+  for select using (true);
+
+drop policy if exists "testimonials: админ создаёт" on public.testimonials;
+create policy "testimonials: админ создаёт" on public.testimonials
+  for insert with check (public.is_admin());
+
+drop policy if exists "testimonials: админ правит" on public.testimonials;
+create policy "testimonials: админ правит" on public.testimonials
+  for update using (public.is_admin()) with check (public.is_admin());
+
+drop policy if exists "testimonials: админ удаляет" on public.testimonials;
+create policy "testimonials: админ удаляет" on public.testimonials
+  for delete using (public.is_admin());
+
+-- ---------- sport_results ----------
+-- Публичные результаты: читают все, правит только владелец.
+drop policy if exists "sport_results: читают все" on public.sport_results;
+create policy "sport_results: читают все" on public.sport_results
+  for select using (true);
+
+drop policy if exists "sport_results: админ создаёт" on public.sport_results;
+create policy "sport_results: админ создаёт" on public.sport_results
+  for insert with check (public.is_admin());
+
+drop policy if exists "sport_results: админ правит" on public.sport_results;
+create policy "sport_results: админ правит" on public.sport_results
+  for update using (public.is_admin()) with check (public.is_admin());
+
+drop policy if exists "sport_results: админ удаляет" on public.sport_results;
+create policy "sport_results: админ удаляет" on public.sport_results
+  for delete using (public.is_admin());
+
 -- ============================================================
 --  Realtime: список пользователей и записи обновляются без перезагрузки
 -- ============================================================
@@ -530,7 +673,7 @@ do $do$
 declare
   t text;
 begin
-  foreach t in array array['profiles', 'registrations', 'notifications', 'results', 'trainings', 'camps', 'training_photos', 'news']
+  foreach t in array array['profiles', 'registrations', 'notifications', 'results', 'trainings', 'camps', 'training_photos', 'news', 'trainers', 'events', 'testimonials', 'sport_results']
   loop
     begin
       execute format('alter publication supabase_realtime add table public.%I', t);
