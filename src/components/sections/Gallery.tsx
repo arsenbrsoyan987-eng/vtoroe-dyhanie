@@ -1,5 +1,5 @@
 import SectionTitle from '../ui/SectionTitle';
-import { directions } from '../../data/directions';
+import { useDirections } from '../../store/directionsStore';
 
 /** Плитки направлений: реальные фото, при желании заменяются снимками из админки */
 const TILES = [
@@ -13,6 +13,7 @@ const TILES = [
 ];
 
 export default function Gallery() {
+  const directions = useDirections();
   return (
     <section className="py-20 lg:py-28 bg-secondary">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

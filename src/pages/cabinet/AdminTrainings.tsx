@@ -2,16 +2,12 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { directions } from '../../data/directions';
+import { useTrainings, updateTraining } from '../../store/trainingsStore';
 import { useTrainers } from '../../store/trainersStore';
-import {
-  addTraining,
-  removeTraining,
-  updateTraining,
-  useTrainings,
-} from '../../store/trainingsStore';
-import { visibleTrainings } from '../../lib/access';
-import { formatDate, isPastDate } from '../../lib/date';
+import { useDirections } from '../../store/directionsStore';
+import { activeProfiles, useProfiles } from '../../store/profilesStore';
+import { supabase } from '../../lib/supabase';
+import type { User } from '../../store/database';
 import Button from '../../components/ui/Button';
 import { Camera, Pencil, Plus, Trash2, X } from 'lucide-react';
 
@@ -35,6 +31,7 @@ type FormState = typeof emptyForm;
 export default function AdminTrainings() {
   const all = useTrainings();
   const trainers = useTrainers();
+  const directions = useDirections();
   const { currentUser, registrations } = useAuth();
   const { toast } = useToast();
 

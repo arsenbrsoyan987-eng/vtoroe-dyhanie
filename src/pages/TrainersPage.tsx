@@ -1,11 +1,12 @@
 import { Link } from 'react-router-dom';
 import SectionTitle from '../components/ui/SectionTitle';
 import { useTrainers } from '../store/trainersStore';
-import { directions } from '../data/directions';
+import { useDirections } from '../store/directionsStore';
 import { displayValue, realValue } from '../lib/placeholder';
 
 export default function TrainersPage() {
   const trainers = useTrainers();
+  const directions = useDirections();
 
   return (
     <div className="py-16 lg:py-24">

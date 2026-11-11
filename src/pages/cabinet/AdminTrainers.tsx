@@ -6,7 +6,7 @@ import { useTrainings, updateTraining } from '../../store/trainingsStore';
 import { activeProfiles, useProfiles } from '../../store/profilesStore';
 import { supabase } from '../../lib/supabase';
 import type { User } from '../../store/database';
-import { directions } from '../../data/directions';
+import { useDirections } from '../../store/directionsStore';
 import Button from '../../components/ui/Button';
 import ImageUpload from '../../components/ui/ImageUpload';
 import { Check, Copy, Link2, Mail, Pencil, Plus, Trash2, UserPlus, X } from 'lucide-react';
@@ -41,6 +41,7 @@ export default function AdminTrainers() {
   const trainers = useTrainers();
   const trainings = useTrainings();
   const profiles = useProfiles();
+  const directions = useDirections();
   const { currentUser } = useAuth();
   const { toast } = useToast();
 

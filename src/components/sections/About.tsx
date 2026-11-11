@@ -1,8 +1,9 @@
 import SectionTitle from '../ui/SectionTitle';
-import { directions } from '../../data/directions';
+import { useDirections } from '../../store/directionsStore';
 import { useTrainers } from '../../store/trainersStore';
 
 export default function About() {
+  const directions = useDirections();
   const trainers = useTrainers();
 
   // Только проверяемые цифры: количество направлений и карточек тренеров.

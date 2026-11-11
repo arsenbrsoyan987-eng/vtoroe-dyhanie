@@ -6,7 +6,7 @@ import { useTrainings } from '../store/trainingsStore';
 import { useEvents } from '../store/eventsStore';
 import { useNews } from '../store/newsStore';
 import { useCamps } from '../store/campsStore';
-import { directions } from '../data/directions';
+import { useDirections } from '../store/directionsStore';
 import { realValue } from '../lib/placeholder';
 
 /** Разделы без публичного контента — их не нужно показывать в поиске */
@@ -37,6 +37,7 @@ export default function Seo() {
   const events = useEvents();
   const news = useNews();
   const camps = useCamps();
+  const directions = useDirections();
 
   useEffect(() => {
     // Детальные страницы: заголовок собираем из данных карточки
@@ -160,7 +161,7 @@ export default function Seo() {
 
     // Неизвестный маршрут — отдаём общие метаданные главной
     applySeo({ path: '/' });
-  }, [pathname, trainers, trainings, events, news, camps]);
+  }, [pathname, trainers, trainings, events, news, camps, directions]);
 
   return null;
 }

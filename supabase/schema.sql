@@ -235,6 +235,37 @@ create table if not exists public.sport_results (
 
 create index if not exists sport_results_date_idx on public.sport_results (date desc);
 
+-- ---------- Направления ----------
+-- Раньше лежали файлом src/data/directions.ts: любое изменение текста
+-- требовало коммита и пересборки. Теперь редактируются из админки.
+create table if not exists public.directions (
+  id text primary key,
+  name text not null,
+  name_short text not null default '',
+  description text not null default '',
+  full_description text not null default '',
+  icon text not null default '',
+  image_url text not null default '',
+  suitable_for text[] not null default '{}',
+  required_equipment text[] not null default '{}',
+  level text not null default 'Все уровни',
+  sort_order int not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists directions_sort_idx on public.directions (sort_order);
+
+-- ---------- Настройки сайта ----------
+-- Одна строка на ключ: тексты Hero/About/CTA, заголовок и описание для
+-- поисковиков, контакты. Хранилище «ключ → значение» проще, чем широкий
+-- профиль с десятком колонок, которые почти никогда не меняются вместе.
+create table if not exists public.site_settings (
+  key text primary key,
+  value text not null default '',
+  updated_at timestamptz not null default now()
+);
+
 -- ============================================================
 --  Проверка роли без рекурсии в политиках
 -- ============================================================
@@ -392,6 +423,8 @@ alter table public.trainers enable row level security;
 alter table public.events enable row level security;
 alter table public.testimonials enable row level security;
 alter table public.sport_results enable row level security;
+alter table public.directions enable row level security;
+alter table public.site_settings enable row level security;
 
 -- ---------- profiles ----------
 -- Удалённый аккаунт не читается даже самим владельцем: при входе профиль
@@ -666,6 +699,34 @@ drop policy if exists "sport_results: админ удаляет" on public.sport
 create policy "sport_results: админ удаляет" on public.sport_results
   for delete using (public.is_admin());
 
+-- ---------- directions ----------
+-- Читают все, правит только администратор.
+drop policy if exists "directions: читают все" on public.directions;
+create policy "directions: читают все" on public.directions
+  for select using (true);
+
+drop policy if exists "directions: админ создаёт" on public.directions;
+create policy "directions: админ создаёт" on public.directions
+  for insert with check (public.is_admin());
+
+drop policy if exists "directions: админ правит" on public.directions;
+create policy "directions: админ правит" on public.directions
+  for update using (public.is_admin()) with check (public.is_admin());
+
+drop policy if exists "directions: админ удаляет" on public.directions;
+create policy "directions: админ удаляет" on public.directions
+  for delete using (public.is_admin());
+
+-- ---------- site_settings ----------
+-- Читают все, правит только администратор.
+drop policy if exists "site_settings: читают все" on public.site_settings;
+create policy "site_settings: читают все" on public.site_settings
+  for select using (true);
+
+drop policy if exists "site_settings: админ правит" on public.site_settings;
+create policy "site_settings: админ правит" on public.site_settings
+  for update using (public.is_admin()) with check (public.is_admin());
+
 -- ============================================================
 --  Realtime: список пользователей и записи обновляются без перезагрузки
 -- ============================================================
@@ -673,7 +734,7 @@ do $do$
 declare
   t text;
 begin
-  foreach t in array array['profiles', 'registrations', 'notifications', 'results', 'trainings', 'camps', 'training_photos', 'news', 'trainers', 'events', 'testimonials', 'sport_results']
+  foreach t in array array['profiles', 'registrations', 'notifications', 'results', 'trainings', 'camps', 'training_photos', 'news', 'trainers', 'events', 'testimonials', 'sport_results', 'directions', 'site_settings']
   loop
     begin
       execute format('alter publication supabase_realtime add table public.%I', t);

@@ -1,6 +1,6 @@
 import { useParams, Link } from 'react-router-dom';
 import Button from '../components/ui/Button';
-import { directions } from '../data/directions';
+import { useDirections } from '../store/directionsStore';
 import { useTrainers } from '../store/trainersStore';
 import { useTrainings } from '../store/trainingsStore';
 import { displayValue, realValue } from '../lib/placeholder';
@@ -9,6 +9,7 @@ import { formatDate, isPastDate } from '../lib/date';
 export default function DirectionDetailPage() {
   const trainings = useTrainings();
   const trainers = useTrainers();
+  const directions = useDirections();
   const { id } = useParams<{ id: string }>();
   const direction = directions.find((d) => d.id === id);
 

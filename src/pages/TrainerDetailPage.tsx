@@ -1,16 +1,15 @@
-import { Link, useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { useTrainer, useTrainers } from '../store/trainersStore';
 import { useTrainings } from '../store/trainingsStore';
-import { directions } from '../data/directions';
-import { formatDate, isPastDate } from '../lib/date';
+import { useDirections } from '../store/directionsStore';
 import { displayValue, realValue } from '../lib/placeholder';
 import Button from '../components/ui/Button';
-import { ArrowLeft, Mail, Phone } from 'lucide-react';
 
 export default function TrainerDetailPage() {
   const { id } = useParams<{ id: string }>();
   const trainer = useTrainer(id);
   const all = useTrainers();
+  const directions = useDirections();
   const trainings = useTrainings();
 
   if (!trainer) {

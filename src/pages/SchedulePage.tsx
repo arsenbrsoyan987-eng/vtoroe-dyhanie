@@ -1,22 +1,14 @@
-import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
-import SectionTitle from '../components/ui/SectionTitle';
-import Button from '../components/ui/Button';
-import { useTrainings } from '../store/trainingsStore';
 import { useAuth } from '../context/AuthContext';
-import { directions } from '../data/directions';
-import { formatDate, isPastDate, todayISO } from '../lib/date';
-import { displayValue, realValue } from '../lib/placeholder';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-
-const WEEK_DAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
-const MONTHS = [
-  'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
-  'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь',
-];
+import { useToast } from '../context/ToastContext';
+import { useTrainings } from '../store/trainingsStore';
+import { useDirections } from '../store/directionsStore';
+import { CalendarDays, List, ChevronLeft, ChevronRight } from 'lucide-react';
+import Button from '../components/ui/Button';
+import { useState } from 'react';
 
 export default function SchedulePage() {
   const trainings = useTrainings();
+  const directions = useDirections();
   const { registrations } = useAuth();
   const [view, setView] = useState<'list' | 'calendar'>('list');
   const [filterDir, setFilterDir] = useState('all');
