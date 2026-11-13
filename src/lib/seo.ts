@@ -9,11 +9,23 @@
 import type { Trainer } from '../types';
 import { isPlaceholder } from './placeholder';
 
-const SITE_NAME = 'Второе дыхание';
 const SITE_URL = 'https://vtoroe-dyhanie.ru';
-const DEFAULT_TITLE = 'Второе дыхание — спортивная школа: бег, трейл, вело, походы';
-const DEFAULT_DESCRIPTION =
+const FALLBACK_NAME = 'Второе дыхание';
+export const FALLBACK_TITLE = 'Второе дыхание — спортивная школа: бег, трейл, вело, походы';
+export const FALLBACK_DESCRIPTION =
   'Спортивная школа «Второе дыхание» в Москве: бег, трейлраннинг, велоспорт, походы, функциональная подготовка, лыжные гонки и триатлон. Группы для начинающих и персональные занятия.';
+
+/** Активные значения названия и метатегов главной. */
+let SITE_NAME = FALLBACK_NAME;
+let ACTIVE_TITLE = FALLBACK_TITLE;
+let ACTIVE_DESCRIPTION = FALLBACK_DESCRIPTION;
+
+/** Применяет настройки сайта к метатегам. Пустые значения = вернуть значения по умолчанию. */
+export function setSiteIdentity(name: string, title: string, description: string) {
+  SITE_NAME = name.trim() || FALLBACK_NAME;
+  ACTIVE_TITLE = title.trim() || FALLBACK_TITLE;
+  ACTIVE_DESCRIPTION = description.trim() || FALLBACK_DESCRIPTION;
+}
 
 interface SeoOptions {
   /** Заголовок без названия школы — оно добавится само */
@@ -54,8 +66,8 @@ function canonicalPath(path: string) {
 }
 
 export function applySeo({ title, description, path = '/', image, noindex }: SeoOptions = {}) {
-  const fullTitle = title ? `${title} — ${SITE_NAME}` : DEFAULT_TITLE;
-  const desc = description ?? DEFAULT_DESCRIPTION;
+  const fullTitle = title ? `${title} — ${SITE_NAME}` : ACTIVE_TITLE;
+  const desc = description ?? ACTIVE_DESCRIPTION;
   const url = `${SITE_URL}${canonicalPath(path)}`;
   const img = image
     ? image.startsWith('http')
@@ -141,9 +153,10 @@ export function trainerSeo(
 
 /** Мета для статических разделов: ключ — путь без завершающего слэша */
 export const STATIC_SEO: Record<string, { title: string; description: string }> = {
+  // Для главной описание пустое: applySeo подставит актуальное из настроек сайта
   '/': {
     title: '',
-    description: DEFAULT_DESCRIPTION,
+    description: '',
   },
   '/directions': {
     title: 'Направления тренировок',

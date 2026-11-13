@@ -1,8 +1,9 @@
 /*
- * Переносит данные из src/data/published.json в Supabase.
+ * Переносит данные из файлов src/data/*.json в Supabase.
  *
- * Расписание и новости переехали в базу: записи спортсменов ссылаются на id
- * тренировки, а тренер видит только свои занятия (RLS). Скрипт нужен при
+ * Расписание, новости, кэмпы и фото тренировок сохраняются сразу
+ * в базу: записи спортсменов ссылаются на id тренировки,
+ * а тренер видит только свои занятия (RLS). Скрипт нужен при
  * переходе и потом — если данные правили файлом, а не через админку.
  *
  * Запуск:
@@ -23,10 +24,23 @@ if (!URL_BASE || !SECRET) {
   process.exit(1);
 }
 
-const file = path.join(__dirname, '..', 'src', 'data', 'published.json');
-const data = JSON.parse(fs.readFileSync(file, 'utf8'));
+const root = path.join(__dirname, '..');
 
-const trainingRows = (Array.isArray(data.trainings) ? data.trainings : []).map((t) => ({
+/** Читаем JSON из src/data */
+function readJson(name) {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(root, 'src', 'data', name), 'utf8'));
+  } catch {
+    console.log(`${name}: файл не найден, пропускаем`);
+    return null;
+  }
+}
+
+const published = readJson('published.json');
+const directions = readJson('directions.json');
+
+// --- trainings ---
+const trainingRows = (Array.isArray(published?.trainings) ? published.trainings : []).map((t) => ({
   id: t.id,
   name: t.name,
   direction_id: t.directionId || 'running',
@@ -44,7 +58,8 @@ const trainingRows = (Array.isArray(data.trainings) ? data.trainings : []).map((
   image: t.image || '',
 }));
 
-const newsRows = (Array.isArray(data.news) ? data.news : []).map((n) => ({
+// --- news ---
+const newsRows = (Array.isArray(published?.news) ? published.news : []).map((n) => ({
   id: n.id,
   title: n.title,
   summary: n.summary || '',
@@ -55,7 +70,8 @@ const newsRows = (Array.isArray(data.news) ? data.news : []).map((n) => ({
   author_name: n.authorName || '',
 }));
 
-const campRows = (Array.isArray(data.camps) ? data.camps : []).map((c) => ({
+// --- camps ---
+const campRows = (Array.isArray(published?.camps) ? published.camps : []).map((c) => ({
   id: c.id,
   name: c.name,
   location: c.location || '',
@@ -73,7 +89,8 @@ const campRows = (Array.isArray(data.camps) ? data.camps : []).map((c) => ({
   published: c.published !== false,
 }));
 
-const trainerRows = (Array.isArray(data.trainers) ? data.trainers : []).map((t) => ({
+// --- trainers ---
+const trainerRows = (Array.isArray(published?.trainers) ? published.trainers : []).map((t) => ({
   id: t.id,
   name: t.name || '',
   photo: t.photo || '',
@@ -86,7 +103,8 @@ const trainerRows = (Array.isArray(data.trainers) ? data.trainers : []).map((t) 
   email: t.email || '',
 }));
 
-const eventRows = (Array.isArray(data.events) ? data.events : []).map((e) => ({
+// --- events ---
+const eventRows = (Array.isArray(published?.events) ? published.events : []).map((e) => ({
   id: e.id,
   name: e.name || '',
   category: e.category || 'competition',
@@ -102,7 +120,8 @@ const eventRows = (Array.isArray(data.events) ? data.events : []).map((e) => ({
   requirements: Array.isArray(e.requirements) ? e.requirements : [],
 }));
 
-const testimonialRows = (Array.isArray(data.testimonials) ? data.testimonials : []).map((t) => ({
+// --- testimonials ---
+const testimonialRows = (Array.isArray(published?.testimonials) ? published.testimonials : []).map((t) => ({
   id: t.id,
   name: t.name || '',
   photo: t.photo || '',
@@ -111,7 +130,8 @@ const testimonialRows = (Array.isArray(data.testimonials) ? data.testimonials : 
   direction: t.direction || '',
 }));
 
-const sportResultRows = (Array.isArray(data.results) ? data.results : []).map((r) => ({
+// --- sport_results ---
+const sportResultRows = (Array.isArray(published?.results) ? published.results : []).map((r) => ({
   id: r.id,
   athlete_name: r.athleteName || '',
   event: r.event || '',
@@ -121,6 +141,56 @@ const sportResultRows = (Array.isArray(data.results) ? data.results : []).map((r
   place: r.place || '',
   protocol_url: r.protocolUrl || '',
 }));
+
+// --- directions ---
+const directionRows = (Array.isArray(directions) ? directions : []).map((d, i) => ({
+  id: d.id,
+  name: d.name || '',
+  name_short: d.nameShort || d.name || '',
+  description: d.description || '',
+  full_description: d.fullDescription || '',
+  icon: d.icon || '🏃',
+  image_url: d.imageUrl || '',
+  suitable_for: Array.isArray(d.suitableFor) ? d.suitableFor : [],
+  required_equipment: Array.isArray(d.requiredEquipment) ? d.requiredEquipment : [],
+  level: d.level || 'Все уровни',
+  sort_order: i,
+}));
+
+// --- site_settings ---
+/**
+ * club.json — уже есть как JSON, поэтому парсим напрямую:
+ * вложенный объект owner и массив phones не ломают парсер.
+ */
+const clubData = readJson('club.json');
+let siteSettingsRows = [];
+if (clubData) {
+  const c = clubData;
+  siteSettingsRows = [
+    { key: 'siteName', value: c.name || '' },
+    { key: 'siteTitle', value: '' },  // пусто — подставится fallback из кода
+    { key: 'siteDescription', value: '' },
+    { key: 'heroTitle', value: '' },
+    { key: 'heroSubtitle', value: '' },
+    { key: 'aboutTitle', value: '' },
+    { key: 'aboutSubtitle', value: '' },
+    { key: 'ctaTitle', value: '' },
+    { key: 'ctaSubtitle', value: '' },
+    { key: 'fullName', value: c.fullName || '' },
+    { key: 'city', value: c.city || '' },
+    { key: 'phones', value: Array.isArray(c.phones) ? c.phones.join('\n') : '' },
+    { key: 'email', value: c.email || '' },
+    { key: 'telegram', value: c.telegram || '' },
+    { key: 'telegramLabel', value: c.telegramLabel || '' },
+    { key: 'addressNote', value: c.addressNote || '' },
+    { key: 'ownerName', value: c.owner?.name || '' },
+    { key: 'ownerRole', value: c.owner?.role || '' },
+    { key: 'ownerEmail', value: c.owner?.email || '' },
+    { key: 'ownerPhone', value: c.owner?.phone || '' },
+  ];
+} else {
+  console.log('site_settings: club.json не найден — пропустим');
+}
 
 /** Вставляет строки пачками: PostgREST не любит гигантские тела запросов */
 async function upsert(table, rows) {
@@ -157,4 +227,24 @@ async function upsert(table, rows) {
   await upsert('events', eventRows);
   await upsert('testimonials', testimonialRows);
   await upsert('sport_results', sportResultRows);
+  await upsert('directions', directionRows);
+  // site_settings использует уникальный ключ, поэтому не нужно on_conflict
+  if (siteSettingsRows.length > 0) {
+    const res = await fetch(`${URL_BASE}/rest/v1/site_settings`, {
+      method: 'POST',
+      headers: {
+        apikey: SECRET,
+        Authorization: `Bearer ${SECRET}`,
+        'Content-Type': 'application/json',
+        'On-Conflict': 'key',
+      },
+      body: JSON.stringify(siteSettingsRows),
+    });
+    if (res.ok) {
+      console.log(`site_settings: вставлено ${siteSettingsRows.length}`);
+    } else {
+      console.error(`site_settings: ошибка ${res.status} — ${await res.text()}`);
+      process.exitCode = 1;
+    }
+  }
 })();

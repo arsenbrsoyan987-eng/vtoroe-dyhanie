@@ -1,7 +1,13 @@
 import SectionTitle from '../components/ui/SectionTitle';
-import { CLUB, telHref } from '../data/club';
+import { telHref } from '../data/club';
+import { useSetting, useSettingList } from '../store/settingsStore';
 
 export default function PrivacyPage() {
+  const fullName = useSetting('fullName');
+  const city = useSetting('city');
+  const email = useSetting('email');
+  const phones = useSettingList('phones');
+
   return (
     <div className="py-16 lg:py-24">
       <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
@@ -11,7 +17,7 @@ export default function PrivacyPage() {
           <section>
             <h2 className="mb-2 text-base font-semibold text-white">1. Общие положения</h2>
             <p>
-              Настоящая политика описывает, как {CLUB.fullName} обрабатывает
+              Настоящая политика описывает, как {fullName} обрабатывает
               персональные данные пользователей сайта. Используя сайт
               и создавая аккаунт, вы соглашаетесь с условиями этой политики.
             </p>
@@ -60,14 +66,14 @@ export default function PrivacyPage() {
           <section>
             <h2 className="mb-2 text-base font-semibold text-white">6. Контакты</h2>
             <p>
-              {CLUB.fullName}, {CLUB.city}. По вопросам обработки персональных
+              {fullName}, {city}. По вопросам обработки персональных
               данных пишите на{' '}
-              <a href={`mailto:${CLUB.email}`} className="text-accent-blue hover:underline">
-                {CLUB.email}
+              <a href={`mailto:${email}`} className="text-accent-blue hover:underline">
+                {email}
               </a>{' '}
               или звоните:{' '}
-              <a href={telHref(CLUB.phones[0])} className="text-accent-blue hover:underline">
-                {CLUB.phones[0]}
+              <a href={telHref(phones[0] ?? '')} className="text-accent-blue hover:underline">
+                {phones[0]}
               </a>
               .
             </p>

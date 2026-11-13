@@ -1,6 +1,5 @@
 import { useSyncExternalStore } from 'react';
 import { supabase } from '../lib/supabase';
-import { published } from '../data/published';
 import { directions as seedDirections } from '../data/directions';
 import type { Direction } from '../types';
 
@@ -36,6 +35,13 @@ function fromRow(row: DirectionRow): Direction {
   };
 }
 
+/**
+ * Порядок карточек из колонки `sort_order`.
+ *
+ * Держим отдельно от Direction: тип публичный, и поле «позиция в базе» в нём
+ * только сбивало бы. Раньше `toRow` всегда писал 0, и любое сохранение
+ * уводило направление в начало списка.
+ */
 function toRow(d: Direction): DirectionRow {
   return {
     id: d.id,
@@ -48,13 +54,20 @@ function toRow(d: Direction): DirectionRow {
     suitable_for: d.suitableFor,
     required_equipment: d.requiredEquipment,
     level: d.level,
-    sort_order: 0,
+    sort_order: sortOrder.get(d.id) ?? cache.length,
   };
 }
 
 const listeners = new Set<() => void>();
-const FALLBACK: Direction[] = published.directions ?? seedDirections;
+/**
+ * Запасной вариант, пока база недоступна или таблица пуста.
+ *
+ * `published.json` направлений не содержит — они никогда не выгружались
+ * через админку, поэтому источник один: значения из сборки.
+ */
+const FALLBACK: Direction[] = seedDirections;
 let cache: Direction[] = FALLBACK;
+let sortOrder = new Map(FALLBACK.map((d, i) => [d.id, i]));
 let started = false;
 let channel: ReturnType<typeof supabase.channel> | null = null;
 
@@ -69,7 +82,16 @@ export async function reloadDirections(): Promise<Direction[]> {
     .order('sort_order', { ascending: true });
 
   if (error) throw error;
-  cache = (data as DirectionRow[]).map(fromRow);
+  const rows = data as DirectionRow[];
+  // Пустая таблица (схему применили, а данные не перенесли) не должна
+  // очищать сайт: держим значения из сборки, пока админ не заполнит раздел.
+  if (rows.length === 0) {
+    cache = FALLBACK;
+    sortOrder = new Map(FALLBACK.map((d, i) => [d.id, i]));
+  } else {
+    cache = rows.map(fromRow);
+    sortOrder = new Map(rows.map((r) => [r.id, r.sort_order]));
+  }
   emit();
   return cache;
 }

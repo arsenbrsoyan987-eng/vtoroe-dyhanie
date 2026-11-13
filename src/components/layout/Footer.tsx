@@ -1,7 +1,15 @@
 import { Link } from 'react-router-dom';
-import { CLUB, telHref } from '../../data/club';
+import { telHref } from '../../data/club';
+import { useSetting, useSettingList } from '../../store/settingsStore';
 
 export default function Footer() {
+  const fullName = useSetting('fullName');
+  const city = useSetting('city');
+  const addressNote = useSetting('addressNote');
+  const email = useSetting('email');
+  const telegram = useSetting('telegram');
+  const phones = useSettingList('phones');
+
   return (
     <footer className="bg-surface border-t border-white/10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
@@ -12,7 +20,7 @@ export default function Footer() {
               <span className="bg-white rounded-md px-3 py-2 flex items-center">
                 <img
                   src="/logo.jpg"
-                  alt="Логотип школы «Второе дыхание»"
+                  alt={`Логотип школы «${fullName}»`}
                   className="h-16 w-auto object-contain"
                 />
               </span>
@@ -57,8 +65,8 @@ export default function Footer() {
               Контакты
             </h3>
             <ul className="space-y-3 text-sm text-gray-400">
-              <li className="text-gray-500">{CLUB.city}</li>
-              {CLUB.phones.map((phone) => (
+              <li className="text-gray-500">{city}</li>
+              {phones.map((phone) => (
                 <li key={phone}>
                   <a href={telHref(phone)} className="transition-colors hover:text-white">
                     {phone}
@@ -66,13 +74,13 @@ export default function Footer() {
                 </li>
               ))}
               <li>
-                <a href={`mailto:${CLUB.email}`} className="transition-colors hover:text-white">
-                  {CLUB.email}
+                <a href={`mailto:${email}`} className="transition-colors hover:text-white">
+                  {email}
                 </a>
               </li>
             </ul>
             <p className="mt-4 text-xs leading-relaxed text-gray-600">
-              {CLUB.addressNote}
+              {addressNote}
             </p>
           </div>
 
@@ -83,7 +91,7 @@ export default function Footer() {
             </h3>
             <div className="flex gap-3">
               <a
-                href={CLUB.telegram}
+                href={telegram}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex h-10 w-10 items-center justify-center rounded-sm bg-white/10 text-gray-400 transition-all hover:bg-accent-blue hover:text-white"
@@ -97,7 +105,7 @@ export default function Footer() {
             <p className="mt-4 text-xs text-gray-500">
               Новости школы и анонсы тренировок — в{' '}
               <a
-                href={CLUB.telegram}
+                href={telegram}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-accent-blue hover:underline"
@@ -112,7 +120,7 @@ export default function Footer() {
         {/* Bottom */}
         <div className="mt-12 pt-8 border-t border-white/10 flex flex-col sm:flex-row justify-between items-center gap-4">
           <p className="text-gray-500 text-xs">
-            © {new Date().getFullYear()} {CLUB.fullName}. Все права защищены.
+            © {new Date().getFullYear()} {fullName}. Все права защищены.
           </p>
           <div className="flex items-center gap-4">
             <Link to="/privacy" className="text-xs text-gray-500 transition-colors hover:text-white">

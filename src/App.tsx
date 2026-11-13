@@ -47,6 +47,8 @@ const AdminCamps = lazy(() => import('./pages/cabinet/AdminCamps'));
 const TrainerPhotos = lazy(() => import('./pages/cabinet/TrainerPhotos'));
 const AdminResults = lazy(() => import('./pages/cabinet/AdminResults'));
 const AdminNotifications = lazy(() => import('./pages/cabinet/AdminNotifications'));
+const AdminDirections = lazy(() => import('./pages/cabinet/AdminDirections'));
+const AdminSiteSettings = lazy(() => import('./pages/cabinet/AdminSiteSettings'));
 const PaymentPage = lazy(() => import('./pages/cabinet/PaymentPage'));
 const CalendarExport = lazy(() => import('./pages/cabinet/CalendarExport'));
 const EventQR = lazy(() => import('./pages/cabinet/EventQR'));
@@ -209,10 +211,26 @@ export default function App() {
                   }
                 />
                 <Route
+                  path="admin/site-settings"
+                  element={
+                    <ProtectedRoute roles={['admin']}>
+                      <AdminSiteSettings />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
                   path="admin/trainers"
                   element={
                     <ProtectedRoute roles={['admin']}>
                       <AdminTrainers />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="admin/directions"
+                  element={
+                    <ProtectedRoute roles={['admin']}>
+                      <AdminDirections />
                     </ProtectedRoute>
                   }
                 />

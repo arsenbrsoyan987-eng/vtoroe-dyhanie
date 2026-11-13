@@ -1,10 +1,15 @@
 import SectionTitle from '../ui/SectionTitle';
 import { useDirections } from '../../store/directionsStore';
 import { useTrainers } from '../../store/trainersStore';
+import { useSetting } from '../../store/settingsStore';
 
 export default function About() {
   const directions = useDirections();
   const trainers = useTrainers();
+  const aboutTitle = useSetting('aboutTitle');
+  const aboutSubtitle = useSetting('aboutSubtitle');
+  const aboutText1 = useSetting('aboutText1');
+  const aboutText2 = useSetting('aboutText2');
 
   // Только проверяемые цифры: количество направлений и карточек тренеров.
   // Придуманные «500+ участников» на старте выглядят как обман.
@@ -22,21 +27,15 @@ export default function About() {
           {/* Text */}
           <div>
             <SectionTitle
-              subtitle="О школе"
-              title="Движение — это жизнь"
+              subtitle={aboutSubtitle}
+              title={aboutTitle}
               align="left"
             />
             <p className="text-gray-300 text-base md:text-lg leading-relaxed mb-6">
-              «Второе дыхание» — это спортивная школа, объединяющая людей,
-              которые любят движение. Мы верим, что спорт — это не только
-              результаты на соревнованиях, но и свобода, общение, преодоление
-              себя и открытие новых горизонтов.
+              {aboutText1}
             </p>
             <p className="text-gray-400 text-base leading-relaxed mb-8">
-              Наша школа основана на принципах взаимной поддержки, постоянных
-              тренировок и активного отдыха на природе. Мы бегаем по городским
-              паркам и горным тропам, крутим педали по пригородным дорогам,
-              ходим в походы и тренируемся функционально — в зале и на улице.
+              {aboutText2}
             </p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
               {stats.map((stat) => (

@@ -1,15 +1,12 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { useToast } from '../../context/ToastContext';
 import { activeProfiles, useProfiles } from '../../store/profilesStore';
 import { useTrainings } from '../../store/trainingsStore';
-import { downloadPublished } from '../../lib/publish';
-import { Camera, Users, ClipboardList, Calendar, Trophy, TrendingUp, Newspaper, PartyPopper, Download, Tent } from 'lucide-react';
+import { Camera, Users, ClipboardList, Calendar, Trophy, TrendingUp, Newspaper, PartyPopper, Tent } from 'lucide-react';
 
 export default function AdminDashboard() {
   const trainings = useTrainings();
   const { registrations } = useAuth();
-  const { toast } = useToast();
   // Счётчики считаются по общей базе и обновляются в реальном времени
   const users = activeProfiles(useProfiles());
   const athletes = users.filter((u) => u.role === 'athlete').length;
@@ -17,15 +14,10 @@ export default function AdminDashboard() {
   const totalRegs = registrations.filter((r) => r.status !== 'cancelled').length;
   const totalAttended = registrations.filter((r) => r.attended).length;
 
-  const handlePublish = () => {
-    downloadPublished();
-    toast('Файл published.json скачан — выполните npm run publish');
-  };
-
   return (
     <div>
       <h1 className="text-2xl font-bold text-white mb-2">Панель администратора</h1>
-      <p className="text-gray-400 text-sm mb-8">Управление школаом «Второе дыхание»</p>
+      <p className="text-gray-400 text-sm mb-8">Управление школой «Второе дыхание»</p>
 
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
         <div className="bg-surface border border-white/10 rounded-sm p-5">
@@ -65,6 +57,14 @@ export default function AdminDashboard() {
           <Users className="w-6 h-6 text-gray-400 group-hover:text-accent-red mx-auto mb-2 transition-colors" />
           <div className="text-white text-sm">Тренеры</div>
         </Link>
+        <Link to="/cabinet/admin/directions" className="bg-surface border border-white/10 rounded-sm p-4 hover:border-accent-red/30 transition-colors text-center block group">
+          <TrendingUp className="w-6 h-6 text-gray-400 group-hover:text-accent-red mx-auto mb-2 transition-colors" />
+          <div className="text-white text-sm">Направления</div>
+        </Link>
+        <Link to="/cabinet/admin/site-settings" className="bg-surface border border-white/10 rounded-sm p-4 hover:border-accent-red/30 transition-colors text-center block group">
+          <Calendar className="w-6 h-6 text-gray-400 group-hover:text-accent-red mx-auto mb-2 transition-colors" />
+          <div className="text-white text-sm">Настройки сайта</div>
+        </Link>
         <Link to="/cabinet/admin/trainings" className="bg-surface border border-white/10 rounded-sm p-4 hover:border-accent-red/30 transition-colors text-center block group">
           <ClipboardList className="w-6 h-6 text-gray-400 group-hover:text-accent-red mx-auto mb-2 transition-colors" />
           <div className="text-white text-sm">Тренировки</div>
@@ -93,24 +93,12 @@ export default function AdminDashboard() {
           <Trophy className="w-6 h-6 text-gray-400 group-hover:text-accent-red mx-auto mb-2 transition-colors" />
           <div className="text-white text-sm">Результаты</div>
         </Link>
-        <button
-          type="button"
-          onClick={handlePublish}
-          className="bg-surface border border-accent-red/40 rounded-sm p-4 hover:border-accent-red transition-colors text-center block group"
-        >
-          <Download className="w-6 h-6 text-accent-red mx-auto mb-2" />
-          <div className="text-white text-sm">Опубликовать</div>
-        </button>
       </div>
 
       <div className="mt-4 rounded-sm border border-accent-blue/30 bg-accent-blue/10 px-4 py-3">
         <p className="text-xs leading-relaxed text-blue-200">
-          Тренеры, тренировки, новости, кэмпы и фото тренировок сохраняются сразу
-          в базе — правки видны всем посетителям без публикации файла. Кнопка
-          «Опубликовать» нужна для мероприятий, отзывов и результатов: она
-          скачивает <code className="font-mono">published.json</code>, который
-          затем коммитится в репозиторий командой{' '}
-          <code className="font-mono">npm run publish</code>.
+          Все данные хранятся в Supabase и обновляются мгновенно — правки из админки
+          сразу видны всем посетителям. Кнопка «Опубликовать» больше не нужна.
         </p>
       </div>
 
