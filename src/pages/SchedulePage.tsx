@@ -1,10 +1,13 @@
+import { Link } from 'react-router-dom';
+import { useMemo, useState } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { useToast } from '../context/ToastContext';
 import { useTrainings } from '../store/trainingsStore';
 import { useDirections } from '../store/directionsStore';
-import { CalendarDays, List, ChevronLeft, ChevronRight } from 'lucide-react';
+import { MONTHS, WEEK_DAYS, formatDate, isPastDate, todayISO } from '../lib/date';
+import { displayValue, realValue } from '../lib/placeholder';
 import Button from '../components/ui/Button';
-import { useState } from 'react';
+import SectionTitle from '../components/ui/SectionTitle';
 
 export default function SchedulePage() {
   const trainings = useTrainings();

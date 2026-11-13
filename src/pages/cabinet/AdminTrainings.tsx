@@ -2,14 +2,13 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { useTrainings, updateTraining } from '../../store/trainingsStore';
+import { useTrainings, updateTraining, removeTraining, addTraining } from '../../store/trainingsStore';
 import { useTrainers } from '../../store/trainersStore';
 import { useDirections } from '../../store/directionsStore';
-import { activeProfiles, useProfiles } from '../../store/profilesStore';
-import { supabase } from '../../lib/supabase';
-import type { User } from '../../store/database';
+import { visibleTrainings } from '../../lib/access';
 import Button from '../../components/ui/Button';
 import { Camera, Pencil, Plus, Trash2, X } from 'lucide-react';
+import { isPastDate, formatDate } from '../../lib/date';
 
 const LEVELS = ['Начинающий', 'Средний', 'Продвинутый', 'Все уровни'];
 

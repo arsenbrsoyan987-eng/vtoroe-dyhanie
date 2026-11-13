@@ -1,7 +1,9 @@
 import { useParams, Link } from 'react-router-dom';
+import { ArrowLeft, Mail, Phone } from 'lucide-react';
 import { useTrainer, useTrainers } from '../store/trainersStore';
 import { useTrainings } from '../store/trainingsStore';
 import { useDirections } from '../store/directionsStore';
+import { formatDate, isPastDate } from '../lib/date';
 import { displayValue, realValue } from '../lib/placeholder';
 import Button from '../components/ui/Button';
 
