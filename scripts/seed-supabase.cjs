@@ -157,6 +157,25 @@ const directionRows = (Array.isArray(directions) ? directions : []).map((d, i) =
   sort_order: i,
 }));
 
+// --- routes ---
+const routeRows = (Array.isArray(readJson('routes.json')) ? readJson('routes.json') : []).map(
+  (r, i) => ({
+    id: r.id,
+    name: r.name || '',
+    type: r.type || 'running',
+    image: r.image || '',
+    distance: r.distance || '',
+    elevation: r.elevation || '',
+    duration: r.duration || '',
+    difficulty: r.difficulty || 'easy',
+    description: r.description || '',
+    start_point: r.startPoint || '',
+    map_url: r.mapUrl || '',
+    gpx_url: r.gpxUrl || '',
+    sort_order: i,
+  })
+);
+
 // --- site_settings ---
 /**
  * club.json — уже есть как JSON, поэтому парсим напрямую:
@@ -228,6 +247,7 @@ async function upsert(table, rows) {
   await upsert('testimonials', testimonialRows);
   await upsert('sport_results', sportResultRows);
   await upsert('directions', directionRows);
+  await upsert('routes', routeRows);
   // site_settings использует уникальный ключ, поэтому не нужно on_conflict
   if (siteSettingsRows.length > 0) {
     const res = await fetch(`${URL_BASE}/rest/v1/site_settings`, {

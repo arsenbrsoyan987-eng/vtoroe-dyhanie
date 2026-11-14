@@ -51,6 +51,7 @@ const AdminNotifications = lazy(() => import('./pages/cabinet/AdminNotifications
 const AdminDirections = lazy(() => import('./pages/cabinet/AdminDirections'));
 const AdminSiteSettings = lazy(() => import('./pages/cabinet/AdminSiteSettings'));
 const AdminAppearance = lazy(() => import('./pages/cabinet/AdminAppearance'));
+const AdminRoutes = lazy(() => import('./pages/cabinet/AdminRoutes'));
 const PaymentPage = lazy(() => import('./pages/cabinet/PaymentPage'));
 const CalendarExport = lazy(() => import('./pages/cabinet/CalendarExport'));
 const EventQR = lazy(() => import('./pages/cabinet/EventQR'));
@@ -226,6 +227,14 @@ export default function App() {
                   element={
                     <ProtectedRoute roles={['admin']}>
                       <AdminAppearance />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="admin/routes"
+                  element={
+                    <ProtectedRoute roles={['admin']}>
+                      <AdminRoutes />
                     </ProtectedRoute>
                   }
                 />

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import SectionTitle from '../components/ui/SectionTitle';
-import { routes } from '../data/routes';
+import { useRoutes } from '../store/routesStore';
 
 const typeLabels: Record<string, string> = {
   running: 'Бег',
@@ -24,6 +24,7 @@ const difficultyColors: Record<string, string> = {
 };
 
 export default function RoutesPage() {
+  const routes = useRoutes();
   const [filter, setFilter] = useState('all');
   const filtered = filter === 'all' ? routes : routes.filter((r) => r.type === filter);
 
