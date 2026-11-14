@@ -10,6 +10,7 @@ export default function About() {
   const aboutSubtitle = useSetting('aboutSubtitle');
   const aboutText1 = useSetting('aboutText1');
   const aboutText2 = useSetting('aboutText2');
+  const aboutImage = useSetting('aboutImage');
 
   // Только проверяемые цифры: количество направлений и карточек тренеров.
   // Придуманные «500+ участников» на старте выглядят как обман.
@@ -55,10 +56,16 @@ export default function About() {
           <div className="relative">
             <div className="aspect-[4/3] rounded-sm overflow-hidden">
               <img
-                src="/images/about.svg"
+                src={aboutImage}
                 alt="Атмосфера школы"
                 className="w-full h-full object-cover"
                 loading="lazy"
+                onError={(e) => {
+                  const img = e.currentTarget;
+                  if (img.dataset.fallback) return;
+                  img.dataset.fallback = '1';
+                  img.src = '/images/about.svg';
+                }}
               />
             </div>
             {/* Декор только на широких экранах: на мобильном он вылезает за край */}

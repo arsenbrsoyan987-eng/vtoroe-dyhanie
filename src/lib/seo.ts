@@ -19,12 +19,19 @@ export const FALLBACK_DESCRIPTION =
 let SITE_NAME = FALLBACK_NAME;
 let ACTIVE_TITLE = FALLBACK_TITLE;
 let ACTIVE_DESCRIPTION = FALLBACK_DESCRIPTION;
+let ACTIVE_OG_IMAGE = '/og-image.jpg';
 
 /** Применяет настройки сайта к метатегам. Пустые значения = вернуть значения по умолчанию. */
-export function setSiteIdentity(name: string, title: string, description: string) {
+export function setSiteIdentity(
+  name: string,
+  title: string,
+  description: string,
+  ogImage = ''
+) {
   SITE_NAME = name.trim() || FALLBACK_NAME;
   ACTIVE_TITLE = title.trim() || FALLBACK_TITLE;
   ACTIVE_DESCRIPTION = description.trim() || FALLBACK_DESCRIPTION;
+  ACTIVE_OG_IMAGE = ogImage.trim() || '/og-image.jpg';
 }
 
 interface SeoOptions {
@@ -73,7 +80,7 @@ export function applySeo({ title, description, path = '/', image, noindex }: Seo
     ? image.startsWith('http')
       ? image
       : `${SITE_URL}${image}`
-    : `${SITE_URL}/og-image.jpg`;
+    : `${SITE_URL}${ACTIVE_OG_IMAGE}`;
 
   document.title = fullTitle;
 

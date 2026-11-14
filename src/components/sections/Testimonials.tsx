@@ -1,11 +1,14 @@
 import SectionTitle from '../ui/SectionTitle';
 import { useTestimonials } from '../../store/testimonialsStore';
+import { useSetting } from '../../store/settingsStore';
 import { isFilled } from '../../lib/placeholder';
 
 export default function Testimonials() {
   const testimonials = useTestimonials().filter((item) =>
     isFilled(item, ['name', 'text']),
   );
+  const title = useSetting('testimonialsTitle');
+  const subtitle = useSetting('testimonialsSubtitle');
 
   if (testimonials.length === 0) return null;
 
@@ -13,8 +16,8 @@ export default function Testimonials() {
     <section className="py-20 lg:py-28 bg-primary">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <SectionTitle
-          subtitle="Истории"
-          title="Голоса школы"
+          subtitle={subtitle}
+          title={title}
           align="center"
         />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

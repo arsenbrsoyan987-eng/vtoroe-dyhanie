@@ -4,15 +4,23 @@ import Button from '../ui/Button';
 export default function CTA() {
   const ctaTitle = useSetting('ctaTitle');
   const ctaSubtitle = useSetting('ctaSubtitle');
+  const ctaBackground = useSetting('ctaBackground');
+  const ctaButton = useSetting('ctaButton');
 
   return (
     <section className="relative py-24 lg:py-32 overflow-hidden">
       <div className="absolute inset-0">
         <img
-          src="/images/cta.svg"
+          src={ctaBackground}
           alt="Бегущие люди"
           className="w-full h-full object-cover"
           loading="lazy"
+          onError={(e) => {
+            const img = e.currentTarget;
+            if (img.dataset.fallback) return;
+            img.dataset.fallback = '1';
+            img.src = '/images/cta.svg';
+          }}
         />
         <div className="absolute inset-0 bg-black/75" />
       </div>
@@ -25,7 +33,7 @@ export default function CTA() {
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           <Button to="/register" variant="primary" size="lg">
-            Присоединиться
+            {ctaButton}
           </Button>
           <Button to="/schedule" variant="outline" size="lg">
             Попробовать тренировку

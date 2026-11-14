@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useSetting } from '../../store/settingsStore';
 import Button from '../ui/Button';
 import { LayoutDashboard, Menu, X } from 'lucide-react';
 
@@ -18,6 +19,8 @@ export default function Header() {
   const [open, setOpen] = useState(false);
   const { pathname } = useLocation();
   const { currentUser } = useAuth();
+  const logoUrl = useSetting('logoUrl') || '/logo.jpg';
+  const logoAlt = useSetting('logoAlt') || 'Логотип школы «Второе дыхание»';
 
   // Закрываем мобильное меню при переходе
   useEffect(() => {
@@ -48,12 +51,19 @@ export default function Header() {
     <header className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-primary/90 backdrop-blur-md">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between gap-4 lg:h-20">
-          <Link to="/" className="flex shrink-0 items-center" aria-label="Второе дыхание — на главную">
+          <Link to="/" className="flex shrink-0 items-center" aria-label={logoAlt}>
             <span className="flex items-center rounded-md bg-white px-2 py-1 transition-all hover:ring-2 hover:ring-accent-red/50">
               <img
-                src="/logo.jpg"
-                alt="Логотип школы «Второе дыхание»"
+                src={logoUrl}
+                alt={logoAlt}
                 className="h-10 w-auto object-contain lg:h-12"
+                onError={(e) => {
+                  // Ссылка из админки не открылась — возвращаем штатный логотип
+                  const img = e.currentTarget;
+                  if (img.dataset.fallback) return;
+                  img.dataset.fallback = '1';
+                  img.src = '/logo.jpg';
+                }}
               />
             </span>
           </Link>

@@ -23,19 +23,37 @@ const EXTRA_KEYS = [
   'siteDescription',
   'heroTitle',
   'heroSubtitle',
+  'heroButton',
+  'heroBackground',
   'aboutTitle',
   'aboutSubtitle',
   'aboutText1',
   'aboutText2',
+  'aboutImage',
   'ctaTitle',
   'ctaSubtitle',
+  'ctaButton',
+  'ctaBackground',
   'phones',
   'ogImage',
-  'favicon',
   'ownerName',
   'ownerRole',
   'ownerEmail',
   'ownerPhone',
+  'galleryImages',
+  'logoUrl',
+  'logoAlt',
+  'primaryColor',
+  'secondaryColor',
+  'accentColor',
+  'accentBlue',
+  'surfaceColor',
+  'socialVk',
+  'socialYoutube',
+  'socialInstagram',
+  'footerText',
+  'testimonialsTitle',
+  'testimonialsSubtitle',
 ] as const;
 
 export type SettingKey = (typeof CLUB_TEXT_KEYS)[number] | (typeof EXTRA_KEYS)[number];
@@ -66,10 +84,12 @@ function getDefaultValue(key: SettingKey): string {
   if (key === 'siteDescription') return FALLBACK_DESCRIPTION;
   if (key === 'heroTitle') return 'Второе дыхание — больше, чем спорт';
   if (key === 'heroSubtitle') return 'Бегаем, крутим педали, исследуем новые маршруты и становимся сильнее вместе';
+  if (key === 'heroButton') return 'Присоединиться к школе';
   if (key === 'aboutTitle') return 'Движение — это жизнь';
   if (key === 'aboutSubtitle') return 'О школе';
   if (key === 'ctaTitle') return 'Стань частью нашей школы';
   if (key === 'ctaSubtitle') return 'Присоединяйся к тренировкам, находи новых друзей и достигай целей вместе с нами. Первое занятие — бесплатно.';
+  if (key === 'ctaButton') return 'Присоединиться';
   if (key === 'aboutText1') return ABOUT_TEXT_1;
   if (key === 'aboutText2') return ABOUT_TEXT_2;
   if (key === 'ownerName') return CLUB.owner.name;
@@ -77,7 +97,15 @@ function getDefaultValue(key: SettingKey): string {
   if (key === 'ownerEmail') return CLUB.owner.email;
   if (key === 'ownerPhone') return CLUB.owner.phone;
   if (key === 'ogImage') return '/og-image.jpg';
-  if (key === 'favicon') return '/favicon.ico';
+  if (key === 'logoUrl') return '/logo.jpg';
+  if (key === 'logoAlt') return 'Логотип школы «Второе дыхание»';
+  if (key === 'heroBackground') return '/images/hero.svg';
+  if (key === 'aboutImage') return '/images/about.svg';
+  if (key === 'ctaBackground') return '/images/cta.svg';
+  if (key === 'testimonialsTitle') return 'Голоса школы';
+  if (key === 'testimonialsSubtitle') return 'Истории';
+  // Пустые значения — осознанный выбор: цвета и галерея остаются
+  // на дефолтах сборки (@theme и PLACEHOLDER_TILES), пока админ не заполнит сам.
   return '';
 }
 
@@ -109,7 +137,8 @@ function syncSeoFromSettings(values: Record<string, string>) {
   setSiteIdentity(
     values.siteName ?? CLUB.name,
     values.siteTitle ?? FALLBACK_TITLE,
-    values.siteDescription ?? FALLBACK_DESCRIPTION
+    values.siteDescription ?? FALLBACK_DESCRIPTION,
+    values.ogImage ?? ''
   );
 }
 

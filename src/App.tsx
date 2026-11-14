@@ -24,6 +24,7 @@ import PrivacyPage from './pages/PrivacyPage';
 import NotFoundPage from './pages/NotFoundPage';
 import { AuthProvider } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
+import ThemeProvider from './context/ThemeProvider';
 
 // Кабинет грузится отдельным чанком: посетителю публичных страниц (и краулеру)
 // не нужно скачивать админку, графики и формы оплаты
@@ -49,6 +50,7 @@ const AdminResults = lazy(() => import('./pages/cabinet/AdminResults'));
 const AdminNotifications = lazy(() => import('./pages/cabinet/AdminNotifications'));
 const AdminDirections = lazy(() => import('./pages/cabinet/AdminDirections'));
 const AdminSiteSettings = lazy(() => import('./pages/cabinet/AdminSiteSettings'));
+const AdminAppearance = lazy(() => import('./pages/cabinet/AdminAppearance'));
 const PaymentPage = lazy(() => import('./pages/cabinet/PaymentPage'));
 const CalendarExport = lazy(() => import('./pages/cabinet/CalendarExport'));
 const EventQR = lazy(() => import('./pages/cabinet/EventQR'));
@@ -61,9 +63,10 @@ function CabinetFallback() {
 export default function App() {
   return (
     <BrowserRouter>
-      <Seo />
-      <ToastProvider>
-        <AuthProvider>
+      <ThemeProvider>
+        <Seo />
+        <ToastProvider>
+          <AuthProvider>
           <Suspense fallback={<CabinetFallback />}>
             <Routes>
             <Route path="/" element={<Layout />}>
@@ -219,6 +222,14 @@ export default function App() {
                   }
                 />
                 <Route
+                  path="admin/appearance"
+                  element={
+                    <ProtectedRoute roles={['admin']}>
+                      <AdminAppearance />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
                   path="admin/trainers"
                   element={
                     <ProtectedRoute roles={['admin']}>
@@ -272,8 +283,9 @@ export default function App() {
             </Route>
             </Routes>
           </Suspense>
-        </AuthProvider>
-      </ToastProvider>
+          </AuthProvider>
+        </ToastProvider>
+      </ThemeProvider>
     </BrowserRouter>
   );
 }

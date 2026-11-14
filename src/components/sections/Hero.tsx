@@ -19,16 +19,25 @@ function Title({ text }: { text: string }) {
 export default function Hero() {
   const heroTitle = useSetting('heroTitle');
   const heroSubtitle = useSetting('heroSubtitle');
+  const heroBackground = useSetting('heroBackground');
+  const heroButton = useSetting('heroButton');
 
   return (
     <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
       {/* Background Image */}
       <div className="absolute inset-0">
         <img
-          src="/images/hero.svg"
+          src={heroBackground}
           alt="Спортсмены на тренировке"
           className="w-full h-full object-cover"
           loading="eager"
+          onError={(e) => {
+            // Ссылка из админки не открылась — показываем штатное изображение
+            const img = e.currentTarget;
+            if (img.dataset.fallback) return;
+            img.dataset.fallback = '1';
+            img.src = '/images/hero.svg';
+          }}
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/80" />
       </div>
@@ -43,7 +52,7 @@ export default function Hero() {
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           <Button to="/register" variant="primary" size="lg">
-            Присоединиться к школе
+            {heroButton}
           </Button>
           <Button to="/schedule" variant="outline" size="lg">
             Расписание тренировок
