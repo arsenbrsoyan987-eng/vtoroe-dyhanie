@@ -725,7 +725,7 @@ create policy "site_settings: читают все" on public.site_settings
 
 drop policy if exists "site_settings: админ правит" on public.site_settings;
 create policy "site_settings: админ правит" on public.site_settings
-  for update using (public.is_admin()) with check (public.is_admin());
+  for all using (public.is_admin()) with check (public.is_admin());
 
 -- ============================================================
 --  Realtime: список пользователей и записи обновляются без перезагрузки
