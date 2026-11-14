@@ -458,6 +458,7 @@ alter table public.events enable row level security;
 alter table public.testimonials enable row level security;
 alter table public.sport_results enable row level security;
 alter table public.directions enable row level security;
+alter table public.routes enable row level security;
 alter table public.site_settings enable row level security;
 
 -- ---------- profiles ----------

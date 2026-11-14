@@ -22,10 +22,14 @@ cat supabase/schema.sql | pbcopy   # затем вставьте в SQL Editor �
 ```
 
 Что создаётся: `profiles`, `invitations`, `trainings`, `registrations`,
-`notifications`, `results`, `news`, `camps`, `training_photos`, функции
+`notifications`, `results`, `news`, `camps`, `training_photos`, `directions`,
+`routes`, `site_settings`, функции
 `is_admin()`, `is_trainer()`, `is_trainer_of()`, `my_trainer_id()`, `teaches()`,
 триггеры `handle_new_user()` и `protect_profile_fields()`, realtime-подписки и
 публичный бакет Storage `training-photos`.
+
+Если нужно применить только маршруты (не трогая остальную схему) — есть
+отдельный идемпотентный файл `supabase/routes.sql`.
 
 Права по разделам:
 
