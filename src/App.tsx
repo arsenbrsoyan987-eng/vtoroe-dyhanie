@@ -52,6 +52,8 @@ const AdminDirections = lazy(() => import('./pages/cabinet/AdminDirections'));
 const AdminSiteSettings = lazy(() => import('./pages/cabinet/AdminSiteSettings'));
 const AdminAppearance = lazy(() => import('./pages/cabinet/AdminAppearance'));
 const AdminRoutes = lazy(() => import('./pages/cabinet/AdminRoutes'));
+const AdminPages = lazy(() => import('./pages/cabinet/AdminPages'));
+const PageDetailPage = lazy(() => import('./pages/PageDetailPage'));
 const PaymentPage = lazy(() => import('./pages/cabinet/PaymentPage'));
 const CalendarExport = lazy(() => import('./pages/cabinet/CalendarExport'));
 const EventQR = lazy(() => import('./pages/cabinet/EventQR'));
@@ -286,7 +288,18 @@ export default function App() {
                     </ProtectedRoute>
                   }
                 />
+                <Route
+                  path="admin/pages"
+                  element={
+                    <ProtectedRoute roles={['admin']}>
+                      <AdminPages />
+                    </ProtectedRoute>
+                  }
+                />
               </Route>
+
+              {/* Динамические страницы */}
+              <Route path=":slug" element={<PageDetailPage />} />
 
               <Route path="*" element={<NotFoundPage />} />
             </Route>

@@ -290,6 +290,23 @@ drop policy if exists "routes: админ правит" on public.routes;
 create policy "routes: админ правит" on public.routes
   for all using (public.is_admin()) with check (public.is_admin());
 
+-- ---------- Страницы сайта ----------
+-- Произвольные страницы, которые администратор создаёт сам: «О школе»,
+-- «Как записаться», «Партнёрам». slug задаёт адрес /<slug>.
+create table if not exists public.pages (
+  id text primary key,
+  slug text not null unique,
+  title text not null default '',
+  hero_image text not null default '',
+  content text not null default '',
+  published boolean not null default true,
+  sort_order int not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists pages_sort_idx on public.pages (sort_order);
+
 -- ---------- Настройки сайта ----------
 -- Одна строка на ключ: тексты Hero/About/CTA, заголовок и описание для
 -- поисковиков, контакты. Хранилище «ключ → значение» проще, чем широкий
@@ -459,6 +476,7 @@ alter table public.testimonials enable row level security;
 alter table public.sport_results enable row level security;
 alter table public.directions enable row level security;
 alter table public.routes enable row level security;
+alter table public.pages enable row level security;
 alter table public.site_settings enable row level security;
 
 -- ---------- profiles ----------
@@ -769,7 +787,7 @@ do $do$
 declare
   t text;
 begin
-  foreach t in array array['profiles', 'registrations', 'notifications', 'results', 'trainings', 'camps', 'training_photos', 'news', 'trainers', 'events', 'testimonials', 'sport_results', 'directions', 'site_settings', 'routes']
+  foreach t in array array['profiles', 'registrations', 'notifications', 'results', 'trainings', 'camps', 'training_photos', 'news', 'trainers', 'events', 'testimonials', 'sport_results', 'directions', 'site_settings', 'routes', 'pages']
   loop
     begin
       execute format('alter publication supabase_realtime add table public.%I', t);
