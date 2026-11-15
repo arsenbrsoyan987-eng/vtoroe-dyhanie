@@ -85,13 +85,16 @@ function getDefaultValue(key: SettingKey): string {
   if (key === 'heroTitle') return 'Второе дыхание — больше, чем спорт';
   if (key === 'heroSubtitle') return 'Бегаем, крутим педали, исследуем новые маршруты и становимся сильнее вместе';
   if (key === 'heroButton') return 'Присоединиться к школе';
+  if (key === 'heroBackground') return '/images/hero.svg';
   if (key === 'aboutTitle') return 'Движение — это жизнь';
   if (key === 'aboutSubtitle') return 'О школе';
+  if (key === 'aboutText1') return ABOUT_TEXT_1;
+  if (key === 'aboutText2') return ABOUT_TEXT_2;
+  if (key === 'aboutImage') return '/images/about.svg';
   if (key === 'ctaTitle') return 'Стань частью нашей школы';
   if (key === 'ctaSubtitle') return 'Присоединяйся к тренировкам, находи новых друзей и достигай целей вместе с нами. Первое занятие — бесплатно.';
   if (key === 'ctaButton') return 'Присоединиться';
-  if (key === 'aboutText1') return ABOUT_TEXT_1;
-  if (key === 'aboutText2') return ABOUT_TEXT_2;
+  if (key === 'ctaBackground') return '/images/cta.svg';
   if (key === 'ownerName') return CLUB.owner.name;
   if (key === 'ownerRole') return CLUB.owner.role;
   if (key === 'ownerEmail') return CLUB.owner.email;
@@ -99,13 +102,14 @@ function getDefaultValue(key: SettingKey): string {
   if (key === 'ogImage') return '/og-image.jpg';
   if (key === 'logoUrl') return '/logo.jpg';
   if (key === 'logoAlt') return 'Логотип школы «Второе дыхание»';
-  if (key === 'heroBackground') return '/images/hero.svg';
-  if (key === 'aboutImage') return '/images/about.svg';
-  if (key === 'ctaBackground') return '/images/cta.svg';
   if (key === 'testimonialsTitle') return 'Голоса школы';
   if (key === 'testimonialsSubtitle') return 'Истории';
-  // Пустые значения — осознанный выбор: цвета и галерея остаются
-  // на дефолтах сборки (@theme и PLACEHOLDER_TILES), пока админ не заполнит сам.
+  if (key === 'footerText') return '';
+  if (key === 'socialVk') return '';
+  if (key === 'socialYoutube') return '';
+  if (key === 'socialInstagram') return '';
+  if (key === 'galleryImages') return '';
+  // Дефолтные цвета оставим пустыми — они берутся из Tailwind @theme.
   return '';
 }
 
@@ -135,10 +139,10 @@ function emit() {
  */
 function syncSeoFromSettings(values: Record<string, string>) {
   setSiteIdentity(
-    values.siteName ?? CLUB.name,
-    values.siteTitle ?? FALLBACK_TITLE,
-    values.siteDescription ?? FALLBACK_DESCRIPTION,
-    values.ogImage ?? ''
+    values.siteName || CLUB.name,
+    values.siteTitle || FALLBACK_TITLE,
+    values.siteDescription || FALLBACK_DESCRIPTION,
+    values.ogImage || '/og-image.jpg'
   );
 }
 
@@ -190,7 +194,7 @@ function getSettings(): Record<string, string> {
 
 export const settingsStore = {
   get: getSettings,
-  getOne: (key: SettingKey): string => getCache()[key] ?? getDefaultValue(key),
+  getOne: (key: SettingKey): string => getCache()[key] || getDefaultValue(key),
   /**
    * `key` — первичный ключ таблицы, поэтому upsert сам решает, вставлять
    * строку или обновлять: отдельный фильтр здесь не нужен и ломал бы запрос.
@@ -215,7 +219,9 @@ export function useSettings(): Record<string, string> {
 
 export function useSetting(key: SettingKey): string {
   const settings = useSettings();
-  return settings[key] ?? getDefaultValue(key);
+  // Пустая строка в базе равносильно «не заполнено»: берём текст из кода,
+  // иначе случайный seed или удалённый админом текст обнулял целые блоки сайта.
+  return settings[key] || getDefaultValue(key);
 }
 
 /**
@@ -226,7 +232,7 @@ export function useSetting(key: SettingKey): string {
  */
 export function useSettingList(key: SettingKey): string[] {
   const settings = useSettings();
-  const raw = settings[key] ?? getDefaultValue(key);
+  const raw = settings[key] || getDefaultValue(key);
   const items = raw.split('\n').map((s) => s.trim()).filter(Boolean);
   return items.length > 0 ? items : [];
 }
