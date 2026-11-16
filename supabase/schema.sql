@@ -307,6 +307,80 @@ create table if not exists public.pages (
 
 create index if not exists pages_sort_idx on public.pages (sort_order);
 
+-- Посетители видят только опубликованные страницы, администратор — все,
+-- иначе черновики исчезали бы из админки сразу после сохранения.
+drop policy if exists "pages: читают все" on public.pages;
+create policy "pages: читают все" on public.pages
+  for select using (published = true or public.is_admin());
+
+drop policy if exists "pages: админ создаёт" on public.pages;
+create policy "pages: админ создаёт" on public.pages
+  for insert with check (public.is_admin());
+
+drop policy if exists "pages: админ правит" on public.pages;
+create policy "pages: админ правит" on public.pages
+  for all using (public.is_admin()) with check (public.is_admin());
+
+-- ---------- Разделы сайта ----------
+-- Произвольные разделы с карточками: «Мероприятия клуба», «Правила посещения» и т.п.
+-- Раздел появляется в меню, на главной и на отдельной странице /section/<slug>.
+create table if not exists public.sections (
+  id text primary key,
+  slug text not null unique,
+  title text not null default '',
+  subtitle text not null default '',
+  icon text not null default '',
+  published boolean not null default true,
+  sort_order int not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists sections_sort_idx on public.sections (sort_order);
+
+-- ---------- Карточки раздела ----------
+create table if not exists public.section_cards (
+  id text primary key,
+  section_id text not null references public.sections(id) on delete cascade,
+  title text not null default '',
+  description text not null default '',
+  image text not null default '',
+  link text not null default '',
+  sort_order int not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists section_cards_section_idx on public.section_cards (section_id);
+create index if not exists section_cards_sort_idx on public.section_cards (sort_order);
+
+alter table public.sections enable row level security;
+alter table public.section_cards enable row level security;
+
+drop policy if exists "sections: читают все" on public.sections;
+create policy "sections: читают все" on public.sections
+  for select using (published = true or public.is_admin());
+
+drop policy if exists "sections: админ создаёт" on public.sections;
+create policy "sections: админ создаёт" on public.sections
+  for insert with check (public.is_admin());
+
+drop policy if exists "sections: админ правит" on public.sections;
+create policy "sections: админ правит" on public.sections
+  for all using (public.is_admin()) with check (public.is_admin());
+
+drop policy if exists "section_cards: читают все" on public.section_cards;
+create policy "section_cards: читают все" on public.section_cards
+  for select using (true);
+
+drop policy if exists "section_cards: админ создаёт" on public.section_cards;
+create policy "section_cards: админ создаёт" on public.section_cards
+  for insert with check (public.is_admin());
+
+drop policy if exists "section_cards: админ правит" on public.section_cards;
+create policy "section_cards: админ правит" on public.section_cards
+  for all using (public.is_admin()) with check (public.is_admin());
+
 -- ---------- Настройки сайта ----------
 -- Одна строка на ключ: тексты Hero/About/CTA, заголовок и описание для
 -- поисковиков, контакты. Хранилище «ключ → значение» проще, чем широкий
@@ -787,7 +861,7 @@ do $do$
 declare
   t text;
 begin
-  foreach t in array array['profiles', 'registrations', 'notifications', 'results', 'trainings', 'camps', 'training_photos', 'news', 'trainers', 'events', 'testimonials', 'sport_results', 'directions', 'site_settings', 'routes', 'pages']
+  foreach t in array array['profiles', 'registrations', 'notifications', 'results', 'trainings', 'camps', 'training_photos', 'news', 'trainers', 'events', 'testimonials', 'sport_results', 'directions', 'site_settings', 'routes', 'pages', 'sections', 'section_cards']
   loop
     begin
       execute format('alter publication supabase_realtime add table public.%I', t);

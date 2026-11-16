@@ -1,6 +1,7 @@
 import Hero from '../components/sections/Hero';
 import About from '../components/sections/About';
 import Directions from '../components/sections/Directions';
+import DynamicSections from '../components/sections/DynamicSections';
 import UpcomingTrainings from '../components/sections/UpcomingTrainings';
 import Trainers from '../components/sections/Trainers';
 import Events from '../components/sections/Events';
@@ -14,6 +15,7 @@ export default function HomePage() {
       <Hero />
       <About />
       <Directions />
+      <DynamicSections />
       <UpcomingTrainings />
       <Trainers />
       <Events />

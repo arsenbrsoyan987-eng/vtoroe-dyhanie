@@ -53,7 +53,10 @@ const AdminSiteSettings = lazy(() => import('./pages/cabinet/AdminSiteSettings')
 const AdminAppearance = lazy(() => import('./pages/cabinet/AdminAppearance'));
 const AdminRoutes = lazy(() => import('./pages/cabinet/AdminRoutes'));
 const AdminPages = lazy(() => import('./pages/cabinet/AdminPages'));
+const AdminSections = lazy(() => import('./pages/cabinet/AdminSections'));
 const PageDetailPage = lazy(() => import('./pages/PageDetailPage'));
+const SectionPage = lazy(() => import('./pages/SectionPage'));
+const SectionDetailPage = lazy(() => import('./pages/SectionDetailPage'));
 const PaymentPage = lazy(() => import('./pages/cabinet/PaymentPage'));
 const CalendarExport = lazy(() => import('./pages/cabinet/CalendarExport'));
 const EventQR = lazy(() => import('./pages/cabinet/EventQR'));
@@ -296,10 +299,21 @@ export default function App() {
                     </ProtectedRoute>
                   }
                 />
+                <Route
+                  path="admin/sections"
+                  element={
+                    <ProtectedRoute roles={['admin']}>
+                      <AdminSections />
+                    </ProtectedRoute>
+                  }
+                />
               </Route>
 
-              {/* Динамические страницы */}
               <Route path=":slug" element={<PageDetailPage />} />
+
+              {/* Разделы: список + детальная карточка */}
+              <Route path="section/:slug" element={<SectionPage />} />
+              <Route path="section/:slug/:cardId" element={<SectionDetailPage />} />
 
               <Route path="*" element={<NotFoundPage />} />
             </Route>

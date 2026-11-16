@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useSetting } from '../../store/settingsStore';
+import { useSections } from '../../store/sectionsStore';
 import Button from '../ui/Button';
 import { LayoutDashboard, Menu, X } from 'lucide-react';
 
@@ -19,6 +20,7 @@ export default function Header() {
   const [open, setOpen] = useState(false);
   const { pathname } = useLocation();
   const { currentUser } = useAuth();
+  const sections = useSections();
   const logoUrl = useSetting('logoUrl') || '/logo.jpg';
   const logoAlt = useSetting('logoAlt') || 'Логотип школы «Второе дыхание»';
 
@@ -47,6 +49,11 @@ export default function Header() {
 
   const isActive = (path: string) => pathname === path || pathname.startsWith(path + '/');
 
+  const dynamicLinks = sections
+    .filter((s) => s.published)
+    .map((s) => ({ path: `/section/${s.slug}`, label: s.title }));
+  const allLinks = [...navLinks, ...dynamicLinks];
+
   return (
     <header className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-primary/90 backdrop-blur-md">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -69,7 +76,7 @@ export default function Header() {
           </Link>
 
           <nav className="hidden items-center gap-0.5 lg:flex" aria-label="Основная навигация">
-            {navLinks.map((link) => (
+            {allLinks.map((link) => (
               <NavLink
                 key={link.path}
                 to={link.path}
@@ -125,7 +132,7 @@ export default function Header() {
         }`}
       >
         <nav className="space-y-1 px-4 py-4" aria-label="Мобильная навигация">
-          {navLinks.map((link) => (
+          {allLinks.map((link) => (
             <NavLink
               key={link.path}
               to={link.path}

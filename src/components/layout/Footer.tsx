@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { telHref } from '../../data/club';
 import { useSetting, useSettingList } from '../../store/settingsStore';
+import { useSections } from '../../store/sectionsStore';
 
 /** SVG-иконки соцсетей: показываем только те, ссылку на которые заполнили в админке */
 const SOCIAL_ICONS: Record<string, { path: string; label: string }> = {
@@ -24,6 +25,7 @@ const SOCIAL_ICONS: Record<string, { path: string; label: string }> = {
 
 export default function Footer() {
   const fullName = useSetting('fullName');
+  const sections = useSections();
   const city = useSetting('city');
   const addressNote = useSetting('addressNote');
   const email = useSetting('email');
@@ -84,6 +86,9 @@ export default function Footer() {
                 { to: '/routes', label: 'Маршруты' },
                 { to: '/news', label: 'Новости' },
                 { to: '/results', label: 'Результаты' },
+                ...sections
+                  .filter((s) => s.published)
+                  .map((s) => ({ to: `/section/${s.slug}`, label: s.title })),
               ].map((link) => (
                 <li key={link.to}>
                   <Link
