@@ -56,8 +56,16 @@ create table if not exists public.trainings (
   description text not null default '',
   equipment text[] not null default '{}',
   image text not null default '',
+  format text not null default 'group' check (format in ('group', 'individual')),
+  price_group text not null default '',
+  price_individual text not null default '',
   created_at timestamptz not null default now()
 );
+
+-- Формат и цены для баз, созданных по прежней версии файла
+alter table public.trainings add column if not exists format text not null default 'group' check (format in ('group', 'individual'));
+alter table public.trainings add column if not exists price_group text not null default '';
+alter table public.trainings add column if not exists price_individual text not null default '';
 
 create index if not exists trainings_date_idx on public.trainings (date, time);
 
@@ -128,8 +136,14 @@ create table if not exists public.registrations (
   training_id text not null,
   status text not null default 'confirmed' check (status in ('confirmed', 'waitlist', 'cancelled')),
   attended boolean not null default false,
+  -- Индивидуальная тренировка: спортсмен сам выбирает тренера и направление
+  selected_trainer_id text not null default '',
+  selected_direction_id text not null default '',
   created_at timestamptz not null default now()
 );
+
+alter table public.registrations add column if not exists selected_trainer_id text not null default '';
+alter table public.registrations add column if not exists selected_direction_id text not null default '';
 
 create index if not exists registrations_training_idx on public.registrations (training_id);
 create index if not exists registrations_user_idx on public.registrations (user_id);
@@ -448,6 +462,7 @@ as $fn$
 $fn$;
 
 -- Тренер видит профиль спортсмена, если тот записан на его тренировку
+-- либо выбрал этого тренера для индивидуального занятия
 create or replace function public.teaches(profile uuid)
 returns boolean
 language sql
@@ -462,9 +477,31 @@ as $teaches$
     join public.profiles me on me.id = auth.uid()
     where r.user_id = profile
       and me.trainer_id is not null
-      and t.trainer_id = me.trainer_id
+      and me.trainer_id <> ''
+      and (t.trainer_id = me.trainer_id or r.selected_trainer_id = me.trainer_id)
   );
 $teaches$;
+
+-- Ведёт ли текущий тренер эту конкретную запись: по тренеру тренировки
+-- или по выбору спортсмена на индивидуальном занятии
+create or replace function public.coaches(reg uuid)
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $coaches$
+  select exists (
+    select 1
+    from public.registrations r
+    join public.trainings t on t.id = r.training_id
+    join public.profiles me on me.id = auth.uid()
+    where r.id = reg
+      and me.trainer_id is not null
+      and me.trainer_id <> ''
+      and (t.trainer_id = me.trainer_id or r.selected_trainer_id = me.trainer_id)
+  );
+$coaches$;
 
 -- ============================================================
 --  Профиль создаётся автоматически при регистрации.
@@ -677,12 +714,13 @@ create policy "news: автор и админ удаляют" on public.news
   for delete using (public.is_admin() or author_id = auth.uid());
 
 -- ---------- registrations ----------
+-- Тренер видит запись, если ведёт тренировку или спортсмен выбрал его сам
 drop policy if exists "registrations: свои, тренеру и админу" on public.registrations;
 create policy "registrations: свои, тренеру и админу" on public.registrations
   for select using (
     user_id = auth.uid()
     or public.is_admin()
-    or public.is_trainer_of(training_id)
+    or public.coaches(id)
   );
 
 drop policy if exists "registrations: записывает себя" on public.registrations;
@@ -692,12 +730,12 @@ create policy "registrations: записывает себя" on public.registrat
 drop policy if exists "registrations: отмена и отметка" on public.registrations;
 create policy "registrations: отмена и отметка" on public.registrations
   for update using (
-    user_id = auth.uid() or public.is_admin() or public.is_trainer_of(training_id)
+    user_id = auth.uid() or public.is_admin() or public.coaches(id)
   );
 
 drop policy if exists "registrations: админ удаляет" on public.registrations;
 create policy "registrations: админ удаляет" on public.registrations
-  for delete using (public.is_admin() or public.is_trainer_of(training_id));
+  for delete using (public.is_admin() or public.coaches(id));
 
 -- ---------- notifications ----------
 drop policy if exists "notifications: свои" on public.notifications;

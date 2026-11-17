@@ -8,7 +8,7 @@ export default function TrainerSchedulePage() {
   const trainings = useTrainings();
   const { currentUser, registrations } = useAuth();
 
-  const mine = visibleTrainings(trainings, currentUser).sort((a, b) =>
+  const mine = visibleTrainings(trainings, currentUser, registrations).sort((a, b) =>
     (a.date + a.time).localeCompare(b.date + b.time)
   );
   const upcoming = mine.filter((t) => !isPastDate(t.date));

@@ -30,6 +30,10 @@ export interface TrainingRegistration {
   status: 'confirmed' | 'waitlist' | 'cancelled';
   registeredAt: string;
   attended: boolean;
+  /** Индивидуальная тренировка: спортсмен выбрал этого тренера */
+  selectedTrainerId?: string;
+  /** Индивидуальная тренировка: выбранное направление */
+  selectedDirectionId?: string;
 }
 
 export interface Notification {

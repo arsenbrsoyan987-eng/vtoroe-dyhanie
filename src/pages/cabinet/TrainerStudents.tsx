@@ -8,7 +8,7 @@ export default function TrainerStudentsPage() {
   const { currentUser, registrations } = useAuth();
   const users = activeProfiles(useProfiles());
 
-  const myTrainings = visibleTrainings(trainings, currentUser);
+  const myTrainings = visibleTrainings(trainings, currentUser, registrations);
   const myTrainingIds = new Set(myTrainings.map((t) => t.id));
 
   // Только те, кто записан на тренировки этого тренера

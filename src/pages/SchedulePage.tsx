@@ -4,6 +4,8 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTrainings } from '../store/trainingsStore';
 import { useDirections } from '../store/directionsStore';
+import { useTrainers } from '../store/trainersStore';
+import { freeSpots } from '../lib/access';
 import { MONTHS, WEEK_DAYS, formatDate, isPastDate, todayISO } from '../lib/date';
 import { displayValue, realValue } from '../lib/placeholder';
 import Button from '../components/ui/Button';
@@ -12,10 +14,12 @@ import SectionTitle from '../components/ui/SectionTitle';
 export default function SchedulePage() {
   const trainings = useTrainings();
   const directions = useDirections();
+  const trainers = useTrainers();
   const { registrations } = useAuth();
   const [view, setView] = useState<'list' | 'calendar'>('list');
   const [filterDir, setFilterDir] = useState('all');
   const [filterLevel, setFilterLevel] = useState('all');
+  const [filterFormat, setFilterFormat] = useState('all');
   const [tab, setTab] = useState<'upcoming' | 'past'>('upcoming');
 
   const today = todayISO();
@@ -28,10 +32,11 @@ export default function SchedulePage() {
         .filter((t) => {
           if (filterDir !== 'all' && t.directionId !== filterDir) return false;
           if (filterLevel !== 'all' && t.level !== filterLevel) return false;
+          if (filterFormat !== 'all' && t.format !== filterFormat) return false;
           return true;
         })
         .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time)),
-    [trainings, filterDir, filterLevel]
+    [trainings, filterDir, filterLevel, filterFormat]
   );
 
   const upcoming = filtered.filter((t) => !isPastDate(t.date));
@@ -40,11 +45,9 @@ export default function SchedulePage() {
 
   const levels = [...new Set(trainings.map((t) => t.level))];
 
-  const bookedCount = (trainingId: string) =>
-    registrations.filter((r) => r.trainingId === trainingId && r.status === 'confirmed').length;
-
+  /** Свободные места: для групповой — по ёмкости, для индивидуальной — по свободным тренерам */
   const leftSpots = (t: (typeof trainings)[number]) =>
-    Math.max(0, t.spotsAvailable - bookedCount(t.id));
+    freeSpots(t, registrations, trainers);
 
   // Календарь: сетка 6 недель с понедельника
   const firstDay = new Date(month.year, month.month, 1);
@@ -95,6 +98,16 @@ export default function SchedulePage() {
             {levels.map((l) => (
               <option key={l} value={l}>{l}</option>
             ))}
+          </select>
+          <select
+            value={filterFormat}
+            onChange={(e) => setFilterFormat(e.target.value)}
+            className={selectClass}
+            aria-label="Фильтр по формату"
+          >
+            <option value="all">Любой формат</option>
+            <option value="group">Групповые</option>
+            <option value="individual">Индивидуальные</option>
           </select>
 
           <div className="flex gap-1 sm:ml-auto">
@@ -149,6 +162,8 @@ export default function SchedulePage() {
                 list.map((t) => {
                   const left = leftSpots(t);
                   const done = isPastDate(t.date);
+                  const individual = t.format === 'individual';
+                  const price = individual ? t.priceIndividual : t.priceGroup;
                   return (
                     <div
                       key={t.id}
@@ -163,6 +178,16 @@ export default function SchedulePage() {
                               {t.directionName}
                             </span>
                             <span className="text-gray-600">·</span>
+                            <span
+                              className={`rounded-sm px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+                                individual
+                                  ? 'bg-purple-500/15 text-purple-300'
+                                  : 'bg-blue-500/15 text-blue-300'
+                              }`}
+                            >
+                              {individual ? 'Индивидуальная' : 'Групповая'}
+                            </span>
+                            <span className="text-gray-600">·</span>
                             <span className="text-xs text-gray-400">{t.level}</span>
                             <span className="text-gray-600">·</span>
                             <span
@@ -170,7 +195,13 @@ export default function SchedulePage() {
                                 done ? 'text-gray-500' : left > 0 ? 'text-green-400' : 'text-red-400'
                               }`}
                             >
-                              {done ? 'Завершена' : left > 0 ? `${left} мест` : 'Мест нет'}
+                              {done
+                                ? 'Завершена'
+                                : left > 0
+                                  ? individual
+                                    ? 'Есть свободные тренеры'
+                                    : `${left} мест`
+                                  : 'Мест нет'}
                             </span>
                           </div>
                           <h3 className="mb-1 text-lg font-bold text-white">
@@ -183,12 +214,13 @@ export default function SchedulePage() {
                             <span>📅 {formatDate(t.date)}</span>
                             <span>🕐 {t.time} · {t.duration}</span>
                             <span>📍 {displayValue(t.location, 'точка сбора в анонсе')}</span>
-                            {realValue(t.trainer) && <span>👤 {t.trainer}</span>}
+                            {!individual && realValue(t.trainer) && <span>👤 {t.trainer}</span>}
+                            {price && <span className="font-semibold text-white">💳 {price} ₽</span>}
                           </div>
                         </div>
                         <div className="flex shrink-0 gap-2">
                           <Button to={`/schedule/${t.id}`} variant={done ? 'outline' : 'primary'} size="sm">
-                            {done ? 'Подробнее' : 'Записаться'}
+                            {done ? 'Подробнее' : individual ? 'Выбрать тренера' : 'Записаться'}
                           </Button>
                         </div>
                       </div>

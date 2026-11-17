@@ -9,7 +9,7 @@ export default function TrainerDashboard() {
   const trainings = useTrainings();
   const { currentUser, registrations } = useAuth();
 
-  const myTrainings = visibleTrainings(trainings, currentUser).sort((a, b) =>
+  const myTrainings = visibleTrainings(trainings, currentUser, registrations).sort((a, b) =>
     (a.date + a.time).localeCompare(b.date + b.time)
   );
   const upcoming = myTrainings.filter((t) => !isPastDate(t.date));

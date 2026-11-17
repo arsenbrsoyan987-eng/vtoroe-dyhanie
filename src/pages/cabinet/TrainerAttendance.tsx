@@ -12,7 +12,7 @@ export default function TrainerAttendancePage() {
   const users = activeProfiles(useProfiles());
   const [showPast, setShowPast] = useState(true);
 
-  const myTrainings = visibleTrainings(trainings, currentUser).sort((a, b) =>
+  const myTrainings = visibleTrainings(trainings, currentUser, registrations).sort((a, b) =>
     (a.date + a.time).localeCompare(b.date + b.time)
   );
   const listed = showPast ? myTrainings : myTrainings.filter((t) => !isPastDate(t.date));

@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 import { deleteStorageFile } from '../lib/upload';
 import { publishedOr } from '../data/published';
 import { trainings as seedTrainings } from '../data/trainings';
-import type { Training } from '../types';
+import type { Training, TrainingFormat } from '../types';
 
 /**
  * Расписание живёт в таблице public.trainings: записи на тренировки ссылаются
@@ -31,10 +31,20 @@ interface TrainingRow {
   description: string;
   equipment: string[] | null;
   image: string;
+  format: TrainingFormat;
+  price_group: string;
+  price_individual: string;
 }
 
-const COLUMNS =
+/**
+ * Старые базы без format/price* — запрашиваем только знакомые поля.
+ * Новые колонки добавляем через union, чтобы миграцию можно было
+ * выполнить в любой момент без простоя расписания.
+ */
+const COLUMNS_OLD =
   'id,name,direction_id,direction_name,date,time,location,trainer_id,trainer_name,duration,level,capacity,description,equipment,image';
+const COLUMNS_FORMAT = 'format,price_group,price_individual';
+const COLUMNS = `${COLUMNS_OLD},${COLUMNS_FORMAT}`;
 
 function fromRow(row: TrainingRow): Training {
   return {
@@ -53,6 +63,9 @@ function fromRow(row: TrainingRow): Training {
     description: row.description,
     equipment: row.equipment ?? [],
     image: row.image,
+    format: row.format === 'individual' ? 'individual' : 'group',
+    priceGroup: row.price_group ?? '',
+    priceIndividual: row.price_individual ?? '',
   };
 }
 
@@ -73,11 +86,28 @@ function toRow(t: Training): TrainingRow {
     description: t.description,
     equipment: t.equipment,
     image: t.image,
+    format: t.format,
+    price_group: t.priceGroup,
+    price_individual: t.priceIndividual,
+  };
+}
+
+/**
+ * published.json и data/trainings.ts появились раньше формата тренировок,
+ * поэтому в них нет format/price*: подставляем дефолты, иначе у части
+ * тренировок из пререндера поля были бы undefined.
+ */
+function withDefaults(t: Training): Training {
+  return {
+    ...t,
+    format: t.format === 'individual' ? 'individual' : 'group',
+    priceGroup: t.priceGroup ?? '',
+    priceIndividual: t.priceIndividual ?? '',
   };
 }
 
 const listeners = new Set<() => void>();
-const FALLBACK = publishedOr<Training>('trainings', seedTrainings);
+const FALLBACK: Training[] = publishedOr<Training>('trainings', seedTrainings).map(withDefaults);
 let cache: Training[] = FALLBACK;
 let started = false;
 let channel: ReturnType<typeof supabase.channel> | null = null;
@@ -93,7 +123,21 @@ export async function reloadTrainings(): Promise<Training[]> {
     .order('date', { ascending: true })
     .order('time', { ascending: true });
 
-  if (error) throw error;
+  if (error) {
+    /** Колонки ещё не добавили — откатываемся на старый запрос */
+    if (error.message?.includes('does not exist')) {
+      const fallback = await supabase
+        .from('trainings')
+        .select(COLUMNS_OLD)
+        .order('date', { ascending: true })
+        .order('time', { ascending: true });
+      if (fallback.error) throw fallback.error;
+      cache = (fallback.data as TrainingRow[]).map(fromRow);
+      emit();
+      return cache;
+    }
+    throw error;
+  }
   cache = (data as TrainingRow[]).map(fromRow);
   emit();
   return cache;

@@ -1,22 +1,59 @@
+import { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { useTrainings } from '../store/trainingsStore';
 import { usePhotosOf } from '../store/trainingPhotosStore';
+import { useTrainers } from '../store/trainersStore';
+import { useDirections } from '../store/directionsStore';
 import { formatDate, isPastDate } from '../lib/date';
 import { isVideoUrl } from '../lib/upload';
 import { displayValue, realValue } from '../lib/placeholder';
 import Button from '../components/ui/Button';
-import { ArrowLeft, CalendarDays, Camera, CheckCircle2, Clock, MapPin, Timer, User, Users } from 'lucide-react';
+import { ArrowLeft, CalendarDays, Camera, CheckCircle2, Clock, MapPin, Timer, User, Users, Wallet } from 'lucide-react';
 
 export default function TrainingDetailPage() {
   const { id } = useParams<{ id: string }>();
   const trainings = useTrainings();
   const training = trainings.find((t) => t.id === id);
   const photos = usePhotosOf(training?.id);
+  const trainers = useTrainers();
+  const directions = useDirections();
   const { currentUser, registrations, register, cancelRegistration } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  const isIndividual = training?.format === 'individual';
+  const [pickedTrainer, setPickedTrainer] = useState('');
+  const [pickedDirection, setPickedDirection] = useState('');
+
+  /**
+   * Индивидуальное занятие ведёт любой тренер школы, поэтому спортсмен
+   * выбирает сам. Список сокращаем до тех, кто работает по выбранному
+   * направлению; если по нему нет ни одного — показываем всех.
+   */
+  const availableTrainers = useMemo(() => {
+    if (!isIndividual) return [];
+    if (!pickedDirection) return trainers;
+    const matched = trainers.filter((t) => t.directions.includes(pickedDirection));
+    return matched.length > 0 ? matched : trainers;
+  }, [isIndividual, pickedDirection, trainers]);
+
+  /** Тренер уже ведёт это занятие у другого спортсмена — выбрать его нельзя */
+  const busyTrainerIds = useMemo(
+    () =>
+      new Set(
+        registrations
+          .filter(
+            (r) =>
+              r.trainingId === training?.id &&
+              r.status === 'confirmed' &&
+              r.selectedTrainerId
+          )
+          .map((r) => r.selectedTrainerId as string)
+      ),
+    [registrations, training?.id]
+  );
 
   if (!training) {
     return (
@@ -35,9 +72,14 @@ export default function TrainingDetailPage() {
   const confirmed = registrations.filter(
     (r) => r.trainingId === training.id && r.status === 'confirmed'
   ).length;
-  const capacity = training.spotsAvailable;
-  const left = Math.max(0, capacity - confirmed);
   const past = isPastDate(training.date);
+
+  /**
+   * Ёмкость занятия: группу ограничивает capacity, индивидуальное занятие —
+   * числом тренеров школы, ведь каждый тренер берёт одного спортсмена.
+   */
+  const capacity = isIndividual ? Math.max(trainers.length, confirmed) : training.spotsAvailable;
+  const left = Math.max(0, capacity - confirmed);
 
   const myReg = currentUser
     ? registrations.find(
@@ -47,12 +89,26 @@ export default function TrainingDetailPage() {
       )
     : undefined;
 
+  /** Тариф подставлен по формату: у тренировки заполнено только нужное поле */
+  const price = isIndividual ? training.priceIndividual : training.priceGroup;
+
+  /** Already-запись на индивидуальное занятие: показываем выбор спортсмена */
+  const pickedTrainerName = trainers.find((t) => t.id === myReg?.selectedTrainerId)?.name;
+  const pickedDirectionName = directions.find((d) => d.id === myReg?.selectedDirectionId)?.name;
+
   const handleRegister = async () => {
     if (!currentUser) {
       navigate('/login', { state: { from: `/schedule/${training.id}` } });
       return;
     }
-    const status = await register(training.id, capacity);
+    if (isIndividual && (!pickedTrainer || !pickedDirection)) {
+      toast('Выберите тренера и направление для индивидуальной тренировки', 'error');
+      return;
+    }
+
+    // Индивидуальное занятие оформляют только с выбранными тренером и направлением
+    const choice = isIndividual ? { trainerId: pickedTrainer, directionId: pickedDirection } : undefined;
+    const status = await register(training.id, capacity, choice);
     if (status === 'already') {
       toast('Вы уже записаны на эту тренировку', 'info');
     } else if (status === 'waitlist') {
@@ -96,6 +152,14 @@ export default function TrainingDetailPage() {
                 {training.directionName}
               </span>
               <span className="text-gray-600">·</span>
+              <span
+                className={`rounded-sm px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+                  isIndividual ? 'bg-purple-500/15 text-purple-300' : 'bg-blue-500/15 text-blue-300'
+                }`}
+              >
+                {isIndividual ? 'Индивидуальная' : 'Групповая'}
+              </span>
+              <span className="text-gray-600">·</span>
               <span className="text-xs text-gray-400">{training.level}</span>
               {past && (
                 <span className="rounded-sm bg-white/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-gray-400">
@@ -133,8 +197,18 @@ export default function TrainingDetailPage() {
               )}
               <div className="flex items-center gap-2 text-gray-300">
                 <Users className="h-4 w-4 shrink-0 text-gray-500" />
-                {left > 0 ? `Свободно мест: ${left} из ${capacity}` : 'Мест нет'}
+                {isIndividual
+                  ? 'Только вы и тренер'
+                  : left > 0
+                    ? `Свободно мест: ${left} из ${capacity}`
+                    : 'Мест нет'}
               </div>
+              {price && (
+                <div className="flex items-center gap-2 font-semibold text-white">
+                  <Wallet className="h-4 w-4 shrink-0 text-accent-red" />
+                  {price}
+                </div>
+              )}
             </dl>
 
             {training.description && (
@@ -162,26 +236,83 @@ export default function TrainingDetailPage() {
             )}
 
             {myReg ? (
-              <div className="flex flex-wrap items-center gap-3 rounded-sm border border-green-500/30 bg-green-500/10 px-4 py-3">
-                <CheckCircle2 className="h-4 w-4 shrink-0 text-green-400" />
-                <p className="flex-1 text-sm text-green-200">
-                  {myReg.status === 'confirmed'
-                    ? 'Вы записаны на эту тренировку'
-                    : 'Вы в листе ожидания — сообщим, если освободится место'}
-                </p>
-                {!past && (
-                  <button
-                    onClick={handleCancel}
-                    className="rounded-sm border border-white/20 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-white hover:text-primary"
-                  >
-                    Отменить запись
-                  </button>
+              <div className="rounded-sm border border-green-500/30 bg-green-500/10 px-4 py-3">
+                <div className="flex flex-wrap items-center gap-3">
+                  <CheckCircle2 className="h-4 w-4 shrink-0 text-green-400" />
+                  <p className="flex-1 text-sm text-green-200">
+                    {myReg.status === 'confirmed'
+                      ? 'Вы записаны на эту тренировку'
+                      : 'Вы в листе ожидания — сообщим, если освободится место'}
+                  </p>
+                  {!past && (
+                    <button
+                      onClick={handleCancel}
+                      className="rounded-sm border border-white/20 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-white hover:text-primary"
+                    >
+                      Отменить запись
+                    </button>
+                  )}
+                </div>
+                {pickedTrainerName && (
+                  <p className="mt-2 pl-7 text-xs text-green-200/70">
+                    Ваш тренер: {pickedTrainerName}
+                    {pickedDirectionName ? ` · Направление: ${pickedDirectionName}` : ''}
+                  </p>
                 )}
               </div>
             ) : past ? (
               <p className="text-sm text-gray-500">
                 Эта тренировка уже прошла. Посмотрите актуальное расписание.
               </p>
+            ) : isIndividual && currentUser ? (
+              <div className="space-y-4">
+                <div className="rounded-sm border border-white/10 bg-surface p-4">
+                  <h3 className="mb-3 text-sm font-semibold text-white">
+                    Выберите тренера и направление
+                  </h3>
+                  <div className="space-y-3 sm:flex sm:gap-3 sm:space-y-0">
+                    <select
+                      value={pickedDirection}
+                      onChange={(e) => {
+                        setPickedDirection(e.target.value);
+                        // Тренер из другого направления больше не подходит
+                        setPickedTrainer('');
+                      }}
+                      className="flex-1 rounded-sm border border-white/10 bg-primary px-3 py-2.5 text-sm text-white focus:border-accent-red focus:outline-none"
+                    >
+                      <option value="">— Выберите направление —</option>
+                      {directions.map((d) => (
+                        <option key={d.id} value={d.id}>{d.name}</option>
+                      ))}
+                    </select>
+                    <select
+                      value={pickedTrainer}
+                      onChange={(e) => setPickedTrainer(e.target.value)}
+                      className="flex-1 rounded-sm border border-white/10 bg-primary px-3 py-2.5 text-sm text-white focus:border-accent-red focus:outline-none"
+                    >
+                      <option value="">— Выберите тренера —</option>
+                      {availableTrainers.map((t) => (
+                        <option key={t.id} value={t.id} disabled={busyTrainerIds.has(t.id)}>
+                          {busyTrainerIds.has(t.id) ? `${t.name} — занят` : t.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {pickedDirection && availableTrainers.length === 0 && (
+                    <p className="mt-2 text-xs text-yellow-300">
+                      По этому направлению пока нет свободных тренеров — выберите другое.
+                    </p>
+                  )}
+                </div>
+                <div className="flex flex-wrap items-center gap-3">
+                  <Button onClick={handleRegister} variant="primary">
+                    Записаться
+                  </Button>
+                  <span className="text-xs text-gray-500">
+                    Запись подтвердит выбранный тренер
+                  </span>
+                </div>
+              </div>
             ) : (
               <div className="flex flex-wrap items-center gap-3">
                 <Button onClick={handleRegister} variant="primary">

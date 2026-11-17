@@ -11,6 +11,8 @@ export interface Direction {
   level: string;
 }
 
+export type TrainingFormat = 'group' | 'individual';
+
 export interface Training {
   id: string;
   name: string;
@@ -27,6 +29,24 @@ export interface Training {
   description: string;
   equipment: string[];
   image: string;
+  /** 'group' | 'individual' */
+  format: TrainingFormat;
+  priceGroup: string;
+  priceIndividual: string;
+}
+
+/** Регистрация на тренировку */
+export interface Registration {
+  id: string;
+  userId: string;
+  trainingId: string;
+  status: 'confirmed' | 'waitlist' | 'cancelled';
+  attended: boolean;
+  /** Для индивидуальной тренировки — выбранный тренер */
+  selectedTrainerId: string;
+  /** Для индивидуальной тренировки — выбранное направление */
+  selectedDirectionId: string;
+  registeredAt: string;
 }
 
 export interface Trainer {

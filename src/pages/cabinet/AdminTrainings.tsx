@@ -9,8 +9,13 @@ import { visibleTrainings } from '../../lib/access';
 import Button from '../../components/ui/Button';
 import { Camera, Pencil, Plus, Trash2, X } from 'lucide-react';
 import { isPastDate, formatDate } from '../../lib/date';
+import type { TrainingFormat } from '../../types';
 
 const LEVELS = ['Начинающий', 'Средний', 'Продвинутый', 'Все уровни'];
+const FORMATS: { value: TrainingFormat; label: string }[] = [
+  { value: 'group', label: 'Групповая' },
+  { value: 'individual', label: 'Индивидуальная' },
+];
 
 const emptyForm = {
   name: '',
@@ -23,6 +28,9 @@ const emptyForm = {
   level: 'Все уровни',
   spots: 12,
   description: '',
+  format: 'group' as TrainingFormat,
+  priceGroup: '',
+  priceIndividual: '',
 };
 
 type FormState = typeof emptyForm;
@@ -36,7 +44,10 @@ export default function AdminTrainings() {
 
   const isAdmin = currentUser?.role === 'admin';
   // Тренер видит и правит только свои занятия, администратор — все
-  const trainings = useMemo(() => visibleTrainings(all, currentUser), [all, currentUser]);
+  const trainings = useMemo(
+    () => visibleTrainings(all, currentUser, registrations),
+    [all, currentUser, registrations]
+  );
   // Без привязки к карточке тренера база не даст создать занятие
   const unlinkedTrainer = !isAdmin && !currentUser?.trainerId;
 
@@ -80,6 +91,9 @@ export default function AdminTrainings() {
       level: t.level,
       spots: t.spotsAvailable,
       description: t.description,
+      format: t.format ?? 'group',
+      priceGroup: t.priceGroup ?? '',
+      priceIndividual: t.priceIndividual ?? '',
     });
     setEditingId(id);
     setOpen(true);
@@ -108,6 +122,9 @@ export default function AdminTrainings() {
       description: form.description.trim(),
       equipment: direction?.requiredEquipment ?? [],
       image: direction?.imageUrl ?? '',
+      format: form.format,
+      priceGroup: form.priceGroup.trim(),
+      priceIndividual: form.priceIndividual.trim(),
     };
 
     try {
@@ -203,6 +220,42 @@ export default function AdminTrainings() {
               )}
             </div>
             <div>
+              <label htmlFor="t-format" className={label}>Формат</label>
+              <select
+                id="t-format"
+                value={form.format}
+                onChange={(e) => {
+                  const format = e.target.value as TrainingFormat;
+                  // Индивидуальное занятие — всегда один спортсмен
+                  setForm({ ...form, format, spots: format === 'individual' ? 1 : form.spots });
+                }}
+                className={field}
+              >
+                {FORMATS.map((f) => (
+                  <option key={f.value} value={f.value}>{f.label}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label htmlFor="t-price" className={label}>
+                Цена, ₽ {form.format === 'individual' ? 'за индивидуальную' : 'за групповую'}
+              </label>
+              <input
+                id="t-price"
+                value={form.format === 'individual' ? form.priceIndividual : form.priceGroup}
+                onChange={(e) =>
+                  setForm(
+                    form.format === 'individual'
+                      ? { ...form, priceIndividual: e.target.value }
+                      : { ...form, priceGroup: e.target.value }
+                  )
+                }
+                className={field}
+                placeholder="2500"
+                inputMode="numeric"
+              />
+            </div>
+            <div>
               <label htmlFor="t-date" className={label}>Дата</label>
               <input id="t-date" type="date" required value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} className={field} />
             </div>
@@ -277,7 +330,14 @@ export default function AdminTrainings() {
                       {t.name}
                       {done && <span className="ml-2 text-[10px] uppercase text-gray-500">завершена</span>}
                     </p>
-                    <p className="text-xs text-gray-500">{t.directionName} · {t.trainer}</p>
+                    <p className="text-xs text-gray-500">
+                      {t.format === 'individual' && (
+                        <span className="mr-1 rounded-sm bg-purple-500/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-purple-300">
+                          Индив.
+                        </span>
+                      )}
+                      {t.directionName} · {t.trainer}
+                    </p>
                   </td>
                   <td className="hidden px-4 py-3 text-gray-400 sm:table-cell">
                     {formatDate(t.date, false)}

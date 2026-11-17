@@ -56,6 +56,9 @@ const trainingRows = (Array.isArray(published?.trainings) ? published.trainings 
   description: t.description || '',
   equipment: Array.isArray(t.equipment) ? t.equipment : [],
   image: t.image || '',
+  format: t.format === 'individual' ? 'individual' : 'group',
+  price_group: t.priceGroup || '',
+  price_individual: t.priceIndividual || '',
 }));
 
 // --- news ---

@@ -3,8 +3,10 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { useTrainings } from '../../store/trainingsStore';
+import { useTrainers } from '../../store/trainersStore';
+import { useDirections } from '../../store/directionsStore';
 import Button from '../../components/ui/Button';
-import { CalendarDays, Clock, MapPin, Users } from 'lucide-react';
+import { CalendarDays, Clock, MapPin, Users, Wallet } from 'lucide-react';
 
 const formatDate = (iso: string) =>
   new Date(iso).toLocaleDateString('ru-RU', {
@@ -15,6 +17,8 @@ const formatDate = (iso: string) =>
 
 export default function AthleteRegistrations() {
   const trainings = useTrainings();
+  const trainers = useTrainers();
+  const directions = useDirections();
   const {
     currentUser,
     registrations,
@@ -35,6 +39,10 @@ export default function AthleteRegistrations() {
   const confirmedCount = (trainingId: string) =>
     registrations.filter((r) => r.trainingId === trainingId && r.status === 'confirmed').length;
 
+  /**
+   * Здесь записывают только на групповые тренировки: индивидуальная требует
+   * выбрать тренера и направление, её оформляют на /schedule/<id>.
+   */
   const handleRegister = async (trainingId: string, capacity: number, name: string) => {
     const status = await register(trainingId, capacity);
     if (status === 'already') {
@@ -129,7 +137,14 @@ export default function AthleteRegistrations() {
                         </span>
                       </div>
                       <p className="mt-2 text-xs text-gray-600">
-                        Направление: {training.directionName} · Тренер: {training.trainer}
+                        Направление: {reg.selectedDirectionId
+                          ? directions.find((d) => d.id === reg.selectedDirectionId)?.name ??
+                            training.directionName
+                          : training.directionName}{' '}
+                        · Тренер: {reg.selectedTrainerId
+                          ? trainers.find((x) => x.id === reg.selectedTrainerId)?.name ??
+                            training.trainer
+                          : training.trainer}
                       </p>
                     </div>
                     <div className="flex shrink-0 gap-2">
@@ -183,13 +198,32 @@ export default function AthleteRegistrations() {
                       </span>
                       <span className="flex items-center gap-1.5">
                         <Users className="h-3.5 w-3.5" />
-                        {left > 0 ? `${left} мест` : 'мест нет'}
+                        {t.format === 'individual'
+                          ? 'Индивидуально'
+                          : `${left > 0 ? left + ' мест' : 'мест нет'}`}
                       </span>
+                      {t.format === 'individual' && t.priceIndividual && (
+                        <span className="flex items-center gap-1.5 font-semibold text-white">
+                          <Wallet className="h-3.5 w-3.5" />
+                          {t.priceIndividual} ₽
+                        </span>
+                      )}
+                      {t.format === 'group' && t.priceGroup && (
+                        <span className="flex items-center gap-1.5 text-gray-500">
+                          <Wallet className="h-3.5 w-3.5" />
+                          {t.priceGroup} ₽
+                        </span>
+                      )}
                     </div>
                   </div>
                   <div className="shrink-0">
                     {booked ? (
                       <span className="text-xs text-gray-500">Вы записаны</span>
+                    ) : t.format === 'individual' ? (
+                      // Формат требует выбрать тренера и направление — это на странице
+                      <Button to={`/schedule/${t.id}`} variant="primary" size="sm">
+                        Выбрать тренера
+                      </Button>
                     ) : (
                       <Button
                         onClick={() => handleRegister(t.id, t.spotsAvailable, t.name)}

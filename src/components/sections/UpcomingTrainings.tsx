@@ -2,25 +2,21 @@ import { Link } from 'react-router-dom';
 import SectionTitle from '../ui/SectionTitle';
 import Button from '../ui/Button';
 import { useTrainings } from '../../store/trainingsStore';
+import { useTrainers } from '../../store/trainersStore';
 import { useAuth } from '../../context/AuthContext';
+import { freeSpots } from '../../lib/access';
 import { formatDate, isPastDate } from '../../lib/date';
 import { displayValue } from '../../lib/placeholder';
 
 export default function UpcomingTrainings() {
   const trainings = useTrainings();
+  const trainers = useTrainers();
   const { registrations } = useAuth();
 
   const upcoming = [...trainings]
     .filter((t) => !isPastDate(t.date))
     .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time))
     .slice(0, 4);
-
-  const leftSpots = (id: string, capacity: number) =>
-    Math.max(
-      0,
-      capacity -
-        registrations.filter((r) => r.trainingId === id && r.status === 'confirmed').length
-    );
 
   return (
     <section className="bg-primary py-20 lg:py-28">
@@ -41,7 +37,9 @@ export default function UpcomingTrainings() {
         ) : (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             {upcoming.map((t) => {
-              const left = leftSpots(t.id, t.spotsAvailable);
+              const left = freeSpots(t, registrations, trainers);
+              const individual = t.format === 'individual';
+              const price = individual ? t.priceIndividual : t.priceGroup;
               return (
                 <div
                   key={t.id}
@@ -57,12 +55,21 @@ export default function UpcomingTrainings() {
                   </div>
                   <div className="flex flex-1 flex-col justify-between p-5">
                     <div>
-                      <div className="mb-2 flex items-center gap-2">
+                      <div className="mb-2 flex flex-wrap items-center gap-2">
                         <span className="text-xs font-semibold uppercase tracking-wider text-accent-blue">
                           {t.directionName}
                         </span>
                         <span className="text-gray-600">·</span>
                         <span className="text-xs text-gray-400">{t.level}</span>
+                        <span
+                          className={`rounded-sm px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+                            individual
+                              ? 'bg-purple-500/15 text-purple-300'
+                              : 'bg-blue-500/15 text-blue-300'
+                          }`}
+                        >
+                          {individual ? 'Индивидуальная' : 'Групповая'}
+                        </span>
                       </div>
                       <h3 className="mb-2 text-lg font-bold text-white">
                         <Link to={`/schedule/${t.id}`} className="transition-colors hover:text-accent-red">
@@ -74,6 +81,9 @@ export default function UpcomingTrainings() {
                           {formatDate(t.date, false)} · {t.time} · {t.duration}
                         </p>
                         <p>{displayValue(t.location, 'Точка сбора — в расписании')}</p>
+                        {price && (
+                          <p className="font-semibold text-white">{price} ₽</p>
+                        )}
                       </div>
                     </div>
                     <div className="mt-4 flex items-center justify-between">
@@ -82,10 +92,14 @@ export default function UpcomingTrainings() {
                           left > 0 ? 'text-green-400' : 'text-red-400'
                         }`}
                       >
-                        {left > 0 ? `${left} мест` : 'Мест нет'}
+                        {left > 0
+                          ? individual
+                            ? 'Есть свободные тренеры'
+                            : `${left} мест`
+                          : 'Мест нет'}
                       </span>
                       <Button to={`/schedule/${t.id}`} variant="blue" size="sm">
-                        {left > 0 ? 'Записаться' : 'В лист ожидания'}
+                        {individual ? 'Выбрать тренера' : left > 0 ? 'Записаться' : 'В лист ожидания'}
                       </Button>
                     </div>
                   </div>

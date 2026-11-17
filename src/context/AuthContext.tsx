@@ -50,7 +50,11 @@ interface AuthContextType {
   registrations: TrainingRegistration[];
   notifications: Notification[];
   personalResults: PersonalResult[];
-  register: (trainingId: string, capacity: number) => Promise<'confirmed' | 'waitlist' | 'already' | 'error'>;
+  register: (
+    trainingId: string,
+    capacity: number,
+    extra?: { trainerId: string; directionId: string }
+  ) => Promise<'confirmed' | 'waitlist' | 'already' | 'error'>;
   cancelRegistration: (regId: string) => Promise<void>;
   markAttended: (regId: string) => Promise<void>;
   addPersonalResult: (r: Omit<PersonalResult, 'id'>) => Promise<void>;
@@ -164,7 +168,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const [regs, notifs, results] = await Promise.all([
         supabase
           .from('registrations')
-          .select('id,user_id,training_id,status,attended,created_at')
+          .select(
+            'id,user_id,training_id,status,attended,selected_trainer_id,selected_direction_id,created_at'
+          )
           .order('created_at', { ascending: false }),
         supabase
           .from('notifications')
@@ -187,6 +193,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             status: r.status as TrainingRegistration['status'],
             registeredAt: isoDate(r.created_at as string),
             attended: Boolean(r.attended),
+            ...(r.selected_trainer_id ? { selectedTrainerId: String(r.selected_trainer_id) } : {}),
+            ...(r.selected_direction_id
+              ? { selectedDirectionId: String(r.selected_direction_id) }
+              : {}),
           }))
         );
       }
@@ -384,7 +394,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const register = useCallback(
-    async (trainingId: string, capacity: number): Promise<'confirmed' | 'waitlist' | 'already' | 'error'> => {
+    async (
+      trainingId: string,
+      capacity: number,
+      extra?: { trainerId: string; directionId: string }
+    ): Promise<'confirmed' | 'waitlist' | 'already' | 'error'> => {
       if (!currentUser) return 'error';
 
       const mine = registrations.find(
@@ -401,11 +415,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const status: TrainingRegistration['status'] =
         taken < capacity ? 'confirmed' : 'waitlist';
 
-      const { error } = await supabase.from('registrations').insert({
+      const payload: Record<string, unknown> = {
         user_id: currentUser.id,
         training_id: trainingId,
         status,
-      });
+      };
+      if (extra?.trainerId) payload.selected_trainer_id = extra.trainerId;
+      if (extra?.directionId) payload.selected_direction_id = extra.directionId;
+
+      const { error } = await supabase.from('registrations').insert(payload);
       if (error) return 'error';
 
       await addNotification({

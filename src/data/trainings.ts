@@ -1,7 +1,13 @@
 import type { Training } from '../types';
 import { dateFromToday } from '../lib/date';
 
-export const trainings: Training[] = [
+/**
+ * Демо-расписание описано до появления формата тренировок, поэтому новые
+ * поля здесь заданы через SEED_DEFAULTS: все примеры — групповые занятия.
+ */
+type SeedTraining = Omit<Training, 'format' | 'priceGroup' | 'priceIndividual'>;
+
+const seedTrainings: SeedTraining[] = [
   {
     id: 'training-1',
     name: 'Утренний бег в парке',
@@ -105,3 +111,10 @@ export const trainings: Training[] = [
     image: '/images/hiking.svg',
   },
 ];
+
+export const trainings: Training[] = seedTrainings.map((t) => ({
+  ...t,
+  format: 'group',
+  priceGroup: '',
+  priceIndividual: '',
+}));

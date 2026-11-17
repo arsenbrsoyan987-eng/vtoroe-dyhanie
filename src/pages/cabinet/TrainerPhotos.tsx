@@ -18,13 +18,13 @@ import { Camera, Trash2 } from 'lucide-react';
  * Права проверяет база — в списке и так только свои тренировки.
  */
 export default function TrainerPhotos() {
-  const { currentUser } = useAuth();
+  const { currentUser, registrations } = useAuth();
   const { toast } = useToast();
   const trainings = useTrainings();
   const photos = useTrainingPhotos();
 
   const mine = useMemo(() => {
-    const list = visibleTrainings(trainings, currentUser);
+    const list = visibleTrainings(trainings, currentUser, registrations);
     // Сначала прошедшие: фото делают после занятия
     return [...list].sort((a, b) => {
       const pastA = isPastDate(a.date) ? 0 : 1;
