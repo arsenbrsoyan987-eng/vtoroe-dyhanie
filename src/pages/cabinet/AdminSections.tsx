@@ -14,6 +14,7 @@ const emptyForm = {
   title: '',
   subtitle: '',
   icon: '',
+  description: '',
   published: true,
 };
 
@@ -22,6 +23,7 @@ type FormState = {
   title: string;
   subtitle: string;
   icon: string;
+  description: string;
   published: boolean;
 };
 
@@ -56,6 +58,7 @@ export default function AdminSections() {
       title: r.title,
       subtitle: r.subtitle,
       icon: r.icon,
+      description: r.description ?? '',
       published: r.published,
     });
     setEditingId(id);
@@ -162,6 +165,17 @@ export default function AdminSections() {
                 onChange={(e) => setForm({ ...form, icon: e.target.value })}
                 className={field}
                 placeholder="🏆"
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <label htmlFor="s-desc" className={label}>Описание раздела (вводный текст)</label>
+              <textarea
+                id="s-desc"
+                rows={4}
+                value={form.description}
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
+                className={`${field} resize-none`}
+                placeholder="Краткое описание раздела, которое показывается перед карточками на странице"
               />
             </div>
             <div>
@@ -366,11 +380,16 @@ function AdminCards({ sectionId, onClose }: { sectionId: string; onClose: () => 
               <label htmlFor="c-desc" className={label}>Описание</label>
               <textarea
                 id="c-desc"
-                rows={3}
+                rows={10}
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
-                className={`${field} resize-none`}
+                className={`${field} resize-y leading-relaxed`}
+                placeholder={'Обычный текст: пустая строка разделяет абзацы, строки с «- » соберут список. Можно вставить и готовый HTML.'}
               />
+              <p className="mt-1.5 text-[11px] leading-relaxed text-gray-500">
+                Этот текст становится страницей карточки: в списке раздела показывается только
+                начало, полностью — при переходе по карточке.
+              </p>
             </div>
             <div className="sm:col-span-2">
               <label htmlFor="c-image" className={label}>URL фото</label>

@@ -1,6 +1,7 @@
 import { useParams, Link } from 'react-router-dom';
 import SectionTitle from '../components/ui/SectionTitle';
 import { useSections, useCards } from '../store/sectionsStore';
+import { plainExcerpt, toHtml } from '../lib/html';
 
 export default function SectionPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -29,6 +30,13 @@ export default function SectionPage() {
           align="center"
           as="h1"
         />
+
+        {section.description && (
+          <div
+            className="mx-auto mb-12 max-w-3xl text-center text-base leading-relaxed text-gray-300 [&_a]:text-accent-blue [&_h2]:mb-3 [&_h2]:mt-8 [&_h2]:text-xl [&_h2]:font-bold [&_h2]:text-white [&_h3]:mb-2 [&_h3]:mt-6 [&_h3]:text-lg [&_h3]:font-bold [&_h3]:text-white [&_li]:ml-5 [&_li]:list-disc [&_p]:mb-4 [&_p]:last:mb-0 [&_strong]:text-white [&_ul]:mb-4 [&_ul]:space-y-2 [&_ul]:text-left"
+            dangerouslySetInnerHTML={{ __html: toHtml(section.description) }}
+          />
+        )}
 
         {cards.length === 0 ? (
           <div className="rounded-sm border border-white/10 bg-surface px-6 py-16 text-center">
@@ -62,7 +70,7 @@ export default function SectionPage() {
                   </h3>
                   {card.description && (
                     <p className="text-gray-400 text-sm line-clamp-3 leading-relaxed">
-                      {card.description}
+                      {plainExcerpt(card.description)}
                     </p>
                   )}
                   {card.link && (

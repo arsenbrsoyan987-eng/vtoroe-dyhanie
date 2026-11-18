@@ -344,11 +344,14 @@ create table if not exists public.sections (
   title text not null default '',
   subtitle text not null default '',
   icon text not null default '',
+  description text not null default '',
   published boolean not null default true,
   sort_order int not null default 0,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.sections add column if not exists description text not null default '';
 
 create index if not exists sections_sort_idx on public.sections (sort_order);
 

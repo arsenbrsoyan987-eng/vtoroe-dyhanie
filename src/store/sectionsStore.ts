@@ -15,6 +15,8 @@ export interface Section {
   title: string;
   subtitle: string;
   icon: string;
+  /** Вводный текст страницы раздела, показывается перед карточками */
+  description: string;
   published: boolean;
   sort_order: number;
   created_at: string;
@@ -39,6 +41,7 @@ interface SectionRow {
   title: string;
   subtitle: string;
   icon: string;
+  description: string;
   published: boolean;
   sort_order: number;
   created_at: string;
@@ -57,7 +60,11 @@ interface CardRow {
   updated_at: string;
 }
 
-const SECTION_COLUMNS = 'id,slug,title,subtitle,icon,published,sort_order,created_at,updated_at';
+const SECTION_COLUMNS =
+  'id,slug,title,subtitle,icon,description,published,sort_order,created_at,updated_at';
+/** Разделы создали раньше описания: без миграции колонки в базе нет */
+const SECTION_COLUMNS_OLD =
+  'id,slug,title,subtitle,icon,published,sort_order,created_at,updated_at';
 const CARD_COLUMNS = 'id,section_id,title,description,image,link,sort_order,created_at,updated_at';
 
 function fromSectionRow(row: SectionRow): Section {
@@ -67,6 +74,7 @@ function fromSectionRow(row: SectionRow): Section {
     title: row.title,
     subtitle: row.subtitle,
     icon: row.icon,
+    description: row.description ?? '',
     published: row.published,
     sort_order: row.sort_order,
     created_at: row.created_at,
@@ -109,7 +117,20 @@ export async function reloadSections(): Promise<Section[]> {
     .select(SECTION_COLUMNS)
     .order('sort_order', { ascending: true });
 
-  if (error) throw error;
+  if (error) {
+    /** Колонку description ещё не добавили — читаем разделы без неё */
+    if (error.message?.includes('does not exist')) {
+      const fallback = await supabase
+        .from('sections')
+        .select(SECTION_COLUMNS_OLD)
+        .order('sort_order', { ascending: true });
+      if (fallback.error) throw fallback.error;
+      sectionCache = (fallback.data as SectionRow[] | undefined)?.map(fromSectionRow) ?? [];
+      emitSections();
+      return sectionCache;
+    }
+    throw error;
+  }
   sectionCache = (data as SectionRow[] | undefined)?.map(fromSectionRow) ?? [];
   emitSections();
   return sectionCache;
@@ -212,6 +233,7 @@ export const sectionsStore = {
       title: input.title ?? '',
       subtitle: input.subtitle ?? '',
       icon: input.icon ?? '',
+      description: input.description ?? '',
       published: input.published ?? true,
       sort_order: 0,
       created_at: now,
