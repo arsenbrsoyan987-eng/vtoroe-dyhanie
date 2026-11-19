@@ -8,6 +8,7 @@ const SECTIONS: { key: string; label: string; fields: Field[] }[] = [
     fields: [
       { key: 'logoUrl', label: 'URL логотипа', hint: 'Прямая ссылка на изображение логотипа (120×40 или 200×60px)' },
       { key: 'logoAlt', label: 'Описание логотипа', hint: 'Альтернативный текст для поисковиков' },
+      { key: 'logoDescriptor', label: 'Дескриптор (слоган)', hint: 'Подпись рядом с логотипом в шапке — повышает узнаваемость бренда. Пусто — скрыть' },
     ],
   },
   {
@@ -28,6 +29,7 @@ const SECTIONS: { key: string; label: string; fields: Field[] }[] = [
       { key: 'socialVk', label: 'ВКонтакте', hint: 'https://vk.com/yourgroup' },
       { key: 'socialYoutube', label: 'YouTube', hint: 'https://youtube.com/@yourchannel' },
       { key: 'socialInstagram', label: 'Instagram', hint: 'https://instagram.com/yourprofile' },
+      { key: 'socialMax', label: 'Max', hint: 'Ссылка на чат в мессенджере Max' },
     ],
   },
   {

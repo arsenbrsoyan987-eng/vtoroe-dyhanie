@@ -21,6 +21,7 @@ import ResultsPage from './pages/ResultsPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import PrivacyPage from './pages/PrivacyPage';
+import CorporatePage from './pages/CorporatePage';
 import NotFoundPage from './pages/NotFoundPage';
 import { AuthProvider } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
@@ -54,6 +55,7 @@ const AdminAppearance = lazy(() => import('./pages/cabinet/AdminAppearance'));
 const AdminRoutes = lazy(() => import('./pages/cabinet/AdminRoutes'));
 const AdminPages = lazy(() => import('./pages/cabinet/AdminPages'));
 const AdminSections = lazy(() => import('./pages/cabinet/AdminSections'));
+const AdminLeads = lazy(() => import('./pages/cabinet/AdminLeads'));
 const PageDetailPage = lazy(() => import('./pages/PageDetailPage'));
 const SectionPage = lazy(() => import('./pages/SectionPage'));
 const SectionDetailPage = lazy(() => import('./pages/SectionDetailPage'));
@@ -92,6 +94,7 @@ export default function App() {
               <Route path="news" element={<NewsPage />} />
               <Route path="news/:id" element={<NewsDetailPage />} />
               <Route path="results" element={<ResultsPage />} />
+              <Route path="corporate" element={<CorporatePage />} />
               <Route path="privacy" element={<PrivacyPage />} />
               <Route path="login" element={<LoginPage />} />
               <Route path="register" element={<RegisterPage />} />
@@ -304,6 +307,14 @@ export default function App() {
                   element={
                     <ProtectedRoute roles={['admin']}>
                       <AdminSections />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="admin/leads"
+                  element={
+                    <ProtectedRoute roles={['admin']}>
+                      <AdminLeads />
                     </ProtectedRoute>
                   }
                 />

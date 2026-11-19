@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { useTrainings } from '../store/trainingsStore';
@@ -10,6 +10,7 @@ import { formatDate, isPastDate } from '../lib/date';
 import { isVideoUrl } from '../lib/upload';
 import { displayValue, realValue } from '../lib/placeholder';
 import Button from '../components/ui/Button';
+import QuickBookingModal from '../components/ui/QuickBookingModal';
 import { ArrowLeft, CalendarDays, Camera, CheckCircle2, Clock, MapPin, Timer, User, Users, Wallet } from 'lucide-react';
 
 export default function TrainingDetailPage() {
@@ -21,11 +22,12 @@ export default function TrainingDetailPage() {
   const directions = useDirections();
   const { currentUser, registrations, register, cancelRegistration } = useAuth();
   const { toast } = useToast();
-  const navigate = useNavigate();
 
   const isIndividual = training?.format === 'individual';
   const [pickedTrainer, setPickedTrainer] = useState('');
   const [pickedDirection, setPickedDirection] = useState('');
+  /** Гость записывается без аккаунта — модалка заявки открывается по кнопке */
+  const [bookingOpen, setBookingOpen] = useState(false);
 
   /**
    * Индивидуальное занятие ведёт любой тренер школы, поэтому спортсмен
@@ -97,8 +99,9 @@ export default function TrainingDetailPage() {
   const pickedDirectionName = directions.find((d) => d.id === myReg?.selectedDirectionId)?.name;
 
   const handleRegister = async () => {
+    // Гость не обязан заводить аккаунт: сначала заявка, вход — второй шаг
     if (!currentUser) {
-      navigate('/login', { state: { from: `/schedule/${training.id}` } });
+      setBookingOpen(true);
       return;
     }
     if (isIndividual && (!pickedTrainer || !pickedDirection)) {
@@ -320,17 +323,25 @@ export default function TrainingDetailPage() {
                     ? left > 0
                       ? 'Записаться'
                       : 'В лист ожидания'
-                    : 'Войти и записаться'}
+                    : 'Записаться без регистрации'}
                 </Button>
                 <span className="text-xs text-gray-500">
                   {currentUser
                     ? 'Запись можно отменить в любой момент'
-                    : 'Для записи нужен аккаунт спортсмена'}
+                    : 'Тренер перезвонит и подтвердит запись — аккаунт создавать не нужно'}
                 </span>
               </div>
             )}
           </div>
         </div>
+
+        {bookingOpen && (
+          <QuickBookingModal
+            trainingId={training.id}
+            trainingName={training.name}
+            onClose={() => setBookingOpen(false)}
+          />
+        )}
 
         {/* Отчёт с занятия: фото и видео загружает тренер после тренировки */}
         {photos.length > 0 && (

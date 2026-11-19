@@ -592,6 +592,7 @@ alter table public.directions enable row level security;
 alter table public.routes enable row level security;
 alter table public.pages enable row level security;
 alter table public.site_settings enable row level security;
+alter table public.leads enable row level security;
 
 -- ---------- profiles ----------
 -- Удалённый аккаунт не читается даже самим владельцем: при входе профиль
@@ -895,6 +896,45 @@ drop policy if exists "site_settings: админ правит" on public.site_se
 create policy "site_settings: админ правит" on public.site_settings
   for all using (public.is_admin()) with check (public.is_admin());
 
+-- ---------- Быстрые заявки (leads) ----------
+-- Запись на тренировку без регистрации: посетитель оставляет имя и телефон,
+-- тренер перезванивает. Заявку может создать аноним, но читать список должен
+-- только администратор — это персональные данные.
+create table if not exists public.leads (
+  id uuid primary key default gen_random_uuid(),
+  name text not null default '',
+  phone text not null default '',
+  email text not null default '',
+  training_id text not null default '',
+  source text not null default '',
+  message text not null default '',
+  status text not null default 'new' check (status in ('new', 'worked', 'closed')),
+  created_at timestamptz not null default now()
+);
+
+create index if not exists leads_created_idx on public.leads (created_at desc);
+create index if not exists leads_training_idx on public.leads (training_id);
+
+alter table public.leads enable row level security;
+
+drop policy if exists "leads: читает только админ" on public.leads;
+create policy "leads: читает только админ" on public.leads
+  for select using (public.is_admin());
+
+drop policy if exists "leads: заявку оставляет любой" on public.leads;
+create policy "leads: заявку оставляет любой" on public.leads
+  for insert with check (
+    length(trim(phone)) >= 10 and length(trim(phone)) <= 20 and length(trim(name)) <= 120
+  );
+
+drop policy if exists "leads: админ правит статус" on public.leads;
+create policy "leads: админ правит статус" on public.leads
+  for update using (public.is_admin()) with check (public.is_admin());
+
+drop policy if exists "leads: админ удаляет" on public.leads;
+create policy "leads: админ удаляет" on public.leads
+  for delete using (public.is_admin());
+
 -- ============================================================
 --  Realtime: список пользователей и записи обновляются без перезагрузки
 -- ============================================================
@@ -902,7 +942,7 @@ do $do$
 declare
   t text;
 begin
-  foreach t in array array['profiles', 'registrations', 'notifications', 'results', 'trainings', 'camps', 'training_photos', 'news', 'trainers', 'events', 'testimonials', 'sport_results', 'directions', 'site_settings', 'routes', 'pages', 'sections', 'section_cards']
+  foreach t in array array['profiles', 'registrations', 'notifications', 'results', 'trainings', 'camps', 'training_photos', 'news', 'trainers', 'events', 'testimonials', 'sport_results', 'directions', 'site_settings', 'routes', 'pages', 'sections', 'section_cards', 'leads']
   loop
     begin
       execute format('alter publication supabase_realtime add table public.%I', t);

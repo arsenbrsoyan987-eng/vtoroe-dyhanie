@@ -43,6 +43,7 @@ const EXTRA_KEYS = [
   'galleryImages',
   'logoUrl',
   'logoAlt',
+  'logoDescriptor',
   'primaryColor',
   'secondaryColor',
   'accentColor',
@@ -51,6 +52,7 @@ const EXTRA_KEYS = [
   'socialVk',
   'socialYoutube',
   'socialInstagram',
+  'socialMax',
   'footerText',
   'testimonialsTitle',
   'testimonialsSubtitle',
@@ -102,12 +104,14 @@ function getDefaultValue(key: SettingKey): string {
   if (key === 'ogImage') return '/og-image.jpg';
   if (key === 'logoUrl') return '/logo.jpg';
   if (key === 'logoAlt') return 'Логотип школы «Второе дыхание»';
+  if (key === 'logoDescriptor') return 'Дыши движением';
   if (key === 'testimonialsTitle') return 'Голоса школы';
   if (key === 'testimonialsSubtitle') return 'Истории';
   if (key === 'footerText') return '';
   if (key === 'socialVk') return '';
   if (key === 'socialYoutube') return '';
   if (key === 'socialInstagram') return '';
+  if (key === 'socialMax') return '';
   if (key === 'galleryImages') return '';
   // Дефолтные цвета оставим пустыми — они берутся из Tailwind @theme.
   return '';

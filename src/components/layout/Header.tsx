@@ -1,21 +1,28 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { useSetting } from '../../store/settingsStore';
+import { useSetting, useSettingList } from '../../store/settingsStore';
 import { useSections } from '../../store/sectionsStore';
+import { telHref } from '../../data/club';
 import Button from '../ui/Button';
-import { LayoutDashboard, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Menu, Phone, Send, X } from 'lucide-react';
 
 const navLinks = [
   { path: '/directions', label: 'Направления' },
   { path: '/schedule', label: 'Расписание' },
   { path: '/trainers', label: 'Тренеры' },
+  { path: '/corporate', label: 'Корпоративный спорт' },
   { path: '/camps', label: 'Кэмпы' },
   { path: '/events', label: 'Мероприятия' },
   { path: '/routes', label: 'Маршруты' },
   { path: '/news', label: 'Новости' },
 ];
 
+/**
+ * Шапка. Контакты (телефон и Telegram) вынесены наверх намеренно: до этого
+ * номер искали в подвале, и значительная часть обращений терялась. Значения
+ * берутся из «Настроек сайта», а не зашиты здесь — телефон меняет владелец.
+ */
 export default function Header() {
   const [open, setOpen] = useState(false);
   const { pathname } = useLocation();
@@ -23,6 +30,11 @@ export default function Header() {
   const sections = useSections();
   const logoUrl = useSetting('logoUrl') || '/logo.jpg';
   const logoAlt = useSetting('logoAlt') || 'Логотип школы «Второе дыхание»';
+  const logoDescriptor = useSetting('logoDescriptor');
+  const telegram = useSetting('telegram');
+  const telegramLabel = useSetting('telegramLabel');
+  const phones = useSettingList('phones');
+  const phone = phones[0] ?? '';
 
   // Закрываем мобильное меню при переходе
   useEffect(() => {
@@ -58,7 +70,7 @@ export default function Header() {
     <header className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-primary/90 backdrop-blur-md">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between gap-4 lg:h-20">
-          <Link to="/" className="flex shrink-0 items-center" aria-label={logoAlt}>
+          <Link to="/" className="flex shrink-0 items-center gap-3" aria-label={logoAlt}>
             <span className="flex items-center rounded-md bg-white px-2 py-1 transition-all hover:ring-2 hover:ring-accent-red/50">
               <img
                 src={logoUrl}
@@ -73,9 +85,15 @@ export default function Header() {
                 }}
               />
             </span>
+            {/* Дескриптор логотипа: сам знак мелкий, узнаваемость добирается слоганом */}
+            {logoDescriptor && (
+              <span className="hidden text-xs font-medium uppercase tracking-[0.18em] text-gray-400 sm:block">
+                {logoDescriptor}
+              </span>
+            )}
           </Link>
 
-          <nav className="hidden items-center gap-0.5 lg:flex" aria-label="Основная навигация">
+          <nav className="hidden items-center gap-0.5 xl:flex" aria-label="Основная навигация">
             {allLinks.map((link) => (
               <NavLink
                 key={link.path}
@@ -96,6 +114,30 @@ export default function Header() {
           </nav>
 
           <div className="flex items-center gap-2">
+            {phone && (
+              <a
+                href={telHref(phone)}
+                className="flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm font-semibold text-white transition-colors hover:text-accent-red"
+                aria-label={`Позвонить: ${phone}`}
+              >
+                <Phone className="h-4 w-4 shrink-0 text-accent-red" />
+                <span className="hidden sm:inline">{phone}</span>
+              </a>
+            )}
+
+            {telegram && (
+              <a
+                href={telegram}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm font-medium text-gray-300 transition-colors hover:text-white"
+                aria-label={`Написать в Telegram ${telegramLabel}`}
+              >
+                <Send className="h-4 w-4 shrink-0" />
+                <span className="hidden lg:inline">Telegram</span>
+              </a>
+            )}
+
             <div className="hidden md:block">
               {currentUser ? (
                 <Button to="/cabinet" variant="outline" size="sm">
@@ -109,7 +151,7 @@ export default function Header() {
               )}
             </div>
             <button
-              className="rounded-sm p-2 text-white transition-colors hover:bg-white/5 lg:hidden"
+              className="rounded-sm p-2 text-white transition-colors hover:bg-white/5 xl:hidden"
               onClick={() => setOpen((v) => !v)}
               aria-label={open ? 'Закрыть меню' : 'Открыть меню'}
               aria-expanded={open}
@@ -127,7 +169,7 @@ export default function Header() {
         // Свёрнутое меню не должно ловить фокус и озвучиваться скринридером
         inert={!open}
         aria-hidden={!open}
-        className={`overflow-hidden border-t border-white/10 bg-surface transition-[max-height] duration-300 lg:hidden ${
+        className={`overflow-hidden border-t border-white/10 bg-surface transition-[max-height] duration-300 xl:hidden ${
           open ? 'max-h-[calc(100vh-4rem)] overflow-y-auto' : 'max-h-0 border-t-0'
         }`}
       >
@@ -148,6 +190,30 @@ export default function Header() {
               {link.label}
             </NavLink>
           ))}
+
+          <div className="space-y-1 border-t border-white/10 pt-3">
+            {phone && (
+              <a
+                href={telHref(phone)}
+                className="flex items-center gap-3 rounded-sm px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/5"
+              >
+                <Phone className="h-4 w-4 shrink-0 text-accent-red" />
+                Позвонить: {phone}
+              </a>
+            )}
+            {telegram && (
+              <a
+                href={telegram}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 rounded-sm px-4 py-3 text-sm font-medium text-gray-300 transition-colors hover:bg-white/5 hover:text-white"
+              >
+                <Send className="h-4 w-4 shrink-0" />
+                Написать в Telegram
+              </a>
+            )}
+          </div>
+
           <div className="pt-3">
             <Button to={currentUser ? '/cabinet' : '/login'} variant="outline" size="sm" className="w-full">
               {currentUser ? 'Личный кабинет' : 'Войти в кабинет'}
