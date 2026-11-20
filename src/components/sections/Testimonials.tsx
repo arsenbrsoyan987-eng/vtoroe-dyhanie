@@ -1,58 +1,89 @@
-import SectionTitle from '../ui/SectionTitle';
+import { useRef } from 'react';
+import { ArrowLeft, ArrowRight, Quote } from 'lucide-react';
 import { useTestimonials } from '../../store/testimonialsStore';
 import { useSetting } from '../../store/settingsStore';
 import { isFilled } from '../../lib/placeholder';
 
+/**
+ * Истории учеников — карусель цитат.
+ *
+ * Блок целиком скрывается, если отзывов с содержательным текстом нет:
+ * пустая секция «Истории» на витрине хуже, чем её отсутствие.
+ */
 export default function Testimonials() {
-  const testimonials = useTestimonials().filter((item) =>
-    isFilled(item, ['name', 'text']),
-  );
+  const items = useTestimonials().filter((item) => isFilled(item, ['name', 'text']));
   const title = useSetting('testimonialsTitle');
-  const subtitle = useSetting('testimonialsSubtitle');
+  const railRef = useRef<HTMLDivElement>(null);
 
-  if (testimonials.length === 0) return null;
+  if (items.length === 0) return null;
+
+  const scrollBy = (dir: 1 | -1) => {
+    railRef.current?.scrollBy({ left: dir * 420, behavior: 'smooth' });
+  };
 
   return (
-    <section className="py-20 lg:py-28 bg-primary">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <SectionTitle
-          subtitle={subtitle}
-          title={title}
-          align="center"
-        />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {testimonials.map((item) => (
-            <div
-              key={item.id}
-              className="bg-surface border border-white/10 rounded-sm p-6 hover:border-accent-red/30 transition-colors"
+    <section className="bg-navy py-20 text-paper lg:py-28">
+      <div className="container-x">
+        <div className="mb-10 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <span className="eyebrow mb-4 text-brand">Истории</span>
+            <h2 className="display max-w-xl text-4xl sm:text-5xl">{title}</h2>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => scrollBy(-1)}
+              aria-label="Предыдущие истории"
+              className="flex h-11 w-11 items-center justify-center rounded-full border border-white/25 text-white transition-colors hover:border-brand hover:bg-brand"
             >
-              <div className="flex items-center gap-3 mb-4">
+              <ArrowLeft className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => scrollBy(1)}
+              aria-label="Следующие истории"
+              className="flex h-11 w-11 items-center justify-center rounded-full border border-white/25 text-white transition-colors hover:border-brand hover:bg-brand"
+            >
+              <ArrowRight className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+
+        <div ref={railRef} className="rail">
+          {items.map((item) => (
+            <figure
+              key={item.id}
+              className="flex w-[20rem] flex-col rounded-2xl bg-white/5 p-6 ring-1 ring-white/10 sm:w-[26rem]"
+            >
+              <Quote className="mb-4 h-6 w-6 shrink-0 text-brand" />
+              <blockquote className="flex-1 text-[0.95rem] leading-relaxed text-white/85">
+                {item.text}
+              </blockquote>
+              <figcaption className="mt-6 flex items-center gap-3 border-t border-white/10 pt-5">
                 {item.photo ? (
                   <img
                     src={item.photo}
                     alt={item.name}
-                    className="w-12 h-12 rounded-full object-cover"
+                    className="h-11 w-11 rounded-full object-cover"
                     loading="lazy"
                   />
                 ) : (
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent-red/15 font-bold text-accent-red">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-full bg-brand/20 font-bold text-brand">
                     {item.name.charAt(0).toUpperCase()}
                   </div>
                 )}
                 <div>
-                  <div className="text-white font-semibold text-sm">{item.name}</div>
-                  <div className="text-accent-red text-xs">{item.direction}</div>
+                  <div className="text-sm font-semibold text-white">{item.name}</div>
+                  {item.achievement ? (
+                    <div className="text-[0.7rem] uppercase tracking-[0.12em] text-white/50">
+                      {item.achievement}
+                    </div>
+                  ) : (
+                    <div className="text-[0.7rem] uppercase tracking-[0.12em] text-brand">
+                      {item.direction}
+                    </div>
+                  )}
                 </div>
-              </div>
-              <blockquote className="text-gray-300 text-sm leading-relaxed italic mb-4">
-                «{item.text}»
-              </blockquote>
-              {item.achievement && (
-                <div className="text-gray-500 text-xs">
-                  🏆 {item.achievement}
-                </div>
-              )}
-            </div>
+              </figcaption>
+            </figure>
           ))}
         </div>
       </div>

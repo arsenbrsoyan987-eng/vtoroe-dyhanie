@@ -38,15 +38,34 @@ const ROUTES = ['/', '/trainers/trainer-2', '/schedule/training-3', '/directions
       title: document.title,
     }));
 
-    // Проверяем переход по внутренней ссылке (SPA-навигация)
-    const link = await page.$('a[href^="/schedule"], a[href^="/trainers"]');
-    let navigated = 'нет ссылки';
-    if (link) {
-      await link.click();
-      await new Promise((r) => setTimeout(r, 800));
-      const after = await page.evaluate(() => ({ url: location.pathname, h1: document.querySelector('h1')?.innerText.trim() ?? '' }));
-      navigated = `${after.url} (h1: ${after.h1.slice(0, 30)})`;
-    }
+    // Проверяем переход по внутренней ссылке (SPA-навигация).
+    // В шапке часть ссылок лежит в выпадающем меню и не видна — кликаем только по видимым.
+    const navigated = await page.evaluate(() => {
+      const candidates = [
+        ...document.querySelectorAll('a[href^="/schedule"], a[href^="/trainers"]'),
+        ...document.querySelectorAll('a[href^="/"]'),
+      ];
+      const link = candidates.find((a) => {
+        const r = a.getBoundingClientRect();
+        const href = a.getAttribute('href');
+        return (
+          href &&
+          href !== location.pathname &&
+          r.width > 0 &&
+          r.height > 0 &&
+          r.top >= 0 &&
+          r.bottom <= window.innerHeight
+        );
+      });
+      if (!link) return 'нет видимой ссылки';
+      link.click();
+      return new Promise((resolve) =>
+        setTimeout(
+          () => resolve(`${location.pathname} (h1: ${document.querySelector('h1')?.innerText.trim().slice(0, 30) ?? ''})`),
+          800
+        )
+      );
+    });
 
     const ok = info.rootNodes > 20 && logs.length === 0;
     if (!ok) errors += 1;

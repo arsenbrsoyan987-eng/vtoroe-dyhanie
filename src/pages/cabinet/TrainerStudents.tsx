@@ -2,6 +2,8 @@ import { useAuth } from '../../context/AuthContext';
 import { activeProfiles, useProfiles } from '../../store/profilesStore';
 import { useTrainings } from '../../store/trainingsStore';
 import { visibleTrainings } from '../../lib/access';
+import { EmptyState, PageHeader, Panel } from '../../components/cabinet/ui';
+import { countNoun } from '../../lib/plural';
 
 export default function TrainerStudentsPage() {
   const trainings = useTrainings();
@@ -19,18 +21,18 @@ export default function TrainerStudentsPage() {
   const athletes = users.filter((u) => athleteIds.includes(u.id));
 
   return (
-    <div>
-      <h1 className="mb-2 text-2xl font-bold text-white">Мои студенты</h1>
-      <p className="mb-8 text-sm text-gray-400">
-        {athletes.length} участников записаны на ваши тренировки
-      </p>
+    <div className="mx-auto max-w-4xl">
+      <PageHeader
+        eyebrow="Люди"
+        title="Мои спортсмены"
+        subtitle={`${countNoun(athletes.length, 'участник записан', 'участника записаны', 'участников записаны')} на ваши тренировки.`}
+      />
 
       {athletes.length === 0 ? (
-        <div className="rounded-sm border border-white/10 bg-surface p-8 text-center">
-          <p className="text-sm text-gray-400">
-            Пока никто не записался. Список появится после первых записей.
-          </p>
-        </div>
+        <EmptyState
+          title="Пока никто не записался"
+          text="Список соберётся автоматически после первых записей на ваши тренировки."
+        />
       ) : (
         <div className="space-y-3">
           {athletes.map((athlete) => {
@@ -38,41 +40,60 @@ export default function TrainerStudentsPage() {
             const attended = regs.filter((r) => r.attended).length;
 
             return (
-              <div key={athlete.id} className="rounded-sm border border-white/10 bg-surface p-5">
+              <Panel key={athlete.id}>
                 <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent-red/20 text-lg font-bold text-accent-red">
-                      {athlete.name.charAt(0)}
-                    </div>
-                    <div>
-                      <div className="font-semibold text-white">{athlete.name}</div>
-                      <div className="text-xs text-gray-400">{athlete.email}</div>
+                  <div className="flex min-w-0 items-center gap-3">
+                    {athlete.photo ? (
+                      <img
+                        src={athlete.photo}
+                        alt={athlete.name}
+                        className="h-12 w-12 shrink-0 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-brand/10 text-lg font-bold text-brand">
+                        {athlete.name.charAt(0)}
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-bold text-ink">{athlete.name}</p>
+                      <p className="truncate text-xs text-graphite">{athlete.email}</p>
                       {athlete.phone && (
-                        <div className="mt-0.5 text-xs text-gray-500">{athlete.phone}</div>
+                        <a
+                          href={`tel:${athlete.phone}`}
+                          className="mt-0.5 block text-xs font-semibold text-navy hover:underline"
+                        >
+                          {athlete.phone}
+                        </a>
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-4 text-xs">
-                    <div className="text-center">
-                      <div className="font-bold text-white">{regs.length}</div>
-                      <div className="text-gray-500">Записей</div>
+                  <div className="flex shrink-0 gap-2">
+                    <div className="rounded-xl bg-mist px-3 py-2 text-center">
+                      <p className="text-base font-bold text-ink">{regs.length}</p>
+                      <p className="text-[0.62rem] uppercase tracking-[0.08em] text-graphite">
+                        Записей
+                      </p>
                     </div>
-                    <div className="text-center">
-                      <div className="font-bold text-white">{attended}</div>
-                      <div className="text-gray-500">Посещено</div>
+                    <div className="rounded-xl bg-mist px-3 py-2 text-center">
+                      <p className="text-base font-bold text-ink">{attended}</p>
+                      <p className="text-[0.62rem] uppercase tracking-[0.08em] text-graphite">
+                        Посещено
+                      </p>
                     </div>
                   </div>
                 </div>
                 {regs.length > 0 && (
-                  <div className="mt-3 border-t border-white/5 pt-3">
-                    <div className="mb-2 text-xs text-gray-500">Активные записи:</div>
-                    <div className="flex flex-wrap gap-2">
+                  <div className="mt-4 border-t border-line pt-3">
+                    <p className="mb-2 text-[0.62rem] font-bold uppercase tracking-[0.1em] text-graphite">
+                      Записи
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
                       {regs.map((r) => {
                         const training = myTrainings.find((t) => t.id === r.trainingId);
                         return (
                           <span
                             key={r.id}
-                            className="rounded-sm bg-white/5 px-2 py-1 text-xs text-gray-400"
+                            className="rounded-full bg-mist px-2.5 py-1 text-[0.68rem] text-graphite"
                           >
                             {training?.name || '—'}
                           </span>
@@ -81,7 +102,7 @@ export default function TrainerStudentsPage() {
                     </div>
                   </div>
                 )}
-              </div>
+              </Panel>
             );
           })}
         </div>

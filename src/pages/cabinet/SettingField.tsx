@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { settingsStore, type SettingKey } from '../../store/settingsStore';
 import { useToast } from '../../context/ToastContext';
+import { fieldClass, labelClass } from '../../components/cabinet/ui';
 
 export interface Field {
   key: SettingKey;
@@ -39,15 +40,12 @@ export default function SettingField({ field, value }: { field: Field; value: st
       .finally(() => setSaving(false));
   };
 
-  const cls =
-    'w-full rounded-sm border border-white/10 bg-black/30 px-3 py-2 text-sm text-white transition-colors focus:border-accent-red focus:outline-none disabled:opacity-50';
-
   return (
     <div>
-      <label className="mb-1 block text-sm text-gray-400">{field.label}</label>
+      <label className={labelClass}>{field.label}</label>
       {field.multiline ? (
         <textarea
-          className={`${cls} min-h-24 leading-relaxed`}
+          className={`${fieldClass} min-h-24 leading-relaxed`}
           value={draft}
           onChange={(e) => {
             setDirty(true);
@@ -58,7 +56,7 @@ export default function SettingField({ field, value }: { field: Field; value: st
         />
       ) : (
         <input
-          className={cls}
+          className={fieldClass}
           value={draft}
           onChange={(e) => {
             setDirty(true);
@@ -68,7 +66,7 @@ export default function SettingField({ field, value }: { field: Field; value: st
           disabled={saving}
         />
       )}
-      {field.hint && <p className="mt-1 text-xs text-gray-600">{field.hint}</p>}
+      {field.hint && <p className="mt-1.5 text-xs leading-relaxed text-graphite">{field.hint}</p>}
     </div>
   );
 }

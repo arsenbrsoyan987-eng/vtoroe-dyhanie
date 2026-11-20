@@ -59,20 +59,20 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 : Info;
           const accent =
             t.kind === 'success'
-              ? 'border-green-500/40 text-green-400'
+              ? 'border-emerald-500/40 text-emerald-600'
               : t.kind === 'error'
-                ? 'border-red-500/40 text-red-400'
-                : 'border-accent-blue/40 text-accent-blue';
+                ? 'border-brand/40 text-brand'
+                : 'border-navy/30 text-navy';
           return (
             <div
               key={t.id}
-              className={`flex items-start gap-3 rounded-sm border bg-surface/95 p-4 shadow-2xl backdrop-blur ${accent} animate-[toast-in_220ms_ease-out]`}
+              className={`flex items-start gap-3 rounded-xl border bg-paper p-4 shadow-lift ${accent} animate-[toast-in_220ms_ease-out]`}
             >
               <Icon className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />
-              <p className="flex-1 text-sm leading-snug text-white">{t.message}</p>
+              <p className="flex-1 text-sm leading-snug text-ink">{t.message}</p>
               <button
                 onClick={() => dismiss(t.id)}
-                className="text-gray-500 transition-colors hover:text-white"
+                className="text-graphite transition-colors hover:text-ink"
                 aria-label="Закрыть уведомление"
               >
                 <X className="h-4 w-4" />

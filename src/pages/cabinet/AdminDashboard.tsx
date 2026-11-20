@@ -2,7 +2,40 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { activeProfiles, useProfiles } from '../../store/profilesStore';
 import { useTrainings } from '../../store/trainingsStore';
-import { Camera, Users, ClipboardList, Calendar, Trophy, TrendingUp, Newspaper, PartyPopper, Tent } from 'lucide-react';
+import { EmptyState, PageHeader, Panel, PanelTitle, StatCard, StatusBadge } from '../../components/cabinet/ui';
+import {
+  Camera,
+  Users,
+  ClipboardList,
+  Calendar,
+  Trophy,
+  TrendingUp,
+  Newspaper,
+  PartyPopper,
+  Tent,
+  Inbox,
+} from 'lucide-react';
+
+const QUICK_LINKS = [
+  { to: '/cabinet/admin/users', icon: Users, label: 'Пользователи' },
+  { to: '/cabinet/admin/trainers', icon: Users, label: 'Тренеры' },
+  { to: '/cabinet/admin/directions', icon: TrendingUp, label: 'Направления' },
+  { to: '/cabinet/admin/trainings', icon: ClipboardList, label: 'Тренировки' },
+  { to: '/cabinet/admin/leads', icon: Inbox, label: 'Заявки' },
+  { to: '/cabinet/admin/notifications', icon: Calendar, label: 'Рассылки' },
+  { to: '/cabinet/admin/news', icon: Newspaper, label: 'Новости' },
+  { to: '/cabinet/admin/events', icon: PartyPopper, label: 'Мероприятия' },
+  { to: '/cabinet/admin/camps', icon: Tent, label: 'Кэмпы' },
+  { to: '/cabinet/photos', icon: Camera, label: 'Фото' },
+  { to: '/cabinet/admin/results', icon: Trophy, label: 'Результаты' },
+  { to: '/cabinet/admin/site-settings', icon: Calendar, label: 'Настройки сайта' },
+];
+
+const STATUS: Record<string, { label: string; tone: 'green' | 'yellow' | 'gray' }> = {
+  confirmed: { label: 'Подтверждён', tone: 'green' },
+  waitlist: { label: 'Ожидание', tone: 'yellow' },
+  cancelled: { label: 'Отменён', tone: 'gray' },
+};
 
 export default function AdminDashboard() {
   const trainings = useTrainings();
@@ -13,131 +46,104 @@ export default function AdminDashboard() {
   const trainers = users.filter((u) => u.role === 'trainer').length;
   const totalRegs = registrations.filter((r) => r.status !== 'cancelled').length;
   const totalAttended = registrations.filter((r) => r.attended).length;
+  const recent = registrations.slice(-6).reverse();
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-white mb-2">Панель администратора</h1>
-      <p className="text-gray-400 text-sm mb-8">Управление школой «Второе дыхание»</p>
+      <PageHeader
+        eyebrow="Управление"
+        title="Панель администратора"
+        subtitle="Сводка по школе «Второе дыхание» и быстрый доступ к разделам."
+      />
 
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
-        <div className="bg-surface border border-white/10 rounded-sm p-5">
-          <Users className="w-5 h-5 text-gray-400 mb-3" />
-          <div className="text-2xl font-bold text-white">{users.length}</div>
-          <div className="text-gray-400 text-sm">Пользователей</div>
-        </div>
-        <div className="bg-surface border border-white/10 rounded-sm p-5">
-          <TrendingUp className="w-5 h-5 text-gray-400 mb-3" />
-          <div className="text-2xl font-bold text-white">{athletes}</div>
-          <div className="text-gray-400 text-sm">Спортсменов</div>
-        </div>
-        <div className="bg-surface border border-white/10 rounded-sm p-5">
-          <Users className="w-5 h-5 text-gray-400 mb-3" />
-          <div className="text-2xl font-bold text-white">{trainers}</div>
-          <div className="text-gray-400 text-sm">Тренеров</div>
-        </div>
-        <div className="bg-surface border border-white/10 rounded-sm p-5">
-          <ClipboardList className="w-5 h-5 text-gray-400 mb-3" />
-          <div className="text-2xl font-bold text-white">{totalRegs}</div>
-          <div className="text-gray-400 text-sm">Записей</div>
-        </div>
-        <div className="bg-surface border border-white/10 rounded-sm p-5">
-          <ClipboardList className="w-5 h-5 text-gray-400 mb-3" />
-          <div className="text-2xl font-bold text-white">{totalAttended}</div>
-          <div className="text-gray-400 text-sm">Посещений</div>
-        </div>
+      <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        <StatCard icon={Users} label="Пользователей" value={users.length} to="/cabinet/admin/users" />
+        <StatCard icon={TrendingUp} label="Спортсменов" value={athletes} to="/cabinet/admin/users" />
+        <StatCard icon={Users} label="Тренеров" value={trainers} to="/cabinet/admin/trainers" />
+        <StatCard icon={ClipboardList} label="Записей" value={totalRegs} hint="без отменённых" />
+        <StatCard icon={ClipboardList} label="Посещений" value={totalAttended} hint="отмечено вручную" />
       </div>
 
-      <h2 className="text-lg font-bold text-white mb-4">Быстрые действия</h2>
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
-        <Link to="/cabinet/admin/users" className="bg-surface border border-white/10 rounded-sm p-4 hover:border-accent-red/30 transition-colors text-center block group">
-          <Users className="w-6 h-6 text-gray-400 group-hover:text-accent-red mx-auto mb-2 transition-colors" />
-          <div className="text-white text-sm">Пользователи</div>
-        </Link>
-        <Link to="/cabinet/admin/trainers" className="bg-surface border border-white/10 rounded-sm p-4 hover:border-accent-red/30 transition-colors text-center block group">
-          <Users className="w-6 h-6 text-gray-400 group-hover:text-accent-red mx-auto mb-2 transition-colors" />
-          <div className="text-white text-sm">Тренеры</div>
-        </Link>
-        <Link to="/cabinet/admin/directions" className="bg-surface border border-white/10 rounded-sm p-4 hover:border-accent-red/30 transition-colors text-center block group">
-          <TrendingUp className="w-6 h-6 text-gray-400 group-hover:text-accent-red mx-auto mb-2 transition-colors" />
-          <div className="text-white text-sm">Направления</div>
-        </Link>
-        <Link to="/cabinet/admin/site-settings" className="bg-surface border border-white/10 rounded-sm p-4 hover:border-accent-red/30 transition-colors text-center block group">
-          <Calendar className="w-6 h-6 text-gray-400 group-hover:text-accent-red mx-auto mb-2 transition-colors" />
-          <div className="text-white text-sm">Настройки сайта</div>
-        </Link>
-        <Link to="/cabinet/admin/trainings" className="bg-surface border border-white/10 rounded-sm p-4 hover:border-accent-red/30 transition-colors text-center block group">
-          <ClipboardList className="w-6 h-6 text-gray-400 group-hover:text-accent-red mx-auto mb-2 transition-colors" />
-          <div className="text-white text-sm">Тренировки</div>
-        </Link>
-        <Link to="/cabinet/admin/notifications" className="bg-surface border border-white/10 rounded-sm p-4 hover:border-accent-red/30 transition-colors text-center block group">
-          <Calendar className="w-6 h-6 text-gray-400 group-hover:text-accent-red mx-auto mb-2 transition-colors" />
-          <div className="text-white text-sm">Рассылки</div>
-        </Link>
-        <Link to="/cabinet/admin/news" className="bg-surface border border-white/10 rounded-sm p-4 hover:border-accent-red/30 transition-colors text-center block group">
-          <Newspaper className="w-6 h-6 text-gray-400 group-hover:text-accent-red mx-auto mb-2 transition-colors" />
-          <div className="text-white text-sm">Новости</div>
-        </Link>
-        <Link to="/cabinet/admin/events" className="bg-surface border border-white/10 rounded-sm p-4 hover:border-accent-red/30 transition-colors text-center block group">
-          <PartyPopper className="w-6 h-6 text-gray-400 group-hover:text-accent-red mx-auto mb-2 transition-colors" />
-          <div className="text-white text-sm">Мероприятия</div>
-        </Link>
-        <Link to="/cabinet/admin/camps" className="bg-surface border border-white/10 rounded-sm p-4 hover:border-accent-red/30 transition-colors text-center block group">
-          <Tent className="w-6 h-6 text-gray-400 group-hover:text-accent-red mx-auto mb-2 transition-colors" />
-          <div className="text-white text-sm">Кэмпы</div>
-        </Link>
-        <Link to="/cabinet/photos" className="bg-surface border border-white/10 rounded-sm p-4 hover:border-accent-red/30 transition-colors text-center block group">
-          <Camera className="w-6 h-6 text-gray-400 group-hover:text-accent-red mx-auto mb-2 transition-colors" />
-          <div className="text-white text-sm">Фото</div>
-        </Link>
-        <Link to="/cabinet/admin/results" className="bg-surface border border-white/10 rounded-sm p-4 hover:border-accent-red/30 transition-colors text-center block group">
-          <Trophy className="w-6 h-6 text-gray-400 group-hover:text-accent-red mx-auto mb-2 transition-colors" />
-          <div className="text-white text-sm">Результаты</div>
-        </Link>
-      </div>
+      <Panel className="mb-8">
+        <PanelTitle hint="Каждый раздел открывается в этом же кабинете — вкладка сайта не нужна.">
+          Быстрые действия
+        </PanelTitle>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-6">
+          {QUICK_LINKS.map((item) => (
+            <Link
+              key={item.to}
+              to={item.to}
+              className="group rounded-xl border border-line bg-mist/60 p-3 text-center transition-colors hover:border-ink/20 hover:bg-paper"
+            >
+              <item.icon className="mx-auto mb-2 h-5 w-5 text-graphite transition-colors group-hover:text-brand" />
+              <span className="text-xs font-semibold text-ink">{item.label}</span>
+            </Link>
+          ))}
+        </div>
+      </Panel>
 
-      <div className="mt-4 rounded-sm border border-accent-blue/30 bg-accent-blue/10 px-4 py-3">
-        <p className="text-xs leading-relaxed text-blue-200">
-          Все данные хранятся в Supabase и обновляются мгновенно — правки из админки
-          сразу видны всем посетителям. Кнопка «Опубликовать» больше не нужна.
+      <Panel className="mb-8 border-navy/20 bg-navy/5">
+        <p className="text-xs leading-relaxed text-navy">
+          Все данные хранятся в Supabase и обновляются мгновенно — правки из админки сразу видны
+          всем посетителям. Кнопка «Опубликовать» больше не нужна.
         </p>
-      </div>
+      </Panel>
 
-      {/* Recent registrations */}
-      <h2 className="text-lg font-bold text-white mt-8 mb-4">Последние записи</h2>
-      <div className="bg-surface border border-white/10 rounded-sm overflow-hidden">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-white/10">
-              <th className="text-left py-3 px-4 text-gray-400 font-medium text-xs">Пользователь</th>
-              <th className="text-left py-3 px-4 text-gray-400 font-medium text-xs hidden sm:table-cell">Тренировка</th>
-              <th className="text-left py-3 px-4 text-gray-400 font-medium text-xs">Статус</th>
-              <th className="text-left py-3 px-4 text-gray-400 font-medium text-xs hidden md:table-cell">Дата</th>
-            </tr>
-          </thead>
-          <tbody>
-            {registrations.slice(-5).reverse().map((r) => {
-              const user = users.find((u) => u.id === r.userId);
-              const training = trainings.find((t) => t.id === r.trainingId);
-              return (
-                <tr key={r.id} className="border-b border-white/5 hover:bg-white/5">
-                  <td className="py-3 px-4 text-white">{user?.name || '—'}</td>
-                  <td className="py-3 px-4 text-gray-300 hidden sm:table-cell">{training?.name || '—'}</td>
-                  <td className="py-3 px-4">
-                    <span className={`text-xs px-2 py-0.5 rounded-sm ${
-                      r.status === 'confirmed' ? 'bg-green-500/20 text-green-400' :
-                      r.status === 'waitlist' ? 'bg-yellow-500/20 text-yellow-400' :
-                      'bg-gray-500/20 text-gray-400'
-                    }`}>
-                      {r.status === 'confirmed' ? 'Подтверждён' : r.status === 'waitlist' ? 'Ожидание' : 'Отменён'}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 text-gray-500 text-xs hidden md:table-cell">{r.registeredAt}</td>
+      <Panel padded={false}>
+        <div className="p-5 pb-0 sm:p-6 sm:pb-0">
+          <PanelTitle hint="Последние шесть записей по всей школе.">Последние записи</PanelTitle>
+        </div>
+        {recent.length === 0 ? (
+          <div className="px-5 pb-6 sm:px-6">
+            <EmptyState
+              title="Записей пока нет"
+              text="Как только спортсмены начнут записываться на тренировки, список появится здесь."
+            />
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-y border-line bg-mist/60">
+                  <th className="px-5 py-2.5 text-left text-[0.62rem] font-bold uppercase tracking-[0.1em] text-graphite sm:px-6">
+                    Спортсмен
+                  </th>
+                  <th className="hidden px-3 py-2.5 text-left text-[0.62rem] font-bold uppercase tracking-[0.1em] text-graphite sm:table-cell">
+                    Тренировка
+                  </th>
+                  <th className="px-3 py-2.5 text-left text-[0.62rem] font-bold uppercase tracking-[0.1em] text-graphite">
+                    Статус
+                  </th>
+                  <th className="hidden px-5 py-2.5 text-left text-[0.62rem] font-bold uppercase tracking-[0.1em] text-graphite md:table-cell sm:px-6">
+                    Дата
+                  </th>
                 </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+              </thead>
+              <tbody>
+                {recent.map((r) => {
+                  const user = users.find((u) => u.id === r.userId);
+                  const training = trainings.find((t) => t.id === r.trainingId);
+                  const status = STATUS[r.status] ?? STATUS.cancelled;
+                  return (
+                    <tr key={r.id} className="border-b border-line last:border-0 hover:bg-mist/50">
+                      <td className="px-5 py-3 font-medium text-ink sm:px-6">{user?.name || '—'}</td>
+                      <td className="hidden px-3 py-3 text-graphite sm:table-cell">
+                        {training?.name || '—'}
+                      </td>
+                      <td className="px-3 py-3">
+                        <StatusBadge tone={status.tone}>{status.label}</StatusBadge>
+                      </td>
+                      <td className="hidden px-5 py-3 text-xs text-graphite md:table-cell sm:px-6">
+                        {r.registeredAt}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Panel>
     </div>
   );
 }

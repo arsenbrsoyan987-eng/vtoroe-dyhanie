@@ -1,51 +1,47 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #0a0a0a;
-  --color-secondary: #1f2937;
-  --color-surface: #111827;
-  --color-accent-red: #dc2626;
-  --color-accent-red-hover: #b91c1c;
-  --color-accent-blue: #2563eb;
-  --color-accent-blue-hover: #1d4ed8;
+  /* ── Палитра школы: бумага, графит, красный акцент ─────────────────────── */
+  --color-paper: #ffffff;
+  --color-mist: #f4f4f6;
+  --color-fog: #ececef;
+  --color-line: #e3e3e7;
+  --color-ink: #0d0d10;
+  --color-graphite: #5b5c63;
+  --color-brand: #e2231a;
+  --color-brand-dark: #b81710;
+  --color-navy: #10214a;
+  --color-navy-soft: #1c3570;
   --color-white: #ffffff;
-  --color-gray-50: #f9fafb;
-  --color-gray-100: #f3f4f6;
-  --color-gray-200: #e5e7eb;
-  --color-gray-300: #d1d5db;
-  --color-gray-400: #9ca3af;
-  --color-gray-500: #6b7280;
-  --color-gray-600: #4b5563;
-  --color-gray-700: #374151;
-  --color-gray-800: #1f2937;
-  --color-gray-900: #111827;
 
-  --font-heading: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --font-body: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-heading: 'Inter Tight', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  --shadow-card: 0 1px 2px rgba(13, 13, 16, 0.04), 0 8px 24px rgba(13, 13, 16, 0.06);
+  --shadow-lift: 0 2px 4px rgba(13, 13, 16, 0.05), 0 18px 40px rgba(13, 13, 16, 0.12);
+
+  --animate-marquee: marquee 34s linear infinite;
+  --animate-reveal: fade-up 0.6s cubic-bezier(0.22, 0.61, 0.36, 1) both;
 }
 
-html {
-  scroll-behavior: smooth;
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
 }
 
-body {
-  margin: 0;
-  font-family: var(--font-body);
-  background-color: var(--color-primary);
-  color: var(--color-white);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-#root {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-
-::selection {
-  background-color: var(--color-accent-red);
-  color: var(--color-white);
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes toast-in {
@@ -59,14 +55,115 @@ body {
   }
 }
 
-@keyframes fade-up {
-  from {
-    opacity: 0;
-    transform: translateY(16px);
+@keyframes pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 rgba(226, 35, 26, 0.45);
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+  70% {
+    box-shadow: 0 0 0 14px rgba(226, 35, 26, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(226, 35, 26, 0);
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+::selection {
+  background-color: var(--color-brand);
+  color: var(--color-white);
+}
+
+/* Видимый фокус для клавиатурной навигации */
+:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+}
+
+@utility container-x {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 80rem;
+  padding-inline: 1rem;
+  @media (width >= 40rem) {
+    padding-inline: 1.5rem;
+  }
+  @media (width >= 64rem) {
+    padding-inline: 2rem;
+  }
+}
+
+/* Фирменный заголовок: плотный гротеск, верхний регистр, тесный трекинг.
+   line-height 1.02, а не 0.95: при меньшем значении обрезается диакритика
+   в «Й» и «Ё» — это видно на заголовках вроде «ПОДАРОЧНЫЙ». */
+@utility display {
+  font-family: var(--font-heading);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.02;
+  text-transform: uppercase;
+}
+
+/* Полосы-разделители в стиле афиши */
+@utility eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-brand);
+}
+
+/* Карточка, которая приподнимается при наведении */
+@utility card-lift {
+  border-radius: 1.25rem;
+  background: var(--color-paper);
+  box-shadow: var(--shadow-card);
+  transition:
+    transform 0.35s cubic-bezier(0.22, 0.61, 0.36, 1),
+    box-shadow 0.35s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+@utility card-lift-hover {
+  transform: translateY(-6px);
+  box-shadow: var(--shadow-lift);
+}
+
+/* Горизонтальная карусель без видимой полосы прокрутки */
+@utility rail {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding-block: 0.25rem;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  & > * {
+    scroll-snap-align: start;
+    flex: 0 0 auto;
   }
 }
 
@@ -81,10 +178,4 @@ body {
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
   }
-}
-
-/* Видимый фокус для клавиатурной навигации */
-:focus-visible {
-  outline: 2px solid var(--color-accent-red);
-  outline-offset: 2px;
 }

@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import SectionTitle from '../components/ui/SectionTitle';
+import Breadcrumbs from '../components/ui/Breadcrumbs';
 import { useRoutes } from '../store/routesStore';
+import { countNoun } from '../lib/plural';
 
 const typeLabels: Record<string, string> = {
   running: 'Бег',
@@ -17,10 +18,10 @@ const difficultyLabels: Record<string, string> = {
 };
 
 const difficultyColors: Record<string, string> = {
-  easy: 'bg-green-500/20 text-green-400',
-  medium: 'bg-yellow-500/20 text-yellow-400',
-  hard: 'bg-orange-500/20 text-orange-400',
-  extreme: 'bg-red-500/20 text-red-400',
+  easy: 'bg-emerald-500/10 text-emerald-700',
+  medium: 'bg-amber-500/10 text-amber-700',
+  hard: 'bg-orange-500/10 text-orange-700',
+  extreme: 'bg-brand/10 text-brand',
 };
 
 export default function RoutesPage() {
@@ -29,77 +30,110 @@ export default function RoutesPage() {
   const filtered = filter === 'all' ? routes : routes.filter((r) => r.type === filter);
 
   return (
-    <div className="py-16 lg:py-24">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <SectionTitle subtitle="Маршруты" title="Наши маршруты" align="center" as="h1" />
+    <>
+      <Breadcrumbs items={[{ label: 'Маршруты' }]} />
 
-        <div className="flex flex-wrap gap-2 mb-10 justify-center">
-          <button
-            onClick={() => setFilter('all')}
-            className={`px-4 py-2 text-xs font-medium rounded-sm transition-colors ${filter === 'all' ? 'bg-accent-red text-white' : 'bg-white/5 text-gray-400 hover:text-white'}`}
-          >
-            Все
-          </button>
-          {Object.entries(typeLabels).map(([id, label]) => (
-            <button
-              key={id}
-              onClick={() => setFilter(id)}
-              className={`px-4 py-2 text-xs font-medium rounded-sm transition-colors ${filter === id ? 'bg-accent-red text-white' : 'bg-white/5 text-gray-400 hover:text-white'}`}
-            >
-              {label}
-            </button>
-          ))}
+      <section className="bg-ink pb-14 pt-8 text-paper lg:pb-16">
+        <div className="container-x">
+          <span className="eyebrow mb-4 text-brand">
+            <span className="h-[2px] w-8 bg-brand" />
+            {countNoun(routes.length, 'маршрут', 'маршрута', 'маршрутов')} школы
+          </span>
+          <h1 className="display max-w-3xl text-[2.5rem] sm:text-6xl lg:text-7xl">
+            Наши маршруты
+          </h1>
+          <p className="mt-5 max-w-2xl text-base leading-relaxed text-white/65 sm:text-lg">
+            Проверенные трассы для тренировок и выездов: от городских петель
+            до горного трейла. Дистанция, набор и точку старта указывает тренер.
+          </p>
         </div>
+      </section>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {filtered.map((route) => (
-            <div key={route.id} className="bg-surface border border-white/10 rounded-sm overflow-hidden hover:border-accent-red/30 transition-colors group">
-              <div className="aspect-[16/9] overflow-hidden">
-                <img
-                  src={route.image}
-                  alt={route.name}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  loading="lazy"
-                />
-              </div>
-              <div className="p-6">
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-sm bg-accent-blue/20 text-accent-blue">
-                    {typeLabels[route.type]}
-                  </span>
-                  <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-sm ${difficultyColors[route.difficulty]}`}>
-                    {difficultyLabels[route.difficulty]}
-                  </span>
-                </div>
-                <h3 className="text-white font-bold text-lg mb-3">{route.name}</h3>
-                <p className="text-gray-400 text-sm mb-4 leading-relaxed">{route.description}</p>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                  <div className="bg-white/5 rounded-sm p-2 text-center">
-                    <div className="text-gray-500 mb-1">Дистанция</div>
-                    <div className="text-white font-semibold">{route.distance}</div>
-                  </div>
-                  <div className="bg-white/5 rounded-sm p-2 text-center">
-                    <div className="text-gray-500 mb-1">Набор</div>
-                    <div className="text-white font-semibold">{route.elevation}</div>
-                  </div>
-                  <div className="bg-white/5 rounded-sm p-2 text-center">
-                    <div className="text-gray-500 mb-1">Время</div>
-                    <div className="text-white font-semibold">{route.duration}</div>
-                  </div>
-                  <div className="bg-white/5 rounded-sm p-2 text-center">
-                    <div className="text-gray-500 mb-1">Старт</div>
-                    <div className="text-white font-semibold truncate">{route.startPoint}</div>
-                  </div>
-                </div>
-              </div>
+      <section className="bg-paper py-14 lg:py-20">
+        <div className="container-x">
+          <div className="mb-10 flex flex-wrap gap-2">
+            {[
+              ['all', 'Все'],
+              ...Object.entries(typeLabels),
+            ].map(([id, label]) => (
+              <button
+                key={id}
+                onClick={() => setFilter(id)}
+                className={`rounded-full px-4 py-2 text-xs font-semibold transition-colors ${
+                  filter === id
+                    ? 'bg-ink text-white'
+                    : 'bg-mist text-graphite hover:bg-line hover:text-ink'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {filtered.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-line bg-mist px-6 py-16 text-center">
+              <p className="text-sm text-graphite">
+                Маршрутов этого типа пока нет — загляните в другие категории.
+              </p>
             </div>
-          ))}
-        </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+              {filtered.map((route) => (
+                <article key={route.id} className="card-lift card-lift-hover group overflow-hidden">
+                  <div className="aspect-[16/9] overflow-hidden bg-mist">
+                    <img
+                      src={route.image}
+                      alt={route.name}
+                      className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      loading="lazy"
+                    />
+                  </div>
 
-        <p className="text-gray-500 text-sm text-center mt-8">
-          Треки присылаем участникам перед выездом — в Telegram-канале школы.
-        </p>
-      </div>
-    </div>
+                  <div className="p-5 sm:p-6">
+                    <div className="mb-3 flex flex-wrap items-center gap-2">
+                      <span className="rounded-full bg-navy px-2.5 py-1 text-[0.6rem] font-bold uppercase tracking-[0.1em] text-white">
+                        {typeLabels[route.type] ?? route.type}
+                      </span>
+                      <span
+                        className={`rounded-full px-2.5 py-1 text-[0.6rem] font-bold uppercase tracking-[0.1em] ${
+                          difficultyColors[route.difficulty] ?? 'bg-mist text-graphite'
+                        }`}
+                      >
+                        {difficultyLabels[route.difficulty] ?? route.difficulty}
+                      </span>
+                    </div>
+
+                    <h2 className="display text-xl leading-tight text-ink">{route.name}</h2>
+                    <p className="mt-2.5 text-sm leading-relaxed text-graphite">
+                      {route.description}
+                    </p>
+
+                    <dl className="mt-5 grid grid-cols-2 gap-px overflow-hidden rounded-xl bg-line sm:grid-cols-4">
+                      {[
+                        ['Дистанция', route.distance],
+                        ['Набор', route.elevation],
+                        ['Время', route.duration],
+                        ['Старт', route.startPoint],
+                      ].map(([label, value]) => (
+                        <div key={label} className="bg-mist px-3 py-2.5">
+                          <dt className="text-[0.6rem] uppercase tracking-[0.1em] text-graphite">
+                            {label}
+                          </dt>
+                          <dd className="mt-0.5 truncate text-xs font-bold text-ink">{value}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+
+          <p className="mt-10 text-center text-sm text-graphite">
+            Треки присылаем участникам перед выездом — в Telegram-канале школы.
+          </p>
+        </div>
+      </section>
+    </>
   );
 }

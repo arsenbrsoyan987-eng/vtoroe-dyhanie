@@ -1,64 +1,63 @@
-import SectionTitle from '../ui/SectionTitle';
 import { useDirections } from '../../store/directionsStore';
 import { useTrainers } from '../../store/trainersStore';
 import { useSetting } from '../../store/settingsStore';
 
+/**
+ * Миссия школы — крупный типографический блок с фото и честными цифрами.
+ *
+ * В статистике только то, что видно в админке: направления и тренеры.
+ * Придуманные «500+ учеников» на незаполненном сайте читаются как обман.
+ */
 export default function About() {
   const directions = useDirections();
   const trainers = useTrainers();
+  const city = useSetting('city');
   const aboutTitle = useSetting('aboutTitle');
   const aboutSubtitle = useSetting('aboutSubtitle');
   const aboutText1 = useSetting('aboutText1');
   const aboutText2 = useSetting('aboutText2');
   const aboutImage = useSetting('aboutImage');
 
-  // Только проверяемые цифры: количество направлений и карточек тренеров.
-  // Придуманные «500+ участников» на старте выглядят как обман.
   const stats = [
-    { number: String(directions.length), label: 'Направлений' },
-    { number: String(trainers.length), label: 'Тренеров' },
-    { number: 'Москва', label: 'Парки и стадионы' },
-    { number: '0 ₽', label: 'Первое занятие' },
+    { value: String(directions.length), label: 'Направления' },
+    { value: String(trainers.length), label: 'Тренера в команде' },
+    { value: city, label: 'Город и площадки' },
+    { value: '0 ₽', label: 'Первое занятие' },
   ];
 
   return (
-    <section className="py-20 lg:py-28 bg-primary overflow-hidden">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-          {/* Text */}
+    <section className="border-b border-line bg-paper py-20 lg:py-28">
+      <div className="container-x">
+        <div className="grid gap-12 lg:grid-cols-[1.15fr_1fr] lg:items-center">
+          {/* Текст */}
           <div>
-            <SectionTitle
-              subtitle={aboutSubtitle}
-              title={aboutTitle}
-              align="left"
-            />
-            <p className="text-gray-300 text-base md:text-lg leading-relaxed mb-6">
+            <span className="eyebrow mb-4">{aboutSubtitle}</span>
+            <h2 className="display text-4xl text-ink sm:text-5xl">{aboutTitle}</h2>
+            <p className="mt-6 text-base leading-relaxed text-graphite sm:text-lg">
               {aboutText1}
             </p>
-            <p className="text-gray-400 text-base leading-relaxed mb-8">
-              {aboutText2}
-            </p>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
+            <p className="mt-4 text-base leading-relaxed text-graphite">{aboutText2}</p>
+
+            <dl className="mt-10 grid grid-cols-2 gap-x-6 gap-y-8 border-t border-line pt-8 sm:grid-cols-4">
               {stats.map((stat) => (
                 <div key={stat.label}>
-                  <div className="text-2xl md:text-3xl font-bold text-accent-red mb-1">
-                    {stat.number}
-                  </div>
-                  <div className="text-gray-400 text-xs uppercase tracking-wider">
+                  <dt className="sr-only">{stat.label}</dt>
+                  <dd className="display text-2xl text-ink sm:text-3xl">{stat.value}</dd>
+                  <dd className="mt-1.5 text-[0.68rem] uppercase tracking-[0.12em] text-graphite">
                     {stat.label}
-                  </div>
+                  </dd>
                 </div>
               ))}
-            </div>
+            </dl>
           </div>
 
-          {/* Image */}
+          {/* Фото */}
           <div className="relative">
-            <div className="aspect-[4/3] rounded-sm overflow-hidden">
+            <div className="aspect-[4/5] overflow-hidden rounded-3xl bg-mist">
               <img
                 src={aboutImage}
                 alt="Атмосфера школы"
-                className="w-full h-full object-cover"
+                className="h-full w-full object-cover"
                 loading="lazy"
                 onError={(e) => {
                   const img = e.currentTarget;
@@ -68,9 +67,13 @@ export default function About() {
                 }}
               />
             </div>
-            {/* Декор только на широких экранах: на мобильном он вылезает за край */}
-            <div className="absolute -bottom-6 -left-6 hidden h-32 w-32 rounded-sm bg-accent-red/20 sm:block -z-10" />
-            <div className="absolute -top-6 -right-6 hidden h-24 w-24 rounded-sm bg-accent-blue/20 sm:block -z-10" />
+            {/* Плашка с обещанием — держит взгляд на фото */}
+            <div className="absolute -bottom-5 left-5 rounded-2xl bg-brand px-5 py-4 text-white shadow-lift">
+              <div className="display text-xl">Первое занятие</div>
+              <div className="text-[0.7rem] uppercase tracking-[0.14em] text-white/80">
+                бесплатно и без абонемента
+              </div>
+            </div>
           </div>
         </div>
       </div>

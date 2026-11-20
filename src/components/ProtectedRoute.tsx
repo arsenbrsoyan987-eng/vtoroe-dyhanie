@@ -19,7 +19,7 @@ export default function ProtectedRoute({ children, roles }: ProtectedRouteProps)
   if (!ready) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-accent-red" />
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-line border-t-brand" />
       </div>
     );
   }

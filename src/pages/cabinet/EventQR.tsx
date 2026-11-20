@@ -1,7 +1,7 @@
 import { useParams } from 'react-router-dom';
 import { events } from '../../data/events';
 import QRCode from '../../components/ui/QRCode';
-import Button from '../../components/ui/Button';
+import { ActionButton, PageHeader, Panel, PanelTitle } from '../../components/cabinet/ui';
 import { Calendar } from 'lucide-react';
 
 export default function EventQRPage() {
@@ -13,25 +13,20 @@ export default function EventQRPage() {
 
   const generateICS = (e: typeof event) => {
     const startDate = e.date.replace(/-/g, '');
-    const title = e.name;
-    const location = e.location;
-    const desc = e.description;
     return `BEGIN:VCALENDAR
 VERSION:2.0
 PRODID:-//Vtoroe Dyhanie//RU
 BEGIN:VEVENT
 DTSTART:${startDate}T${e.time.replace(/:/g, '')}
-SUMMARY:${title}
-LOCATION:${location}
-DESCRIPTION:${desc}
+SUMMARY:${e.name}
+LOCATION:${e.location}
+DESCRIPTION:${e.description}
 END:VEVENT
 END:VCALENDAR`;
   };
 
-  const ICSFile = generateICS(event);
-
   const downloadICS = () => {
-    const blob = new Blob([ICSFile], { type: 'text/calendar;charset=utf-8' });
+    const blob = new Blob([generateICS(event)], { type: 'text/calendar;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -41,26 +36,39 @@ END:VCALENDAR`;
   };
 
   return (
-    <div className="py-16 lg:py-24">
-      <div className="max-w-lg mx-auto px-4 text-center">
-        <h1 className="text-2xl font-bold text-white mb-2">{event.name}</h1>
-        <p className="text-gray-400 text-sm mb-8">QR-код и добавление в календарь</p>
+    <div className="mx-auto max-w-lg">
+      <PageHeader
+        eyebrow="Мероприятие"
+        title={event.name}
+        subtitle="QR-код для входа и файл для календаря."
+      />
 
-        <div className="bg-surface border border-white/10 rounded-sm p-8 mb-6">
-          <h2 className="text-white font-semibold mb-4">QR-код участия</h2>
+      <Panel className="mb-4 text-center">
+        <PanelTitle hint="Покажите QR-код на входе — администратор отметит участие.">
+          QR-код участия
+        </PanelTitle>
+        <div className="flex justify-center">
           <QRCode value={qrData} size={220} title="Покажите на входе" />
         </div>
+      </Panel>
 
-        <div className="bg-surface border border-white/10 rounded-sm p-8 mb-6">
-          <h2 className="text-white font-semibold mb-4">Добавить в календарь</h2>
-          <button onClick={downloadICS} className="flex items-center gap-3 mx-auto bg-accent-blue text-white text-sm px-6 py-3 rounded-sm hover:bg-accent-blue-hover transition-colors">
-            <Calendar className="w-5 h-5" />
-            Скачать .ics файл
-          </button>
-          <p className="text-gray-500 text-xs mt-3">Откройте файл в Google Календаре, Apple Calendar или Outlook</p>
-        </div>
+      <Panel className="mb-4 text-center">
+        <PanelTitle hint="Откроется в Google Календаре, Apple Calendar или Outlook.">
+          Добавить в календарь
+        </PanelTitle>
+        <button
+          onClick={downloadICS}
+          className="mx-auto flex items-center gap-2.5 rounded-full bg-navy px-6 py-3 text-xs font-bold uppercase tracking-[0.08em] text-white transition-colors hover:bg-navy-soft"
+        >
+          <Calendar className="h-4 w-4" />
+          Скачать .ics
+        </button>
+      </Panel>
 
-        <Button to={`/events/${event.id}`} variant="outline" size="sm">Назад к мероприятию</Button>
+      <div className="flex justify-center">
+        <ActionButton to={`/events/${event.id}`} variant="outline">
+          Назад к мероприятию
+        </ActionButton>
       </div>
     </div>
   );

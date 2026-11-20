@@ -1,10 +1,12 @@
 import SettingField, { type Field } from './SettingField';
 import { useSettings } from '../../store/settingsStore';
+import { PageHeader, Panel, PanelTitle } from '../../components/cabinet/ui';
 
-const SECTIONS: { key: string; label: string; fields: Field[] }[] = [
+const SECTIONS: { key: string; label: string; hint?: string; fields: Field[] }[] = [
   {
     key: 'logo',
     label: 'Логотип',
+    hint: 'Знак в шапке и подвале сайта.',
     fields: [
       { key: 'logoUrl', label: 'URL логотипа', hint: 'Прямая ссылка на изображение логотипа (120×40 или 200×60px)' },
       { key: 'logoAlt', label: 'Описание логотипа', hint: 'Альтернативный текст для поисковиков' },
@@ -14,12 +16,10 @@ const SECTIONS: { key: string; label: string; fields: Field[] }[] = [
   {
     key: 'colors',
     label: 'Цвета сайта',
+    hint: 'Фон и поверхности заданы дизайн-системой: бумага, серые подложки, графит. Настраиваются только акценты.',
     fields: [
-      { key: 'accentColor', label: 'Основной акцент', hint: 'Цвет кнопок, заголовков, ссылок. HEX: #dc2626' },
-      { key: 'accentBlue', label: 'Вторичный акцент', hint: 'Цвет вторичных элементов, ссылок' },
-      { key: 'primaryColor', label: 'Фон страницы', hint: 'Основной цвет фона сайта' },
-      { key: 'secondaryColor', label: 'Фон секций', hint: 'Фон чётных секций главной' },
-      { key: 'surfaceColor', label: 'Фон карточек', hint: 'Фон карточек, модалок, сайдбаров' },
+      { key: 'accentColor', label: 'Основной акцент', hint: 'Цвет кнопок и ссылок. HEX: #e2231a' },
+      { key: 'accentBlue', label: 'Вторичный акцент', hint: 'Цвет вторичных элементов: тёмно-синий по умолчанию' },
     ],
   },
   {
@@ -90,22 +90,24 @@ export default function AdminAppearance() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <h1 className="mb-2 text-2xl font-bold text-white">Внешний вид</h1>
-      <p className="mb-8 text-sm leading-relaxed text-gray-400">
-        Логотип, цвета, соцсети, тексты секций. Изменения применяются мгновенно
-        и видны всем посетителям.
-      </p>
+      <PageHeader
+        eyebrow="Контент сайта"
+        title="Внешний вид"
+        subtitle="Логотип, акценты, соцсети и тексты секций главной. Изменения применяются мгновенно и видны всем посетителям."
+      />
 
-      {SECTIONS.map((section) => (
-        <div key={section.key} className="mb-8 rounded-sm border border-white/10 bg-surface p-5">
-          <h2 className="mb-4 text-lg font-semibold text-white">{section.label}</h2>
-          <div className="space-y-4">
-            {section.fields.map((field) => (
-              <SettingField key={field.key} field={field} value={settings[field.key] ?? ''} />
-            ))}
-          </div>
-        </div>
-      ))}
+      <div className="space-y-4">
+        {SECTIONS.map((section) => (
+          <Panel key={section.key}>
+            <PanelTitle hint={section.hint}>{section.label}</PanelTitle>
+            <div className="space-y-4">
+              {section.fields.map((field) => (
+                <SettingField key={field.key} field={field} value={settings[field.key] ?? ''} />
+              ))}
+            </div>
+          </Panel>
+        ))}
+      </div>
     </div>
   );
 }

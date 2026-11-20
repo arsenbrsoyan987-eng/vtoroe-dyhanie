@@ -8,6 +8,8 @@ import {
 import { useToast } from '../../context/ToastContext';
 import Button from '../../components/ui/Button';
 import { Plus, Trash2, Pencil, X, ChevronRight } from 'lucide-react';
+import { fieldClass, labelClass } from '../../components/cabinet/ui';
+import { countNoun } from '../../lib/plural';
 
 const emptyForm = {
   slug: '',
@@ -39,10 +41,6 @@ export default function AdminSections() {
     () => [...all].sort((a, b) => a.sort_order - b.sort_order),
     [all]
   );
-
-  const field =
-    'w-full rounded-sm border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white transition-colors placeholder:text-gray-600 focus:border-accent-red focus:outline-none';
-  const label = 'mb-1.5 block text-xs uppercase tracking-wider text-gray-400';
 
   const openCreate = () => {
     setForm(emptyForm);
@@ -101,9 +99,9 @@ export default function AdminSections() {
     <div className="mx-auto max-w-5xl">
       <div className="mb-6 flex items-start justify-between gap-4">
         <div>
-          <h1 className="mb-1 text-2xl font-bold text-white">Разделы</h1>
-          <p className="text-sm text-gray-400">
-            {sorted.length} разделов · создайте раздел, чтобы добавить его на сайт
+          <h1 className="mb-1 display text-2xl text-ink">Разделы</h1>
+          <p className="text-sm text-graphite">
+            {countNoun(sorted.length, 'раздел', 'раздела', 'разделов')} · создайте раздел, чтобы добавить его на сайт
           </p>
         </div>
         <Button
@@ -120,71 +118,71 @@ export default function AdminSections() {
       </div>
 
       {open && (
-        <form onSubmit={submit} className="mb-6 space-y-4 rounded-sm border border-white/10 bg-surface p-6">
-          <h2 className="font-semibold text-white">
+        <form onSubmit={submit} className="mb-6 space-y-4 rounded-2xl border border-line bg-paper shadow-card p-6">
+          <h2 className="font-semibold text-ink">
             {editingId ? 'Редактирование раздела' : 'Новый раздел'}
           </h2>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label htmlFor="s-slug" className={label}>Адрес (slug)</label>
+              <label htmlFor="s-slug" className={labelClass}>Адрес (slug)</label>
               <input
                 id="s-slug"
                 required
                 value={form.slug}
                 onChange={(e) => setForm({ ...form, slug: e.target.value.toLowerCase().replace(/\s+/g, '-') })}
-                className={field}
+                className={fieldClass}
                 placeholder="meropriyatiya"
               />
             </div>
             <div>
-              <label htmlFor="s-title" className={label}>Заголовок</label>
+              <label htmlFor="s-title" className={labelClass}>Заголовок</label>
               <input
                 id="s-title"
                 required
                 value={form.title}
                 onChange={(e) => setForm({ ...form, title: e.target.value })}
-                className={field}
+                className={fieldClass}
                 placeholder="Мероприятия клуба"
               />
             </div>
             <div>
-              <label htmlFor="s-subtitle" className={label}>Подзаголовок</label>
+              <label htmlFor="s-subtitle" className={labelClass}>Подзаголовок</label>
               <input
                 id="s-subtitle"
                 value={form.subtitle}
                 onChange={(e) => setForm({ ...form, subtitle: e.target.value })}
-                className={field}
+                className={fieldClass}
                 placeholder="Календарь событий"
               />
             </div>
             <div>
-              <label htmlFor="s-icon" className={label}>Иконка (эмодзи)</label>
+              <label htmlFor="s-icon" className={labelClass}>Иконка (эмодзи)</label>
               <input
                 id="s-icon"
                 value={form.icon}
                 onChange={(e) => setForm({ ...form, icon: e.target.value })}
-                className={field}
+                className={fieldClass}
                 placeholder="🏆"
               />
             </div>
             <div className="sm:col-span-2">
-              <label htmlFor="s-desc" className={label}>Описание раздела (вводный текст)</label>
+              <label htmlFor="s-desc" className={labelClass}>Описание раздела (вводный текст)</label>
               <textarea
                 id="s-desc"
                 rows={4}
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
-                className={`${field} resize-none`}
+                className={`${fieldClass} resize-none`}
                 placeholder="Краткое описание раздела, которое показывается перед карточками на странице"
               />
             </div>
             <div>
-              <label htmlFor="s-published" className={label}>Опубликовать</label>
+              <label htmlFor="s-published" className={labelClass}>Опубликовать</label>
               <select
                 id="s-published"
                 value={form.published ? 'true' : 'false'}
                 onChange={(e) => setForm({ ...form, published: e.target.value === 'true' })}
-                className={field}
+                className={fieldClass}
               >
                 <option value="true">Да</option>
                 <option value="false">Нет</option>
@@ -196,7 +194,7 @@ export default function AdminSections() {
               {editingId ? 'Сохранить' : 'Добавить'}
             </Button>
             {editingId && (
-              <button type="button" onClick={closeForm} className="text-xs text-gray-400 hover:text-white">
+              <button type="button" onClick={closeForm} className="text-xs text-graphite hover:text-ink">
                 Отменить
               </button>
             )}
@@ -204,34 +202,34 @@ export default function AdminSections() {
         </form>
       )}
 
-      <div className="overflow-hidden rounded-sm border border-white/10">
+      <div className="overflow-hidden rounded-xl border border-line">
         <table className="w-full text-sm">
-          <thead className="bg-surface">
-            <tr className="border-b border-white/10">
-              <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-400">Заголовок</th>
-              <th scope="col" className="hidden px-4 py-3 text-left text-xs font-medium text-gray-400 sm:table-cell">Адрес</th>
-              <th scope="col" className="hidden px-4 py-3 text-left text-xs font-medium text-gray-400 md:table-cell">Статус</th>
-              <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-400">
+          <thead className="bg-paper">
+            <tr className="border-b border-line">
+              <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-graphite">Заголовок</th>
+              <th scope="col" className="hidden px-4 py-3 text-left text-xs font-medium text-graphite sm:table-cell">Адрес</th>
+              <th scope="col" className="hidden px-4 py-3 text-left text-xs font-medium text-graphite md:table-cell">Статус</th>
+              <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-graphite">
                 <span className="sr-only">Действия</span>
               </th>
             </tr>
           </thead>
           <tbody>
             {sorted.map((r) => (
-              <tr key={r.id} className="border-b border-white/5 bg-surface/50 transition-colors last:border-0 hover:bg-white/5">
+              <tr key={r.id} className="border-b border-line bg-mist transition-colors last:border-0 hover:bg-mist">
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">
                     {r.icon && <span className="text-lg">{r.icon}</span>}
-                    <p className="font-medium text-white">{r.title}</p>
+                    <p className="font-medium text-ink">{r.title}</p>
                   </div>
-                  <p className="text-xs text-gray-500">/{r.slug}</p>
+                  <p className="text-xs text-graphite">/{r.slug}</p>
                 </td>
-                <td className="hidden px-4 py-3 text-gray-400 sm:table-cell">/{r.slug}</td>
+                <td className="hidden px-4 py-3 text-graphite sm:table-cell">/{r.slug}</td>
                 <td className="hidden px-4 py-3">
-                  <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-sm ${
+                  <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-xl ${
                     r.published
-                      ? 'bg-green-500/20 text-green-400'
-                      : 'bg-gray-500/20 text-gray-400'
+                      ? 'bg-emerald-500/10 text-emerald-700'
+                      : 'bg-mist text-graphite'
                   }`}>
                     {r.published ? 'Опубликовано' : 'Черновик'}
                   </span>
@@ -240,17 +238,17 @@ export default function AdminSections() {
                   <div className="flex items-center justify-end gap-3">
                     <button
                       onClick={() => setViewingSection(r.id)}
-                      className="text-gray-500 transition-colors hover:text-accent-blue"
+                      className="text-graphite transition-colors hover:text-navy"
                       title="Карточки раздела"
                     >
                       <ChevronRight className="h-4 w-4" />
                     </button>
-                    <button onClick={() => startEdit(r.id)} className="text-gray-500 transition-colors hover:text-accent-blue" title="Редактировать">
+                    <button onClick={() => startEdit(r.id)} className="text-graphite transition-colors hover:text-navy" title="Редактировать">
                       <Pencil className="h-4 w-4" />
                     </button>
                     <button
                       onClick={() => { if (window.confirm(`Удалить «${r.title}»?`)) remove(r.id, r.title); }}
-                      className="text-gray-500 transition-colors hover:text-red-400"
+                      className="text-graphite transition-colors hover:text-brand"
                       title="Удалить"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -290,10 +288,6 @@ function AdminCards({ sectionId, onClose }: { sectionId: string; onClose: () => 
     () => [...all].sort((a, b) => a.sort_order - b.sort_order),
     [all]
   );
-
-  const field =
-    'w-full rounded-sm border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white transition-colors placeholder:text-gray-600 focus:border-accent-red focus:outline-none';
-  const label = 'mb-1.5 block text-xs uppercase tracking-wider text-gray-400';
 
   const openCreate = () => {
     setForm({ title: '', description: '', image: '', link: '' });
@@ -349,7 +343,7 @@ function AdminCards({ sectionId, onClose }: { sectionId: string; onClose: () => 
   return (
     <div className="mt-8">
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-xl font-bold text-white">Карточки раздела</h2>
+        <h2 className="text-xl font-bold text-ink">Карточки раздела</h2>
         <Button onClick={onClose} variant="outline" size="sm">
           <X className="mr-1.5 h-4 w-4" /> Назад к разделам
         </Button>
@@ -360,54 +354,54 @@ function AdminCards({ sectionId, onClose }: { sectionId: string; onClose: () => 
       </Button>
 
       {open && (
-        <form onSubmit={submit} className="mb-6 space-y-4 rounded-sm border border-white/10 bg-surface p-6">
-          <h3 className="font-semibold text-white">
+        <form onSubmit={submit} className="mb-6 space-y-4 rounded-2xl border border-line bg-paper shadow-card p-6">
+          <h3 className="font-semibold text-ink">
             {editingId ? 'Редактирование карточки' : 'Новая карточка'}
           </h3>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="sm:col-span-2">
-              <label htmlFor="c-title" className={label}>Заголовок</label>
+              <label htmlFor="c-title" className={labelClass}>Заголовок</label>
               <input
                 id="c-title"
                 required
                 value={form.title}
                 onChange={(e) => setForm({ ...form, title: e.target.value })}
-                className={field}
+                className={fieldClass}
                 placeholder="Итоги сезона 2025"
               />
             </div>
             <div className="sm:col-span-2">
-              <label htmlFor="c-desc" className={label}>Описание</label>
+              <label htmlFor="c-desc" className={labelClass}>Описание</label>
               <textarea
                 id="c-desc"
                 rows={10}
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
-                className={`${field} resize-y leading-relaxed`}
+                className={`${fieldClass} resize-y leading-relaxed`}
                 placeholder={'Обычный текст: пустая строка разделяет абзацы, строки с «- » соберут список. Можно вставить и готовый HTML.'}
               />
-              <p className="mt-1.5 text-[11px] leading-relaxed text-gray-500">
+              <p className="mt-1.5 text-[11px] leading-relaxed text-graphite">
                 Этот текст становится страницей карточки: в списке раздела показывается только
                 начало, полностью — при переходе по карточке.
               </p>
             </div>
             <div className="sm:col-span-2">
-              <label htmlFor="c-image" className={label}>URL фото</label>
+              <label htmlFor="c-image" className={labelClass}>URL фото</label>
               <input
                 id="c-image"
                 value={form.image}
                 onChange={(e) => setForm({ ...form, image: e.target.value })}
-                className={field}
+                className={fieldClass}
                 placeholder="https://..."
               />
             </div>
             <div className="sm:col-span-2">
-              <label htmlFor="c-link" className={label}>Ссылка (опционально)</label>
+              <label htmlFor="c-link" className={labelClass}>Ссылка (опционально)</label>
               <input
                 id="c-link"
                 value={form.link}
                 onChange={(e) => setForm({ ...form, link: e.target.value })}
-                className={field}
+                className={fieldClass}
                 placeholder="https://..."
               />
             </div>
@@ -417,7 +411,7 @@ function AdminCards({ sectionId, onClose }: { sectionId: string; onClose: () => 
               {editingId ? 'Сохранить' : 'Добавить'}
             </Button>
             {editingId && (
-              <button type="button" onClick={closeForm} className="text-xs text-gray-400 hover:text-white">
+              <button type="button" onClick={closeForm} className="text-xs text-graphite hover:text-ink">
                 Отменить
               </button>
             )}
@@ -425,35 +419,35 @@ function AdminCards({ sectionId, onClose }: { sectionId: string; onClose: () => 
         </form>
       )}
 
-      <div className="overflow-hidden rounded-sm border border-white/10">
+      <div className="overflow-hidden rounded-xl border border-line">
         <table className="w-full text-sm">
-          <thead className="bg-surface">
-            <tr className="border-b border-white/10">
-              <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-400">Заголовок</th>
-              <th scope="col" className="hidden px-4 py-3 text-left text-xs font-medium text-gray-400 sm:table-cell">Фото</th>
-              <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-400">
+          <thead className="bg-paper">
+            <tr className="border-b border-line">
+              <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-graphite">Заголовок</th>
+              <th scope="col" className="hidden px-4 py-3 text-left text-xs font-medium text-graphite sm:table-cell">Фото</th>
+              <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-graphite">
                 <span className="sr-only">Действия</span>
               </th>
             </tr>
           </thead>
           <tbody>
             {sorted.map((r) => (
-              <tr key={r.id} className="border-b border-white/5 bg-surface/50 transition-colors last:border-0 hover:bg-white/5">
+              <tr key={r.id} className="border-b border-line bg-mist transition-colors last:border-0 hover:bg-mist">
                 <td className="px-4 py-3">
-                  <p className="font-medium text-white">{r.title}</p>
-                  <p className="text-xs text-gray-500 line-clamp-1">{r.description}</p>
+                  <p className="font-medium text-ink">{r.title}</p>
+                  <p className="text-xs text-graphite line-clamp-1">{r.description}</p>
                 </td>
                 <td className="hidden px-4 py-3">
-                  {r.image && <img src={r.image} alt="" className="h-8 w-8 rounded-sm object-cover" />}
+                  {r.image && <img src={r.image} alt="" className="h-8 w-8 rounded-xl object-cover" />}
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex items-center justify-end gap-3">
-                    <button onClick={() => startEdit(r.id)} className="text-gray-500 transition-colors hover:text-accent-blue" title="Редактировать">
+                    <button onClick={() => startEdit(r.id)} className="text-graphite transition-colors hover:text-navy" title="Редактировать">
                       <Pencil className="h-4 w-4" />
                     </button>
                     <button
                       onClick={() => { if (window.confirm(`Удалить «${r.title}»?`)) remove(r.id, r.title); }}
-                      className="text-gray-500 transition-colors hover:text-red-400"
+                      className="text-graphite transition-colors hover:text-brand"
                       title="Удалить"
                     >
                       <Trash2 className="h-4 w-4" />

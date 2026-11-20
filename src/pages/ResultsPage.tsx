@@ -1,6 +1,9 @@
-import SectionTitle from '../components/ui/SectionTitle';
+import Breadcrumbs from '../components/ui/Breadcrumbs';
+import Button from '../components/ui/Button';
 import { useResults } from '../store/resultsStore';
 import { anyPlaceholder } from '../lib/placeholder';
+import { countNoun } from '../lib/plural';
+import { Trophy } from 'lucide-react';
 
 export default function ResultsPage() {
   const results = useResults();
@@ -11,56 +14,96 @@ export default function ResultsPage() {
   );
 
   return (
-    <div className="py-16 lg:py-24">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <SectionTitle subtitle="Спорт" title="Спортивные результаты" align="center" as="h1" />
+    <>
+      <Breadcrumbs items={[{ label: 'Результаты' }]} />
 
-        {real.length === 0 ? (
-          <div className="rounded-sm border border-white/10 bg-surface px-6 py-16 text-center">
-            <p className="mx-auto max-w-md text-sm leading-relaxed text-gray-400">
-              Протоколы соревнований публикуем после каждого старта. Результаты
-              участников появятся здесь, как только завершится ближайший забег.
-            </p>
-            <p className="mt-4 text-xs text-gray-500">
-              Хотите попасть в список? Приходите на тренировку — подготовим к
-              первому старту.
-            </p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-white/10">
-                  <th className="text-left py-3 px-4 text-gray-400 font-medium">Спортсмен</th>
-                  <th className="text-left py-3 px-4 text-gray-400 font-medium">Соревнование</th>
-                  <th className="text-left py-3 px-4 text-gray-400 font-medium hidden md:table-cell">Дата</th>
-                  <th className="text-left py-3 px-4 text-gray-400 font-medium hidden sm:table-cell">Дисциплина</th>
-                  <th className="text-left py-3 px-4 text-gray-400 font-medium">Результат</th>
-                  <th className="text-left py-3 px-4 text-gray-400 font-medium">Место</th>
-                </tr>
-              </thead>
-              <tbody>
-                {real.map((r) => (
-                  <tr key={r.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
-                    <td className="py-4 px-4 text-white font-medium">{r.athleteName}</td>
-                    <td className="py-4 px-4 text-gray-300">{r.event}</td>
-                    <td className="py-4 px-4 text-gray-400 hidden md:table-cell">
-                      {new Date(r.date).toLocaleDateString('ru-RU')}
-                    </td>
-                    <td className="py-4 px-4 text-gray-400 hidden sm:table-cell">{r.discipline}</td>
-                    <td className="py-4 px-4 text-accent-blue font-semibold">{r.result}</td>
-                    <td className="py-4 px-4">
-                      <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-accent-red/20 text-accent-red text-xs font-bold">
-                        {r.place}
-                      </span>
-                    </td>
+      <section className="bg-ink pb-14 pt-8 text-paper lg:pb-16">
+        <div className="container-x">
+          <span className="eyebrow mb-4 text-brand">
+            <span className="h-[2px] w-8 bg-brand" />
+            {real.length > 0
+              ? countNoun(real.length, 'протокол', 'протокола', 'протоколов')
+              : 'Протоколы стартов'}
+          </span>
+          <h1 className="display max-w-3xl text-[2.5rem] sm:text-6xl lg:text-7xl">
+            Спортивные результаты
+          </h1>
+          <p className="mt-5 max-w-2xl text-base leading-relaxed text-white/65 sm:text-lg">
+            Забеги, триатлоны и трейлы, где стартовали наши спортсмены.
+            Протоколы публикуем после каждого старта.
+          </p>
+        </div>
+      </section>
+
+      <section className="bg-paper py-14 lg:py-20">
+        <div className="container-x">
+          {real.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-line bg-mist px-6 py-16 text-center">
+              <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-paper shadow-card">
+                <Trophy className="h-6 w-6 text-brand" />
+              </div>
+              <p className="mx-auto max-w-md text-sm leading-relaxed text-graphite">
+                Протоколы соревнований публикуем после каждого старта. Результаты
+                участников появятся здесь, как только завершится ближайший забег.
+              </p>
+              <p className="mx-auto mt-4 max-w-sm text-xs text-graphite/80">
+                Хотите попасть в список? Приходите на тренировку — подготовим
+                к первому старту.
+              </p>
+              <Button to="/schedule" variant="primary" size="sm" className="mt-6">
+                Посмотреть расписание
+              </Button>
+            </div>
+          ) : (
+            <div className="overflow-x-auto rounded-2xl border border-line">
+              <table className="w-full min-w-[40rem] text-sm">
+                <thead>
+                  <tr className="border-b border-line bg-mist">
+                    {[
+                      ['Спортсмен', ''],
+                      ['Соревнование', ''],
+                      ['Дата', 'hidden md:table-cell'],
+                      ['Дисциплина', 'hidden sm:table-cell'],
+                      ['Результат', ''],
+                      ['Место', ''],
+                    ].map(([label, extra]) => (
+                      <th
+                        key={label}
+                        className={`px-4 py-3 text-left text-[0.65rem] font-bold uppercase tracking-[0.12em] text-graphite ${extra}`}
+                      >
+                        {label}
+                      </th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-    </div>
+                </thead>
+                <tbody>
+                  {real.map((r) => (
+                    <tr
+                      key={r.id}
+                      className="border-b border-line last:border-0 transition-colors hover:bg-mist/60"
+                    >
+                      <td className="px-4 py-4 font-semibold text-ink">{r.athleteName}</td>
+                      <td className="px-4 py-4 text-graphite">{r.event}</td>
+                      <td className="hidden px-4 py-4 text-graphite md:table-cell">
+                        {new Date(r.date).toLocaleDateString('ru-RU')}
+                      </td>
+                      <td className="hidden px-4 py-4 text-graphite sm:table-cell">
+                        {r.discipline}
+                      </td>
+                      <td className="px-4 py-4 font-bold text-ink">{r.result}</td>
+                      <td className="px-4 py-4">
+                        <span className="inline-flex h-8 min-w-8 items-center justify-center rounded-full bg-brand/10 px-2 text-xs font-bold text-brand">
+                          {r.place}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </section>
+    </>
   );
 }

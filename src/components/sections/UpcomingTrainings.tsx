@@ -1,13 +1,19 @@
 import { Link } from 'react-router-dom';
-import SectionTitle from '../ui/SectionTitle';
-import Button from '../ui/Button';
+import { ArrowRight, CalendarDays, Clock, MapPin, Users } from 'lucide-react';
 import { useTrainings } from '../../store/trainingsStore';
 import { useTrainers } from '../../store/trainersStore';
 import { useAuth } from '../../context/AuthContext';
 import { freeSpots } from '../../lib/access';
-import { formatDate, isPastDate } from '../../lib/date';
+import { isPastDate } from '../../lib/date';
 import { displayValue } from '../../lib/placeholder';
+import Button from '../ui/Button';
 
+/**
+ * «Подобрали для вас» — ближайшие занятия из реального расписания.
+ *
+ * Карточка строится вокруг даты: день и месяц крупно, остальное списком.
+ * Так блок читается как афиша, а не как таблица расписания.
+ */
 export default function UpcomingTrainings() {
   const trainings = useTrainings();
   const trainers = useTrainers();
@@ -19,94 +25,108 @@ export default function UpcomingTrainings() {
     .slice(0, 4);
 
   return (
-    <section className="bg-primary py-20 lg:py-28">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="mb-12 flex flex-col md:flex-row md:items-end md:justify-between">
-          <SectionTitle subtitle="Расписание" title="Ближайшие тренировки" />
-          <Button to="/schedule" variant="outline" size="sm" className="mb-12 shrink-0 md:mb-12">
+    <section className="bg-mist py-20 lg:py-28">
+      <div className="container-x">
+        <div className="mb-10 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <span className="eyebrow mb-4">Расписание</span>
+            <h2 className="display max-w-xl text-4xl text-ink sm:text-5xl">
+              Подобрали для вас
+            </h2>
+          </div>
+          <Button
+            to="/schedule"
+            variant="outline"
+            size="sm"
+            className="shrink-0 rounded-full border-ink text-ink hover:bg-ink hover:text-white"
+          >
             Все тренировки
           </Button>
         </div>
 
         {upcoming.length === 0 ? (
-          <div className="rounded-sm border border-white/10 bg-surface p-10 text-center">
-            <p className="text-sm text-gray-400">
-              Новое расписание появится совсем скоро — следите за обновлениями.
+          <div className="rounded-2xl border border-dashed border-line bg-paper p-10 text-center">
+            <p className="text-sm text-graphite">
+              Новое расписание появится совсем скоро — следите за обновлениями
+              или напишите нам в Telegram.
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <ul className="grid gap-4 sm:grid-cols-2">
             {upcoming.map((t) => {
               const left = freeSpots(t, registrations, trainers);
               const individual = t.format === 'individual';
               const price = individual ? t.priceIndividual : t.priceGroup;
+              const [year, , day] = t.date.split('-');
+              const monthShort = new Date(`${t.date}T12:00:00`).toLocaleDateString('ru-RU', {
+                month: 'short',
+              });
+
               return (
-                <div
+                <li
                   key={t.id}
-                  className="group flex flex-col overflow-hidden rounded-sm border border-white/10 bg-surface transition-colors hover:border-accent-red/30 sm:flex-row"
+                  className="card-lift card-lift-hover flex gap-5 p-5 sm:p-6"
                 >
-                  <div className="h-40 shrink-0 overflow-hidden sm:h-auto sm:w-40">
-                    <img
-                      src={t.image}
-                      alt={t.name}
-                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      loading="lazy"
-                    />
+                  {/* Кубик даты */}
+                  <div className="flex w-16 shrink-0 flex-col items-center justify-center rounded-xl bg-navy py-3 text-paper">
+                    <span className="display text-2xl leading-none">{day}</span>
+                    <span className="mt-1 text-[0.62rem] uppercase tracking-[0.14em] text-white/60">
+                      {monthShort}
+                    </span>
+                    <span className="text-[0.62rem] text-white/40">{year.slice(2)}</span>
                   </div>
-                  <div className="flex flex-1 flex-col justify-between p-5">
-                    <div>
-                      <div className="mb-2 flex flex-wrap items-center gap-2">
-                        <span className="text-xs font-semibold uppercase tracking-wider text-accent-blue">
-                          {t.directionName}
-                        </span>
-                        <span className="text-gray-600">·</span>
-                        <span className="text-xs text-gray-400">{t.level}</span>
-                        <span
-                          className={`rounded-sm px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
-                            individual
-                              ? 'bg-purple-500/15 text-purple-300'
-                              : 'bg-blue-500/15 text-blue-300'
-                          }`}
-                        >
-                          {individual ? 'Индивидуальная' : 'Групповая'}
-                        </span>
-                      </div>
-                      <h3 className="mb-2 text-lg font-bold text-white">
-                        <Link to={`/schedule/${t.id}`} className="transition-colors hover:text-accent-red">
-                          {t.name}
-                        </Link>
-                      </h3>
-                      <div className="space-y-1 text-sm text-gray-400">
-                        <p>
-                          {formatDate(t.date, false)} · {t.time} · {t.duration}
-                        </p>
-                        <p>{displayValue(t.location, 'Точка сбора — в расписании')}</p>
-                        {price && (
-                          <p className="font-semibold text-white">{price} ₽</p>
-                        )}
-                      </div>
+
+                  <div className="min-w-0 flex-1">
+                    <div className="mb-2 flex flex-wrap items-center gap-2">
+                      <span className="text-[0.65rem] font-bold uppercase tracking-[0.12em] text-brand">
+                        {t.directionName}
+                      </span>
+                      <span className="text-line">·</span>
+                      <span className="text-[0.7rem] text-graphite">{t.level}</span>
+                      <span className="rounded-full bg-mist px-2.5 py-0.5 text-[0.62rem] font-semibold uppercase tracking-wide text-graphite">
+                        {individual ? 'Персональная' : 'Групповая'}
+                      </span>
                     </div>
-                    <div className="mt-4 flex items-center justify-between">
-                      <span
-                        className={`text-xs font-semibold ${
-                          left > 0 ? 'text-green-400' : 'text-red-400'
-                        }`}
-                      >
+
+                    <h3 className="text-base font-bold leading-snug text-ink">
+                      <Link to={`/schedule/${t.id}`} className="hover:text-brand">
+                        {t.name}
+                      </Link>
+                    </h3>
+
+                    <div className="mt-3 space-y-1.5 text-[0.8rem] text-graphite">
+                      <p className="flex items-center gap-2">
+                        <Clock className="h-3.5 w-3.5 shrink-0 text-brand" />
+                        {t.time} · {t.duration}
+                      </p>
+                      <p className="flex items-center gap-2">
+                        <MapPin className="h-3.5 w-3.5 shrink-0 text-brand" />
+                        {displayValue(t.location, 'Точка сбора — в расписании')}
+                      </p>
+                      <p className="flex items-center gap-2">
+                        <Users className="h-3.5 w-3.5 shrink-0 text-brand" />
                         {left > 0
                           ? individual
                             ? 'Есть свободные тренеры'
-                            : `${left} мест`
-                          : 'Мест нет'}
-                      </span>
-                      <Button to={`/schedule/${t.id}`} variant="blue" size="sm">
-                        {individual ? 'Выбрать тренера' : left > 0 ? 'Записаться' : 'В лист ожидания'}
-                      </Button>
+                            : `${left} свобод. мест`
+                          : 'Мест нет — лист ожидания'}
+                        {price && <span className="ml-auto font-bold text-ink">{price} ₽</span>}
+                      </p>
                     </div>
+
+                    <Link
+                      to={`/schedule/${t.id}`}
+                      className="group mt-4 inline-flex items-center gap-2 text-[0.72rem] font-bold uppercase tracking-[0.12em] text-ink hover:text-brand"
+                    >
+                      <CalendarDays className="h-3.5 w-3.5 text-brand" />
+                      {individual ? 'Выбрать тренера' : left > 0 ? 'Записаться' : 'В лист ожидания'}
+                      <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+                    </Link>
                   </div>
-                </div>
+                </li>
               );
             })}
-          </div>
+          </ul>
         )}
       </div>
     </section>

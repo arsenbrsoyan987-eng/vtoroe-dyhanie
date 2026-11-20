@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import Button from '../../components/ui/Button';
 import ImageUpload from '../../components/ui/ImageUpload';
+import { ActionButton, PageHeader, Panel, PanelTitle, fieldClass, labelClass } from '../../components/cabinet/ui';
 import { CreditCard, Calendar, KeyRound, ShieldCheck } from 'lucide-react';
 import { passwordIssues } from '../../lib/crypto';
 
@@ -25,10 +25,6 @@ export default function AccountSettings() {
   const [nextPw, setNextPw] = useState('');
   const [confirmPw, setConfirmPw] = useState('');
   const [pwBusy, setPwBusy] = useState(false);
-
-  const field =
-    'w-full rounded-sm border border-white/10 bg-primary px-3 py-2.5 text-sm text-white transition-colors placeholder:text-gray-600 focus:border-accent-red focus:outline-none';
-  const label = 'mb-1.5 block text-xs uppercase tracking-wider text-gray-400';
 
   if (!currentUser) return null;
 
@@ -68,15 +64,15 @@ export default function AccountSettings() {
 
   return (
     <div className="mx-auto max-w-4xl">
-      <h1 className="mb-1 text-2xl font-bold text-white">Настройки</h1>
-      <p className="mb-8 text-sm text-gray-400">
-        Профиль, безопасность и дополнительные возможности
-      </p>
+      <PageHeader
+        eyebrow="Аккаунт"
+        title="Настройки"
+        subtitle="Профиль, безопасность и дополнительные возможности кабинета."
+      />
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Профиль */}
-        <section className="rounded-sm border border-white/10 bg-surface p-6">
-          <h2 className="mb-4 font-semibold text-white">Профиль</h2>
+      <div className="grid gap-5 lg:grid-cols-2">
+        <Panel>
+          <PanelTitle hint="Имя и фото видны тренеру в списках участников.">Профиль</PanelTitle>
           <form onSubmit={saveProfile} className="space-y-4">
             <ImageUpload
               value={photo}
@@ -86,92 +82,114 @@ export default function AccountSettings() {
               fallback={name.trim().charAt(0).toUpperCase() || '?'}
             />
             <div>
-              <label htmlFor="name" className={label}>Имя и фамилия</label>
-              <input id="name" value={name} onChange={(e) => setName(e.target.value)} className={field} />
+              <label htmlFor="name" className={labelClass}>
+                Имя и фамилия
+              </label>
+              <input id="name" value={name} onChange={(e) => setName(e.target.value)} className={fieldClass} />
             </div>
             <div>
-              <label htmlFor="phone" className={label}>Телефон</label>
-              <input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className={field} placeholder="+7 900 000-00-00" />
+              <label htmlFor="phone" className={labelClass}>
+                Телефон
+              </label>
+              <input
+                id="phone"
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                className={fieldClass}
+                placeholder="+7 900 000-00-00"
+              />
             </div>
             <div>
-              <label htmlFor="email" className={label}>Email (логин)</label>
-              <input id="email" value={currentUser.email} disabled className={`${field} cursor-not-allowed opacity-60`} />
-              <p className="mt-1 text-xs text-gray-600">
-                Логин меняет только администратор школы
-              </p>
+              <label htmlFor="email" className={labelClass}>
+                Email (логин)
+              </label>
+              <input
+                id="email"
+                value={currentUser.email}
+                disabled
+                className={`${fieldClass} cursor-not-allowed`}
+              />
+              <p className="mt-1.5 text-xs text-graphite">Логин меняет только администратор школы.</p>
             </div>
-            <Button type="submit" variant="primary" size="sm">Сохранить профиль</Button>
+            <ActionButton type="submit">Сохранить профиль</ActionButton>
           </form>
-        </section>
+        </Panel>
 
-        {/* Безопасность */}
-        <section className="rounded-sm border border-white/10 bg-surface p-6">
-          <h2 className="mb-1 flex items-center gap-2 font-semibold text-white">
-            <KeyRound className="h-4 w-4 text-accent-red" />
-            Смена пароля
-          </h2>
-          <p className="mb-4 text-xs text-gray-500">
-            Регулярно меняйте пароль и не передавайте его третьим лицам
-          </p>
+        <Panel>
+          <div className="mb-4">
+            <h2 className="flex items-center gap-2 text-base font-bold text-ink">
+              <KeyRound className="h-4 w-4 text-brand" />
+              Смена пароля
+            </h2>
+            <p className="mt-1 text-xs leading-relaxed text-graphite">
+              Регулярно меняйте пароль и не передавайте его третьим лицам.
+            </p>
+          </div>
           <form onSubmit={savePassword} className="space-y-3">
             <div>
-              <label htmlFor="current-pw" className={label}>Текущий пароль</label>
+              <label htmlFor="current-pw" className={labelClass}>
+                Текущий пароль
+              </label>
               <input
                 id="current-pw"
                 type="password"
                 autoComplete="current-password"
                 value={currentPw}
                 onChange={(e) => setCurrentPw(e.target.value)}
-                className={field}
+                className={fieldClass}
                 required
               />
             </div>
             <div>
-              <label htmlFor="next-pw" className={label}>Новый пароль</label>
+              <label htmlFor="next-pw" className={labelClass}>
+                Новый пароль
+              </label>
               <input
                 id="next-pw"
                 type="password"
                 autoComplete="new-password"
                 value={nextPw}
                 onChange={(e) => setNextPw(e.target.value)}
-                className={field}
+                className={fieldClass}
                 required
               />
             </div>
             <div>
-              <label htmlFor="confirm-pw" className={label}>Повторите новый пароль</label>
+              <label htmlFor="confirm-pw" className={labelClass}>
+                Повторите новый пароль
+              </label>
               <input
                 id="confirm-pw"
                 type="password"
                 autoComplete="new-password"
                 value={confirmPw}
                 onChange={(e) => setConfirmPw(e.target.value)}
-                className={field}
+                className={fieldClass}
                 required
               />
             </div>
-            <Button type="submit" variant="primary" size="sm" disabled={pwBusy}>
+            <ActionButton type="submit" disabled={pwBusy}>
               {pwBusy ? 'Меняем…' : 'Изменить пароль'}
-            </Button>
+            </ActionButton>
           </form>
-          <p className="mt-4 flex items-start gap-2 text-xs text-gray-600">
-            <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-green-500" />
+          <p className="mt-4 flex items-start gap-2 rounded-xl bg-mist px-3 py-2.5 text-xs leading-relaxed text-graphite">
+            <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" />
             Пароль хранится в виде необратимого хеша (PBKDF2, 120 000 итераций).
           </p>
-        </section>
+        </Panel>
       </div>
 
-      {/* Аккаунт */}
-      <section className="mt-6 rounded-sm border border-white/10 bg-surface p-6">
-        <h2 className="mb-4 font-semibold text-white">Аккаунт</h2>
+      <Panel className="mt-5">
+        <PanelTitle>Аккаунт</PanelTitle>
         <dl className="grid gap-3 text-sm sm:grid-cols-2">
-          <div className="flex justify-between sm:block">
-            <dt className="text-gray-400">Роль</dt>
-            <dd className="text-white">{ROLE_LABEL[currentUser.role]}</dd>
+          <div className="flex items-center justify-between rounded-xl bg-mist/60 px-3 py-2.5 sm:block sm:bg-transparent sm:px-0 sm:py-0">
+            <dt className="text-graphite">Роль</dt>
+            <dd className="font-semibold text-ink">{ROLE_LABEL[currentUser.role]}</dd>
           </div>
-          <div className="flex justify-between sm:block">
-            <dt className="text-gray-400">В школе с</dt>
-            <dd className="text-white">
+          <div className="flex items-center justify-between rounded-xl bg-mist/60 px-3 py-2.5 sm:block sm:bg-transparent sm:px-0 sm:py-0">
+            <dt className="text-graphite">В школе с</dt>
+            <dd className="font-semibold text-ink">
               {new Date(currentUser.created).toLocaleDateString('ru-RU', {
                 day: 'numeric',
                 month: 'long',
@@ -180,29 +198,34 @@ export default function AccountSettings() {
             </dd>
           </div>
         </dl>
-      </section>
+      </Panel>
 
-      {/* Дополнительно — только спортсмену */}
       {currentUser.role !== 'trainer' && (
-        <section className="mt-6 rounded-sm border border-white/10 bg-surface p-6">
-          <h2 className="mb-4 font-semibold text-white">Дополнительно</h2>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Link to="/cabinet/payment" className="flex items-center gap-3 rounded-sm bg-white/5 p-3 transition-colors hover:bg-white/10">
-              <CreditCard className="h-5 w-5 text-accent-red" />
+        <Panel className="mt-5">
+          <PanelTitle>Дополнительно</PanelTitle>
+          <div className="grid gap-2.5 sm:grid-cols-2">
+            <Link
+              to="/cabinet/payment"
+              className="flex items-center gap-3 rounded-xl border border-line bg-mist/60 p-3.5 transition-colors hover:border-ink/20 hover:bg-paper"
+            >
+              <CreditCard className="h-5 w-5 shrink-0 text-brand" />
               <span>
-                <span className="block text-sm font-medium text-white">Абонемент</span>
-                <span className="block text-xs text-gray-500">Тарифы и оплата</span>
+                <span className="block text-sm font-semibold text-ink">Абонемент</span>
+                <span className="block text-xs text-graphite">Тарифы и оплата</span>
               </span>
             </Link>
-            <Link to="/cabinet/calendar-export" className="flex items-center gap-3 rounded-sm bg-white/5 p-3 transition-colors hover:bg-white/10">
-              <Calendar className="h-5 w-5 text-accent-blue" />
+            <Link
+              to="/cabinet/calendar-export"
+              className="flex items-center gap-3 rounded-xl border border-line bg-mist/60 p-3.5 transition-colors hover:border-ink/20 hover:bg-paper"
+            >
+              <Calendar className="h-5 w-5 shrink-0 text-navy" />
               <span>
-                <span className="block text-sm font-medium text-white">Экспорт в календарь</span>
-                <span className="block text-xs text-gray-500">Google, Apple, Outlook</span>
+                <span className="block text-sm font-semibold text-ink">Экспорт в календарь</span>
+                <span className="block text-xs text-graphite">Google, Apple, Outlook</span>
               </span>
             </Link>
           </div>
-        </section>
+        </Panel>
       )}
     </div>
   );

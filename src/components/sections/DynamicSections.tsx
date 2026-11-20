@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import SectionTitle from '../ui/SectionTitle';
+import { ArrowRight } from 'lucide-react';
 import { useCards, useSections } from '../../store/sectionsStore';
 
 /**
@@ -24,37 +24,45 @@ export default function DynamicSections() {
   if (visible.length === 0) return null;
 
   return (
-    <section className="bg-primary py-20 lg:py-28">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <SectionTitle subtitle="Разделы" title="Другое о школе" align="center" />
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    <section className="bg-paper py-20 lg:py-28">
+      <div className="container-x">
+        <div className="mb-10">
+          <span className="eyebrow mb-4">Разделы</span>
+          <h2 className="display max-w-xl text-4xl text-ink sm:text-5xl">Другое о школе</h2>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {visible.map(({ sec, cover }) => (
             <Link
               key={sec.id}
               to={`/section/${sec.slug}`}
-              className="group relative overflow-hidden rounded-sm aspect-[4/3] block border border-white/10 hover:border-accent-red/50 transition-colors"
+              className="group relative block aspect-[4/3] overflow-hidden rounded-2xl bg-navy"
             >
               {cover ? (
                 <img
                   src={cover}
                   alt={sec.title}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  className="h-full w-full object-cover opacity-70 transition-transform duration-700 group-hover:scale-105"
                   loading="lazy"
                 />
               ) : (
-                <div className="flex h-full w-full items-center justify-center bg-accent-red/10 text-4xl font-bold text-accent-red">
+                <div className="flex h-full w-full items-center justify-center bg-navy text-5xl font-bold text-white/15">
                   {sec.title.charAt(0).toUpperCase()}
                 </div>
               )}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
-              <div className="absolute bottom-0 left-0 right-0 p-6">
-                {sec.icon && <span className="text-3xl mb-2 block">{sec.icon}</span>}
-                <h3 className="text-white text-xl font-bold group-hover:text-accent-red transition-colors">
-                  {sec.title}
-                </h3>
+              <div className="absolute inset-0 bg-gradient-to-t from-ink/85 via-ink/25 to-transparent" />
+
+              <div className="absolute inset-x-0 bottom-0 p-6">
+                <h3 className="display text-xl text-paper">{sec.title}</h3>
                 {sec.subtitle && (
-                  <p className="text-gray-300 text-sm mt-1 line-clamp-2">{sec.subtitle}</p>
+                  <p className="mt-2 line-clamp-2 text-[0.8rem] leading-relaxed text-white/65">
+                    {sec.subtitle}
+                  </p>
                 )}
+                <span className="mt-3 inline-flex items-center gap-2 text-[0.68rem] font-bold uppercase tracking-[0.12em] text-brand">
+                  Перейти
+                  <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+                </span>
               </div>
             </Link>
           ))}

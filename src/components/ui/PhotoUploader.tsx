@@ -76,26 +76,26 @@ export default function PhotoUploader({ trainingId, onUploaded, disabled }: Phot
             inputRef.current?.click();
           }
         }}
-        className={`flex cursor-pointer flex-col items-center justify-center gap-2 rounded-sm border border-dashed px-4 py-8 text-center transition-colors ${
+        className={`flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed px-4 py-8 text-center transition-colors ${
           dragging
-            ? 'border-accent-red bg-accent-red/10'
-            : 'border-white/20 hover:border-white/40 hover:bg-white/5'
+            ? 'border-brand bg-brand/5'
+            : 'border-line bg-mist/60 hover:border-ink/25 hover:bg-mist'
         } ${busy || disabled ? 'pointer-events-none opacity-60' : ''}`}
       >
         {busy ? (
           <>
-            <Loader2 className="h-5 w-5 animate-spin text-accent-red" />
-            <span className="text-xs text-gray-300">
+            <Loader2 className="h-5 w-5 animate-spin text-brand" />
+            <span className="text-xs text-graphite">
               Загружаем {progress.done + 1} из {progress.total}…
             </span>
           </>
         ) : (
           <>
-            <ImagePlus className="h-5 w-5 text-gray-400" />
-            <span className="text-xs text-gray-300">
+            <ImagePlus className="h-5 w-5 text-graphite" />
+            <span className="text-xs text-graphite">
               Перетащите фото или видео, либо нажмите, чтобы выбрать
             </span>
-            <span className="text-[10px] text-gray-600">
+            <span className="text-[10px] text-graphite/70">
               Можно выбрать несколько сразу · фото до 20 МБ сожмём · видео до 50 МБ (MP4, MOV, WEBM)
             </span>
           </>

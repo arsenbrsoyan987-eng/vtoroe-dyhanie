@@ -156,10 +156,15 @@ export default function Seo() {
       return;
     }
 
-    // Статические разделы: ключ уже без завершающего слэша
+    // Статические разделы: ключ уже без завершающего слэша.
+    // Пустая строка в STATIC_SEO означает «взять значение из настроек сайта».
     const meta = STATIC_SEO[pathname];
     if (meta) {
-      applySeo({ title: meta.title || undefined, description: meta.description, path: pathname });
+      applySeo({
+        title: meta.title || undefined,
+        description: meta.description || undefined,
+        path: pathname,
+      });
       return;
     }
 

@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { useToast } from '../../context/ToastContext';
 import { ImagePlus, Link2, Trash2, Upload } from 'lucide-react';
+import { fieldClass, labelClass } from '../cabinet/ui';
 
 interface ImageUploadProps {
   value: string;
@@ -111,17 +112,17 @@ export default function ImageUpload({
     toast('Фото привязано по ссылке');
   };
 
-  const radius = circle ? 'rounded-full' : 'rounded-sm';
+  const radius = circle ? 'rounded-full' : 'rounded-xl';
 
   return (
     <div>
-      <div className="mb-1.5 flex items-center justify-between">
-        <span className="block text-xs uppercase tracking-wider text-gray-400">{label}</span>
+      <div className="mb-1.5 flex items-center justify-between gap-3">
+        <span className={labelClass}>{label}</span>
         {value && (
           <button
             type="button"
             onClick={() => onChange('')}
-            className="flex items-center gap-1 text-xs text-gray-500 transition-colors hover:text-red-400"
+            className="flex items-center gap-1 text-xs font-semibold text-graphite transition-colors hover:text-brand"
           >
             <Trash2 className="h-3 w-3" />
             Убрать
@@ -131,17 +132,17 @@ export default function ImageUpload({
 
       <div className="flex items-start gap-4">
         <div
-          className={`relative flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden border border-white/10 bg-primary ${radius}`}
+          className={`relative flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden border border-line bg-mist ${radius}`}
         >
           {value ? (
             <img src={value} alt="Предпросмотр" className="h-full w-full object-cover" />
           ) : fallback ? (
-            <span className="text-2xl font-bold text-accent-red">{fallback}</span>
+            <span className="text-2xl font-bold text-brand">{fallback}</span>
           ) : (
-            <ImagePlus className="h-7 w-7 text-gray-600" />
+            <ImagePlus className="h-7 w-7 text-graphite/60" />
           )}
           {busy && (
-            <span className="absolute inset-0 flex items-center justify-center bg-black/60 text-[10px] text-white">
+            <span className="absolute inset-0 flex items-center justify-center bg-ink/60 text-[10px] font-semibold text-white">
               Обработка…
             </span>
           )}
@@ -168,17 +169,15 @@ export default function ImageUpload({
                 inputRef.current?.click();
               }
             }}
-            className={`flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-sm border border-dashed px-4 py-4 text-center transition-colors ${
+            className={`flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed px-4 py-4 text-center transition-colors ${
               dragging
-                ? 'border-accent-red bg-accent-red/10'
-                : 'border-white/20 hover:border-white/40 hover:bg-white/5'
+                ? 'border-brand bg-brand/5'
+                : 'border-line bg-mist/60 hover:border-ink/25 hover:bg-mist'
             }`}
           >
-            <Upload className="h-4 w-4 text-gray-400" />
-            <span className="text-xs text-gray-300">
-              Перетащите фото или нажмите, чтобы выбрать
-            </span>
-            <span className="text-[10px] text-gray-600">
+            <Upload className="h-4 w-4 text-graphite" />
+            <span className="text-xs text-graphite">Перетащите фото или нажмите, чтобы выбрать</span>
+            <span className="text-[10px] text-graphite/70">
               JPG, PNG, WEBP · обрежем по центру и сожмём автоматически
             </span>
           </div>
@@ -203,13 +202,13 @@ export default function ImageUpload({
                   }
                 }}
                 placeholder="https://… или /trainers/ivan.jpg"
-                className="w-full rounded-sm border border-white/10 bg-primary px-3 py-2 text-xs text-white placeholder:text-gray-600 focus:border-accent-red focus:outline-none"
+                className={`${fieldClass} text-xs`}
                 autoFocus
               />
               <button
                 type="button"
                 onClick={applyUrl}
-                className="shrink-0 rounded-sm bg-white/10 px-3 text-xs text-gray-300 transition-colors hover:bg-white/20 hover:text-white"
+                className="shrink-0 rounded-xl border border-line px-3 text-xs font-semibold text-ink transition-colors hover:border-ink/25 hover:bg-mist"
               >
                 ОК
               </button>
@@ -218,7 +217,7 @@ export default function ImageUpload({
             <button
               type="button"
               onClick={() => setShowUrl(true)}
-              className="mt-2 flex items-center gap-1.5 text-xs text-gray-500 transition-colors hover:text-accent-blue"
+              className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-graphite transition-colors hover:text-navy"
             >
               <Link2 className="h-3 w-3" />
               Или вставить ссылку

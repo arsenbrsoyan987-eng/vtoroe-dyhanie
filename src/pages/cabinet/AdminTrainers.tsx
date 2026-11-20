@@ -10,6 +10,8 @@ import { useDirections } from '../../store/directionsStore';
 import Button from '../../components/ui/Button';
 import ImageUpload from '../../components/ui/ImageUpload';
 import { Check, Copy, Link2, Mail, Pencil, Plus, Trash2, UserPlus, X } from 'lucide-react';
+import { fieldClass, labelClass } from '../../components/cabinet/ui';
+import { countNoun } from '../../lib/plural';
 
 const emptyForm = {
   name: '',
@@ -54,10 +56,6 @@ export default function AdminTrainers() {
   const [copied, setCopied] = useState(false);
 
   const users = useMemo(() => activeProfiles(profiles), [profiles]);
-
-  const field =
-    'w-full rounded-sm border border-white/10 bg-primary px-3 py-2.5 text-sm text-white transition-colors placeholder:text-gray-600 focus:border-accent-red focus:outline-none';
-  const label = 'mb-1.5 block text-xs uppercase tracking-wider text-gray-400';
 
   /** Аккаунт тренера в общей базе: роль trainer и привязка к профилю на сайте */
   const accountOf = (trainerId: string): User | undefined =>
@@ -276,9 +274,9 @@ export default function AdminTrainers() {
     <div className="mx-auto max-w-5xl">
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="mb-1 text-2xl font-bold text-white">Тренеры</h1>
-          <p className="text-sm text-gray-400">
-            {trainers.length} профилей · профиль сразу появляется на сайте
+          <h1 className="mb-1 display text-2xl text-ink">Тренеры</h1>
+          <p className="text-sm text-graphite">
+            {countNoun(trainers.length, 'профиль', 'профиля', 'профилей')} · профиль сразу появляется на сайте
           </p>
         </div>
         <Button onClick={() => (open ? closeForm() : startCreate())} variant={open ? 'outline' : 'primary'} size="sm">
@@ -295,8 +293,8 @@ export default function AdminTrainers() {
       </div>
 
       {trainers.some((t) => t.name.startsWith('[')) && (
-        <div className="mb-6 rounded-sm border border-accent-blue/30 bg-accent-blue/10 px-4 py-3">
-          <p className="text-xs leading-relaxed text-blue-200">
+        <div className="mb-6 rounded-xl border border-navy/30 bg-navy/10 px-4 py-3">
+          <p className="text-xs leading-relaxed text-navy">
             В списке остались демонстрационные профили (помечены «[Имя тренера]»).
             Отредактируйте их под своих тренеров или удалите — на сайте они исчезнут сразу.
           </p>
@@ -304,11 +302,11 @@ export default function AdminTrainers() {
       )}
 
       {invite && (
-        <div className="mb-6 rounded-sm border border-green-500/30 bg-green-500/10 p-4">
+        <div className="mb-6 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-green-200">Приглашение для {invite.name}</p>
-              <p className="mt-0.5 text-xs text-green-200/70">
+              <p className="text-sm font-semibold text-emerald-800">Приглашение для {invite.name}</p>
+              <p className="mt-0.5 text-xs text-emerald-700/70">
                 Роль тренера привяжется автоматически при регистрации с email{' '}
                 {invite.email}
               </p>
@@ -316,20 +314,20 @@ export default function AdminTrainers() {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => copyRegisterLink(invite.email)}
-                className="flex items-center gap-1.5 rounded-sm bg-green-500/20 px-3 py-1.5 text-xs font-semibold text-green-100 transition-colors hover:bg-green-500/30"
+                className="flex items-center gap-1.5 rounded-xl bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold text-emerald-800 transition-colors hover:bg-emerald-500/20"
               >
                 {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
                 {copied ? 'Скопировано' : 'Ссылка на регистрацию'}
               </button>
               <button
                 onClick={() => setInvite(null)}
-                className="text-xs text-green-200/70 hover:text-green-100"
+                className="text-xs text-emerald-700/70 hover:text-emerald-800"
               >
                 Закрыть
               </button>
             </div>
           </div>
-          <p className="mt-3 text-xs text-green-200/70">
+          <p className="mt-3 text-xs text-emerald-700/70">
             Пароль тренер придумывает сам, доступ появляется на любом его устройстве.
             Пока он не зарегистрируется, вход в кабинет ему недоступен.
           </p>
@@ -337,31 +335,31 @@ export default function AdminTrainers() {
       )}
 
       {open && (
-        <form onSubmit={submit} className="mb-6 space-y-5 rounded-sm border border-white/10 bg-surface p-6">
-          <h2 className="font-semibold text-white">
+        <form onSubmit={submit} className="mb-6 space-y-5 rounded-2xl border border-line bg-paper shadow-card p-6">
+          <h2 className="font-semibold text-ink">
             {editingId ? 'Редактирование тренера' : 'Новый тренер'}
           </h2>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="sm:col-span-2">
-              <label htmlFor="tr-name" className={label}>Имя и фамилия *</label>
-              <input id="tr-name" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={field} placeholder="Иван Петров" />
+              <label htmlFor="tr-name" className={labelClass}>Имя и фамилия *</label>
+              <input id="tr-name" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={fieldClass} placeholder="Иван Петров" />
             </div>
             <div>
-              <label htmlFor="tr-spec" className={label}>Специализация</label>
-              <input id="tr-spec" value={form.specialization} onChange={(e) => setForm({ ...form, specialization: e.target.value })} className={field} placeholder="Бег, подготовка к марафонам" />
+              <label htmlFor="tr-spec" className={labelClass}>Специализация</label>
+              <input id="tr-spec" value={form.specialization} onChange={(e) => setForm({ ...form, specialization: e.target.value })} className={fieldClass} placeholder="Бег, подготовка к марафонам" />
             </div>
             <div>
-              <label htmlFor="tr-exp" className={label}>Опыт</label>
-              <input id="tr-exp" value={form.experience} onChange={(e) => setForm({ ...form, experience: e.target.value })} className={field} placeholder="8 лет тренерского стажа" />
+              <label htmlFor="tr-exp" className={labelClass}>Опыт</label>
+              <input id="tr-exp" value={form.experience} onChange={(e) => setForm({ ...form, experience: e.target.value })} className={fieldClass} placeholder="8 лет тренерского стажа" />
             </div>
             <div>
-              <label htmlFor="tr-phone" className={label}>Телефон</label>
-              <input id="tr-phone" type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className={field} placeholder="+7 900 000-00-00" />
+              <label htmlFor="tr-phone" className={labelClass}>Телефон</label>
+              <input id="tr-phone" type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className={fieldClass} placeholder="+7 900 000-00-00" />
             </div>
             <div>
-              <label htmlFor="tr-email" className={label}>Контактный email на сайте</label>
-              <input id="tr-email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className={field} placeholder="тренер@vtoroe-dyhanie.ru" />
+              <label htmlFor="tr-email" className={labelClass}>Контактный email на сайте</label>
+              <input id="tr-email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className={fieldClass} placeholder="тренер@vtoroe-dyhanie.ru" />
             </div>
             <div className="sm:col-span-2">
               <ImageUpload
@@ -372,15 +370,15 @@ export default function AdminTrainers() {
               />
             </div>
             <div className="sm:col-span-2">
-              <label htmlFor="tr-bio" className={label}>О тренере</label>
-              <textarea id="tr-bio" rows={4} value={form.biography} onChange={(e) => setForm({ ...form, biography: e.target.value })} className={`${field} resize-none`} placeholder="Опыт, достижения, подход к тренировкам" />
+              <label htmlFor="tr-bio" className={labelClass}>О тренере</label>
+              <textarea id="tr-bio" rows={4} value={form.biography} onChange={(e) => setForm({ ...form, biography: e.target.value })} className={`${fieldClass} resize-none`} placeholder="Опыт, достижения, подход к тренировкам" />
             </div>
             <div className="sm:col-span-2">
-              <label htmlFor="tr-certs" className={label}>Сертификаты и квалификации</label>
-              <textarea id="tr-certs" rows={3} value={form.certifications} onChange={(e) => setForm({ ...form, certifications: e.target.value })} className={`${field} resize-none`} placeholder={'Каждый с новой строки\nКМС по лёгкой атлетике'} />
+              <label htmlFor="tr-certs" className={labelClass}>Сертификаты и квалификации</label>
+              <textarea id="tr-certs" rows={3} value={form.certifications} onChange={(e) => setForm({ ...form, certifications: e.target.value })} className={`${fieldClass} resize-none`} placeholder={'Каждый с новой строки\nКМС по лёгкой атлетике'} />
             </div>
             <div className="sm:col-span-2">
-              <span className={label}>Направления</span>
+              <span className={labelClass}>Направления</span>
               <div className="flex flex-wrap gap-2">
                 {directions.map((d) => {
                   const active = form.directions.includes(d.id);
@@ -396,10 +394,10 @@ export default function AdminTrainers() {
                             : [...form.directions, d.id],
                         })
                       }
-                      className={`rounded-sm px-3 py-1.5 text-xs transition-colors ${
+                      className={`rounded-xl px-3 py-1.5 text-xs transition-colors ${
                         active
-                          ? 'bg-accent-red text-white'
-                          : 'bg-white/5 text-gray-400 hover:text-white'
+                          ? 'bg-brand text-white'
+                          : 'bg-mist text-graphite hover:text-ink'
                       }`}
                     >
                       {d.name}
@@ -411,13 +409,13 @@ export default function AdminTrainers() {
           </div>
 
           {!editingId && (
-            <div className="rounded-sm border border-white/10 bg-primary/50 p-4">
-              <label className="flex items-center gap-2 text-sm text-white">
+            <div className="rounded-xl border border-line bg-mist/60 p-4">
+              <label className="flex items-center gap-2 text-sm text-ink">
                 <input
                   type="checkbox"
                   checked={form.createAccount}
                   onChange={(e) => setForm({ ...form, createAccount: e.target.checked })}
-                  className="h-4 w-4 accent-accent-red"
+                  className="h-4 w-4 accent-brand"
                 />
                 Сразу пригласить тренера в кабинет
               </label>
@@ -425,17 +423,17 @@ export default function AdminTrainers() {
               {form.createAccount && (
                 <div className="mt-4 grid gap-4 sm:grid-cols-2">
                   <div>
-                    <label htmlFor="tr-login" className={label}>Email для входа *</label>
+                    <label htmlFor="tr-login" className={labelClass}>Email для входа *</label>
                     <input
                       id="tr-login"
                       type="email"
                       value={form.loginEmail}
                       onChange={(e) => setForm({ ...form, loginEmail: e.target.value })}
-                      className={field}
+                      className={fieldClass}
                       placeholder={suggestLogin(form.name || 'тренера')}
                     />
                   </div>
-                  <p className="self-end text-xs leading-relaxed text-gray-600 sm:col-span-1">
+                  <p className="self-end text-xs leading-relaxed text-graphite/70 sm:col-span-1">
                     На этот email придёт ссылка регистрации: тренер сам придумает пароль
                     и получит роль тренера автоматически.
                   </p>
@@ -448,7 +446,7 @@ export default function AdminTrainers() {
             <Button type="submit" variant="primary" size="sm" disabled={busy}>
               {busy ? 'Сохраняем…' : editingId ? 'Сохранить изменения' : 'Добавить тренера'}
             </Button>
-            <button type="button" onClick={closeForm} className="text-xs text-gray-400 hover:text-white">
+            <button type="button" onClick={closeForm} className="text-xs text-graphite hover:text-ink">
               Отмена
             </button>
           </div>
@@ -463,37 +461,37 @@ export default function AdminTrainers() {
             .filter(Boolean);
 
           return (
-            <div key={t.id} className="rounded-sm border border-white/10 bg-surface p-4">
+            <div key={t.id} className="rounded-2xl border border-line bg-paper shadow-card p-4">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
                 {t.photo ? (
                   <img
                     src={t.photo}
                     alt={t.name}
-                    className="h-16 w-16 shrink-0 rounded-sm object-cover"
+                    className="h-16 w-16 shrink-0 rounded-xl object-cover"
                     loading="lazy"
                   />
                 ) : (
-                  <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-sm bg-accent-red/15 text-xl font-bold text-accent-red">
+                  <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-brand/15 text-xl font-bold text-brand">
                     {t.name.charAt(0).toUpperCase()}
                   </div>
                 )}
 
                 <div className="min-w-0 flex-1">
-                  <p className="font-semibold text-white">{t.name}</p>
-                  <p className="text-xs text-accent-red">{t.specialization || '—'}</p>
-                  <p className="mt-0.5 text-xs text-gray-500">{t.experience}</p>
+                  <p className="font-semibold text-ink">{t.name}</p>
+                  <p className="text-xs text-brand">{t.specialization || '—'}</p>
+                  <p className="mt-0.5 text-xs text-graphite">{t.experience}</p>
                   <div className="mt-1.5 flex flex-wrap gap-1.5">
                     {dirNames.map((d) => (
-                      <span key={d} className="rounded-sm bg-accent-blue/10 px-1.5 py-0.5 text-[10px] text-accent-blue">
+                      <span key={d} className="rounded-xl bg-navy/10 px-1.5 py-0.5 text-[10px] text-navy">
                         {d}
                       </span>
                     ))}
                   </div>
                   <p className="mt-1.5 text-xs">
                     {account ? (
-                      <span className="text-green-400">Входит в кабинет: {account.email}</span>
+                      <span className="text-emerald-700">Входит в кабинет: {account.email}</span>
                     ) : (
-                      <span className="text-yellow-500">Аккаунта нет — тренер не может войти</span>
+                      <span className="text-amber-700">Аккаунта нет — тренер не может войти</span>
                     )}
                   </p>
                 </div>
@@ -502,7 +500,7 @@ export default function AdminTrainers() {
                   {account ? (
                     <button
                       onClick={() => copyRegisterLink(account.email)}
-                      className="flex items-center gap-1.5 rounded-sm bg-accent-blue/10 px-2.5 py-1.5 text-xs text-accent-blue transition-colors hover:bg-accent-blue/20"
+                      className="flex items-center gap-1.5 rounded-xl bg-navy/10 px-2.5 py-1.5 text-xs text-navy transition-colors hover:bg-navy/20"
                       aria-label={`Ссылка на вход для ${t.name}`}
                       title="Ссылка на страницу входа — отправьте её тренеру"
                     >
@@ -513,14 +511,14 @@ export default function AdminTrainers() {
                     <>
                       <button
                         onClick={() => createAccountFor(t.id, t.name, t.email)}
-                        className="flex items-center gap-1.5 rounded-sm bg-green-500/10 px-2.5 py-1.5 text-xs text-green-400 transition-colors hover:bg-green-500/20"
+                        className="flex items-center gap-1.5 rounded-xl bg-emerald-500/10 px-2.5 py-1.5 text-xs text-emerald-700 transition-colors hover:bg-emerald-500/10"
                       >
                         <UserPlus className="h-3.5 w-3.5" />
                         Пригласить
                       </button>
                       <button
                         onClick={() => linkExistingAccount(t.id, t.name)}
-                        className="flex items-center gap-1.5 rounded-sm bg-white/5 px-2.5 py-1.5 text-xs text-gray-300 transition-colors hover:bg-white/10 hover:text-white"
+                        className="flex items-center gap-1.5 rounded-xl bg-mist px-2.5 py-1.5 text-xs text-ink/80 transition-colors hover:bg-line hover:text-ink"
                         title="Если человек уже зарегистрировался как спортсмен"
                       >
                         <Mail className="h-3.5 w-3.5" />
@@ -531,7 +529,7 @@ export default function AdminTrainers() {
 
                   <button
                     onClick={() => startEdit(t.id)}
-                    className="text-gray-500 transition-colors hover:text-accent-blue"
+                    className="text-graphite transition-colors hover:text-navy"
                     aria-label={`Редактировать ${t.name}`}
                     title="Редактировать"
                   >
@@ -540,16 +538,16 @@ export default function AdminTrainers() {
 
                   {confirmId === t.id ? (
                     <div className="flex items-center gap-2">
-                      <span className="text-[11px] text-gray-400">Удалить?</span>
+                      <span className="text-[11px] text-graphite">Удалить?</span>
                       <button
                         onClick={() => remove(t.id, t.name)}
-                        className="rounded-sm bg-red-500/20 px-2 py-1 text-[11px] font-semibold text-red-300 hover:bg-red-500/30"
+                        className="rounded-xl bg-brand/10 px-2 py-1 text-[11px] font-semibold text-brand hover:bg-brand/15"
                       >
                         Да
                       </button>
                       <button
                         onClick={() => setConfirmId(null)}
-                        className="rounded-sm px-2 py-1 text-[11px] text-gray-400 hover:text-white"
+                        className="rounded-xl px-2 py-1 text-[11px] text-graphite hover:text-ink"
                       >
                         Нет
                       </button>
@@ -557,7 +555,7 @@ export default function AdminTrainers() {
                   ) : (
                     <button
                       onClick={() => setConfirmId(t.id)}
-                      className="text-gray-500 transition-colors hover:text-red-400"
+                      className="text-graphite transition-colors hover:text-brand"
                       aria-label={`Удалить ${t.name}`}
                       title="Удалить"
                     >
@@ -571,18 +569,18 @@ export default function AdminTrainers() {
         })}
 
         {sorted.length === 0 && (
-          <div className="rounded-sm border border-white/10 bg-surface p-8 text-center text-sm text-gray-400">
+          <div className="rounded-2xl border border-line bg-paper shadow-card p-8 text-center text-sm text-graphite">
             Тренеров пока нет — добавьте первого.
           </div>
         )}
       </div>
 
-      <div className="mt-6 space-y-2 text-xs leading-relaxed text-gray-600">
+      <div className="mt-6 space-y-2 text-xs leading-relaxed text-graphite/70">
         <p>
           Профили сразу появляются на странице «Тренеры». Аккаунт даёт тренеру доступ к кабинету:
           своё расписание, спортсмены и посещаемость. Вы вошли как {currentUser?.name}.
         </p>
-        <p className="rounded-sm border border-white/10 bg-surface/60 px-3 py-2">
+        <p className="rounded-xl border border-line bg-mist px-3 py-2">
           Важно: доступы общие, они в облаке. Пригласите тренера по ссылке на регистрацию —
           он придёт с любого своего устройства и попадёт в список «Пользователи» автоматически.
         </p>

@@ -15,13 +15,14 @@ export default function SectionTitle({
   const alignClass = align === 'center' ? 'text-center' : '';
 
   return (
-    <div className={`mb-12 ${alignClass}`}>
+    <div className={`mb-10 ${alignClass}`}>
       {subtitle && (
-        <span className="block text-accent-red font-semibold uppercase tracking-widest text-sm mb-2">
+        <span className={`eyebrow mb-4 ${align === 'center' ? 'justify-center' : ''}`}>
+          <span className="h-[2px] w-8 bg-brand" />
           {subtitle}
         </span>
       )}
-      <Tag className="text-3xl md:text-4xl lg:text-5xl font-bold text-white leading-tight">
+      <Tag className="display text-3xl text-ink sm:text-4xl lg:text-5xl">
         {title}
       </Tag>
     </div>

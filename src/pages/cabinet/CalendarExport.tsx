@@ -1,4 +1,5 @@
 import { useTrainings } from '../../store/trainingsStore';
+import { ActionButton, EmptyState, PageHeader, Panel } from '../../components/cabinet/ui';
 import { Calendar, Download } from 'lucide-react';
 
 export default function CalendarExportPage() {
@@ -24,6 +25,16 @@ LOCATION:${t.location}
 DESCRIPTION:Направление: ${t.directionName}\\nУровень: ${t.level}\\nТренер: ${t.trainer}\\nПродолжительность: ${t.duration}`;
   };
 
+  const saveFile = (ics: string, name: string) => {
+    const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = name;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const downloadAllICS = () => {
     let ics = `BEGIN:VCALENDAR
 VERSION:2.0
@@ -34,68 +45,62 @@ PRODID:-//Vtoroe Dyhanie//RU
       ics += '\nEND:VEVENT\n';
     });
     ics += 'END:VCALENDAR';
-
-    const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'vtoroe-dyhanie-trainings.ics';
-    a.click();
-    URL.revokeObjectURL(url);
+    saveFile(ics, 'vtoroe-dyhanie-trainings.ics');
   };
 
   return (
-    <div className="py-16 lg:py-24">
-      <div className="max-w-2xl mx-auto px-4">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-2xl font-bold text-white">Календарь</h1>
-            <p className="text-gray-400 text-sm">Экспорт тренировок в Google/Apple/Outlook Calendar</p>
-          </div>
-          <button onClick={downloadAllICS} className="flex items-center gap-2 bg-accent-blue text-white text-sm px-4 py-2 rounded-sm hover:bg-accent-blue-hover transition-colors">
-            <Download className="w-4 h-4" />
+    <div className="mx-auto max-w-2xl">
+      <PageHeader
+        eyebrow="Аккаунт"
+        title="Календарь"
+        subtitle="Экспорт тренировок в Google, Apple или Outlook — файл .ics открывается в любом календаре."
+        actions={
+          <ActionButton variant="outline" onClick={downloadAllICS} disabled={upcomingTrainings.length === 0}>
+            <Download className="h-3.5 w-3.5" />
             Скачать все
-          </button>
-        </div>
+          </ActionButton>
+        }
+      />
 
-        <div className="space-y-3">
-          {upcomingTrainings.map((t) => {
-            const icsContent = generateICS(t);
-            const downloadSingle = () => {
-              const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
-              const url = URL.createObjectURL(blob);
-              const a = document.createElement('a');
-              a.href = url;
-              a.download = `${t.name.replace(/\s+/g, '_')}.ics`;
-              a.click();
-              URL.revokeObjectURL(url);
-            };
-
-            return (
-              <div key={t.id} className="bg-surface border border-white/10 rounded-sm p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <Calendar className="w-5 h-5 text-gray-400" />
-                  <div>
-                    <div className="text-white font-semibold text-sm">{t.name}</div>
-                    <div className="text-gray-400 text-xs">
-                      {new Date(t.date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })} · {t.time} · {t.location}
-                    </div>
-                  </div>
+      {upcomingTrainings.length === 0 ? (
+        <EmptyState
+          title="Предстоящих тренировок нет"
+          text="Как только в расписании появятся занятия, их можно будет выгрузить в календарь."
+        />
+      ) : (
+        <div className="space-y-2.5">
+          {upcomingTrainings.map((t) => (
+            <Panel key={t.id} className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+              <div className="flex min-w-0 items-center gap-3">
+                <Calendar className="h-5 w-5 shrink-0 text-graphite" />
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-bold text-ink">{t.name}</p>
+                  <p className="text-xs text-graphite">
+                    {new Date(t.date).toLocaleDateString('ru-RU', {
+                      day: 'numeric',
+                      month: 'long',
+                    })}{' '}
+                    · {t.time} · {t.location}
+                  </p>
                 </div>
-                <button onClick={downloadSingle} className="text-xs text-accent-blue bg-accent-blue/10 px-3 py-1.5 rounded-sm hover:bg-accent-blue/20 transition-colors shrink-0">
-                  + Добавить в календарь
-                </button>
               </div>
-            );
-          })}
+              <button
+                onClick={() => saveFile(generateICS(t), `${t.name.replace(/\s+/g, '_')}.ics`)}
+                className="shrink-0 rounded-full bg-navy/10 px-3 py-1.5 text-[0.68rem] font-bold uppercase tracking-[0.08em] text-navy transition-colors hover:bg-navy/15"
+              >
+                В календарь
+              </button>
+            </Panel>
+          ))}
         </div>
+      )}
 
-        <div className="mt-6 bg-blue-500/10 border border-blue-500/20 rounded-sm p-4">
-          <p className="text-blue-300 text-xs">
-            💡 <strong>Как использовать:</strong> Скачайте .ics файл и откройте его в Google Календаре, Apple Calendar, Outlook или любом другом календаре. Событие автоматически добавится с датой, временем и описанием.
-          </p>
-        </div>
-      </div>
+      <Panel className="mt-5 border-navy/20 bg-navy/5">
+        <p className="text-xs leading-relaxed text-navy">
+          Скачайте .ics и откройте в Google Календаре, Apple Calendar или Outlook — событие
+          добавится с датой, временем и описанием тренировки.
+        </p>
+      </Panel>
     </div>
   );
 }

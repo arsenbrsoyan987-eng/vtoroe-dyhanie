@@ -2,7 +2,15 @@ import { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useProfiles } from '../../store/profilesStore';
 import { activeProfiles } from '../../store/profilesStore';
-import { Bell } from 'lucide-react';
+import {
+  ActionButton,
+  EmptyState,
+  PageHeader,
+  Panel,
+  PanelTitle,
+  fieldClass,
+  labelClass,
+} from '../../components/cabinet/ui';
 
 export default function AdminNotificationsPage() {
   const { notifications, addNotification } = useAuth();
@@ -25,60 +33,105 @@ export default function AdminNotificationsPage() {
     setForm({ title: '', message: '', userId: 'all' });
   };
 
+  const feed = [...notifications]
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    .slice(0, 20);
+
   return (
-    <div>
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-3">
-          <Bell className="w-8 h-8 text-accent-blue" />
-          <div>
-            <h1 className="text-2xl font-bold text-white">Уведомления</h1>
-            <p className="text-gray-400 text-sm">Отправка сообщений участникам</p>
-          </div>
-        </div>
-        <button onClick={() => setShowForm(!showForm)} className="bg-accent-red text-white text-sm px-4 py-2 rounded-sm hover:bg-accent-red-hover transition-colors">
-          + Создать уведомление
-        </button>
-      </div>
+    <div className="mx-auto max-w-4xl">
+      <PageHeader
+        eyebrow="Люди"
+        title="Рассылки"
+        subtitle="Сообщения появляются в кабинете спортсмена и тренера сразу после отправки."
+        actions={
+          <ActionButton onClick={() => setShowForm((v) => !v)} variant={showForm ? 'outline' : 'primary'}>
+            {showForm ? 'Отмена' : '+ Создать уведомление'}
+          </ActionButton>
+        }
+      />
 
       {showForm && (
-        <form onSubmit={handleSend} className="bg-surface border border-white/10 rounded-sm p-6 mb-6 space-y-4">
-          <h3 className="text-white font-semibold">Новое уведомление</h3>
-          <input placeholder="Заголовок" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="w-full bg-primary border border-white/10 rounded-sm px-3 py-2 text-white text-sm focus:border-accent-red focus:outline-none" required />
-          <textarea placeholder="Сообщение" value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} rows={3} className="w-full bg-primary border border-white/10 rounded-sm px-3 py-2 text-white text-sm focus:border-accent-red focus:outline-none resize-none" required />
-          <select value={form.userId} onChange={(e) => setForm({ ...form, userId: e.target.value })} className="w-full bg-primary border border-white/10 rounded-sm px-3 py-2 text-white text-sm focus:border-accent-red focus:outline-none">
-            <option value="all">Всем участникам</option>
-            {users.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
-          </select>
-          <div className="flex gap-2">
-            <button type="submit" className="bg-accent-red text-white text-sm px-4 py-2 rounded-sm hover:bg-accent-red-hover transition-colors">Отправить</button>
-            <button type="button" onClick={() => setShowForm(false)} className="text-gray-400 text-sm hover:text-white">Отмена</button>
-          </div>
-        </form>
+        <Panel className="mb-5">
+          <PanelTitle hint="Выберите «Всем участникам», чтобы разослать сообщение по всей школе.">
+            Новое уведомление
+          </PanelTitle>
+          <form onSubmit={handleSend} className="space-y-3">
+            <div>
+              <label htmlFor="n-title" className={labelClass}>
+                Заголовок
+              </label>
+              <input
+                id="n-title"
+                placeholder="Например: перенос тренировки"
+                value={form.title}
+                onChange={(e) => setForm({ ...form, title: e.target.value })}
+                className={fieldClass}
+                required
+              />
+            </div>
+            <div>
+              <label htmlFor="n-message" className={labelClass}>
+                Сообщение
+              </label>
+              <textarea
+                id="n-message"
+                placeholder="Что нужно знать участникам"
+                value={form.message}
+                onChange={(e) => setForm({ ...form, message: e.target.value })}
+                rows={3}
+                className={`${fieldClass} resize-none`}
+                required
+              />
+            </div>
+            <div>
+              <label htmlFor="n-user" className={labelClass}>
+                Получатель
+              </label>
+              <select
+                id="n-user"
+                value={form.userId}
+                onChange={(e) => setForm({ ...form, userId: e.target.value })}
+                className={fieldClass}
+              >
+                <option value="all">Всем участникам</option>
+                {users.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <ActionButton type="submit">Отправить</ActionButton>
+          </form>
+        </Panel>
       )}
 
-      <div className="space-y-3">
-        {notifications.length === 0 ? (
-          <div className="bg-surface border border-white/10 rounded-sm p-8 text-center text-gray-400 text-sm">Нет отправленных уведомлений</div>
+      <Panel>
+        <PanelTitle hint="Последние 20 сообщений — от новых к старым.">История</PanelTitle>
+        {feed.length === 0 ? (
+          <EmptyState
+            title="Уведомлений ещё не было"
+            text="Создайте первое сообщение — оно появится в кабинетах участников."
+          />
         ) : (
-          notifications
-            .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-            .slice(0, 20)
-            .map((n) => {
+          <ul className="space-y-2.5">
+            {feed.map((n) => {
               const user = users.find((u) => u.id === n.userId);
               return (
-                <div key={n.id} className="bg-surface border border-white/10 rounded-sm p-4">
-                  <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
+                <li key={n.id} className="rounded-xl border border-line bg-mist/50 p-4">
+                  <div className="mb-1 flex flex-wrap items-center gap-2 text-[0.68rem] text-graphite">
                     <span>{n.createdAt}</span>
-                    <span>→</span>
-                    <span className="text-gray-300">{user?.name || 'Всем'}</span>
+                    <span aria-hidden>→</span>
+                    <span className="font-semibold text-ink">{user?.name || 'Всем'}</span>
                   </div>
-                  <div className="text-white text-sm font-medium">{n.title}</div>
-                  <div className="text-gray-400 text-xs mt-1">{n.message}</div>
-                </div>
+                  <p className="text-sm font-bold text-ink">{n.title}</p>
+                  <p className="mt-1 text-xs leading-relaxed text-graphite">{n.message}</p>
+                </li>
               );
-            })
+            })}
+          </ul>
         )}
-      </div>
+      </Panel>
     </div>
   );
 }

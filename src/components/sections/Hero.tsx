@@ -1,9 +1,11 @@
+import { useDirections } from '../../store/directionsStore';
+import { useTrainers } from '../../store/trainersStore';
 import { useSetting } from '../../store/settingsStore';
 import Button from '../ui/Button';
 
 /**
- * Заголовок приходит из настроек сайта одной строкой. Часть после «—»
- * подсвечивается акцентом — так же, как было в статичной вёрстке.
+ * Заголовок из настроек правится одной строкой. Часть после «—» уходит
+ * в акцентную полосу — так витрина читается как афиша, а не как абзац.
  */
 function Title({ text }: { text: string }) {
   const idx = text.indexOf(' — ');
@@ -11,7 +13,7 @@ function Title({ text }: { text: string }) {
   return (
     <>
       {text.slice(0, idx + 3)}
-      <span className="text-accent-red">{text.slice(idx + 3)}</span>
+      <span className="text-brand">{text.slice(idx + 3)}</span>
     </>
   );
 }
@@ -21,15 +23,26 @@ export default function Hero() {
   const heroSubtitle = useSetting('heroSubtitle');
   const heroBackground = useSetting('heroBackground');
   const heroButton = useSetting('heroButton');
+  const city = useSetting('city');
+  const directions = useDirections();
+  const trainers = useTrainers();
+
+  /** Только проверяемые цифры: их видно в админке, выдумывать нечего */
+  const stats = [
+    { value: String(directions.length), label: 'Направлений' },
+    { value: String(trainers.length), label: 'Тренеров' },
+    { value: city, label: 'Площадки в городе' },
+    { value: '0 ₽', label: 'Первое занятие' },
+  ];
 
   return (
-    <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
-      {/* Background Image */}
+    <section className="relative overflow-hidden bg-ink">
+      {/* Фон */}
       <div className="absolute inset-0">
         <img
           src={heroBackground}
           alt="Спортсмены на тренировке"
-          className="w-full h-full object-cover"
+          className="h-full w-full object-cover opacity-45"
           loading="eager"
           onError={(e) => {
             // Ссылка из админки не открылась — показываем штатное изображение
@@ -39,45 +52,57 @@ export default function Hero() {
             img.src = '/images/hero.svg';
           }}
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/80" />
+        <div className="absolute inset-0 bg-gradient-to-b from-ink/70 via-ink/55 to-ink" />
       </div>
 
-      {/* Content */}
-      <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-tight mb-6">
+      <div className="container-x relative z-10 flex min-h-[calc(100vh-8rem)] flex-col justify-end pb-14 pt-20">
+        <span className="eyebrow mb-6 inline-flex w-fit text-brand">
+          <span className="h-[2px] w-8 bg-brand" />
+          Спортивная школа для взрослых
+        </span>
+
+        <h1 className="display max-w-5xl text-[2.75rem] text-paper sm:text-6xl lg:text-7xl xl:text-8xl">
           <Title text={heroTitle} />
         </h1>
-        <p className="text-lg sm:text-xl md:text-2xl text-gray-200 max-w-3xl mx-auto mb-10 leading-relaxed">
+
+        <p className="mt-6 max-w-2xl text-base leading-relaxed text-white/70 sm:text-lg lg:text-xl">
           {heroSubtitle}
         </p>
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Button to="/register" variant="primary" size="lg">
+
+        <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <Button to="/register" variant="primary" size="lg" className="rounded-full">
             {heroButton}
           </Button>
-          <Button to="/schedule" variant="outline" size="lg">
+          <Button
+            to="/schedule"
+            variant="outline"
+            size="lg"
+            className="rounded-full border-white/40 text-white hover:bg-white hover:text-ink"
+          >
             Расписание тренировок
           </Button>
-          <Button to="/directions" variant="secondary" size="lg">
+          <Button
+            to="/directions"
+            variant="secondary"
+            size="lg"
+            className="rounded-full bg-white/10 text-white backdrop-blur-sm hover:bg-white/20"
+          >
             Наши направления
           </Button>
         </div>
-      </div>
 
-      {/* Scroll indicator */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
-        <svg
-          className="w-6 h-6 text-white/60"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M19 14l-7 7m0 0l-7-7m7 7V3"
-          />
-        </svg>
+        {/* Цифры — нижняя полоса hero, как в афише */}
+        <dl className="mt-14 grid grid-cols-2 gap-x-6 gap-y-8 border-t border-white/15 pt-8 sm:grid-cols-4">
+          {stats.map((stat) => (
+            <div key={stat.label}>
+              <dt className="sr-only">{stat.label}</dt>
+              <dd className="display text-3xl text-white sm:text-4xl">{stat.value}</dd>
+              <dd className="mt-1.5 text-[0.7rem] uppercase tracking-[0.14em] text-white/50">
+                {stat.label}
+              </dd>
+            </div>
+          ))}
+        </dl>
       </div>
     </section>
   );

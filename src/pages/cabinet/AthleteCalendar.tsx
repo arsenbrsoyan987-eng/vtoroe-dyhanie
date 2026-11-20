@@ -1,8 +1,25 @@
 import { useAuth } from '../../context/AuthContext';
 import { useTrainings } from '../../store/trainingsStore';
 import { toISODate } from '../../lib/date';
+import { PageHeader, Panel } from '../../components/cabinet/ui';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
+
+const MONTHS = [
+  'Январь',
+  'Февраль',
+  'Март',
+  'Апрель',
+  'Май',
+  'Июнь',
+  'Июль',
+  'Август',
+  'Сентябрь',
+  'Октябрь',
+  'Ноябрь',
+  'Декабрь',
+];
+const WEEK_DAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 
 export default function AthleteCalendarPage() {
   const trainings = useTrainings();
@@ -31,97 +48,104 @@ export default function AthleteCalendarPage() {
       .filter(Boolean);
   };
 
-  const monthNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
-  const weekDays = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+  const shiftMonth = (delta: number) =>
+    setCursor(({ year, month }) => {
+      const d = new Date(year, month + delta, 1);
+      return { year: d.getFullYear(), month: d.getMonth() };
+    });
+
+  const monthCount = days.reduce((sum, day) => sum + getDayTrainings(day).length, 0);
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold text-white mb-2">Календарь</h1>
-      <p className="text-gray-400 text-sm mb-8">Мои тренировки и мероприятия</p>
+    <div className="mx-auto max-w-4xl">
+      <PageHeader
+        eyebrow="Мой сезон"
+        title="Календарь"
+        subtitle={`${monthCount} тренировок в ${MONTHS[month].toLowerCase()}е — только ваши записи.`}
+      />
 
-      <div className="bg-surface border border-white/10 rounded-sm p-6">
-        <div className="mb-6 flex items-center justify-between">
+      <Panel>
+        <div className="mb-5 flex items-center justify-between gap-3">
           <button
-            onClick={() =>
-              setCursor(({ year, month }) => {
-                const d = new Date(year, month - 1, 1);
-                return { year: d.getFullYear(), month: d.getMonth() };
-              })
-            }
-            className="rounded-sm p-2 text-gray-400 transition-colors hover:bg-white/5 hover:text-white"
+            onClick={() => shiftMonth(-1)}
+            className="rounded-full border border-line p-2 text-graphite transition-colors hover:border-ink/25 hover:text-ink"
             aria-label="Предыдущий месяц"
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
-          <h2 className="text-lg font-bold text-white">
-            {monthNames[month]} {year}
+          <h2 className="display text-lg text-ink">
+            {MONTHS[month]} {year}
           </h2>
           <button
-            onClick={() =>
-              setCursor(({ year, month }) => {
-                const d = new Date(year, month + 1, 1);
-                return { year: d.getFullYear(), month: d.getMonth() };
-              })
-            }
-            className="rounded-sm p-2 text-gray-400 transition-colors hover:bg-white/5 hover:text-white"
+            onClick={() => shiftMonth(1)}
+            className="rounded-full border border-line p-2 text-graphite transition-colors hover:border-ink/25 hover:text-ink"
             aria-label="Следующий месяц"
           >
             <ChevronRight className="h-4 w-4" />
           </button>
         </div>
 
-        {/* Weekday headers */}
-        <div className="grid grid-cols-7 gap-1 mb-2">
-          {weekDays.map((d) => (
-            <div key={d} className="text-center text-xs font-semibold text-gray-400 uppercase py-2">{d}</div>
+        <div className="mb-1.5 grid grid-cols-7 gap-1">
+          {WEEK_DAYS.map((d) => (
+            <div
+              key={d}
+              className="py-1.5 text-center text-[0.62rem] font-bold uppercase tracking-[0.08em] text-graphite"
+            >
+              {d}
+            </div>
           ))}
         </div>
 
-        {/* Calendar grid */}
         <div className="grid grid-cols-7 gap-1">
           {blanks.map((b) => (
-            <div key={`blank-${b}`} className="min-h-[80px] p-1" />
+            <div key={`blank-${b}`} className="min-h-16 sm:min-h-20" />
           ))}
           {days.map((day) => {
             const dayTrainings = getDayTrainings(day);
             const isToday =
-              day === now.getDate() &&
-              month === now.getMonth() &&
-              year === now.getFullYear();
+              day === now.getDate() && month === now.getMonth() && year === now.getFullYear();
             return (
               <div
                 key={day}
-                className={`min-h-[80px] p-1 rounded-sm border transition-colors ${
-                  isToday ? 'border-accent-red bg-accent-red/5' : 'border-white/5 hover:border-white/10'
+                className={`min-h-16 rounded-xl border p-1 transition-colors sm:min-h-20 ${
+                  isToday ? 'border-brand bg-brand/5' : 'border-line bg-mist/40 hover:bg-mist'
                 }`}
               >
-                <span className={`text-xs ${isToday ? 'text-accent-red font-bold' : 'text-gray-500'}`}>{day}</span>
+                <span
+                  className={`text-[0.68rem] font-semibold ${
+                    isToday ? 'text-brand' : 'text-graphite'
+                  }`}
+                >
+                  {day}
+                </span>
                 <div className="mt-1 space-y-0.5">
                   {dayTrainings.slice(0, 2).map((t, i) => (
-                    <div key={i} className="text-[10px] bg-accent-blue/20 text-accent-blue px-1 py-0.5 rounded-sm truncate">
+                    <div
+                      key={i}
+                      className="truncate rounded-md bg-navy/10 px-1 py-0.5 text-[0.6rem] font-semibold text-navy"
+                    >
                       {t?.name}
                     </div>
                   ))}
                   {dayTrainings.length > 2 && (
-                    <div className="text-[10px] text-gray-500">+{dayTrainings.length - 2}</div>
+                    <div className="text-[0.6rem] text-graphite">+{dayTrainings.length - 2}</div>
                   )}
                 </div>
               </div>
             );
           })}
         </div>
-      </div>
+      </Panel>
 
-      {/* Legend */}
-      <div className="flex items-center gap-4 mt-4 text-xs text-gray-500">
-        <div className="flex items-center gap-1">
-          <div className="w-3 h-3 rounded-sm bg-accent-red/20 border border-accent-red" />
-          <span>Сегодня</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <div className="w-3 h-3 rounded-sm bg-accent-blue/20" />
-          <span>Тренировка</span>
-        </div>
+      <div className="mt-4 flex items-center gap-4 text-xs text-graphite">
+        <span className="flex items-center gap-1.5">
+          <span className="h-3 w-3 rounded-md border border-brand bg-brand/10" />
+          Сегодня
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="h-3 w-3 rounded-md bg-navy/10" />
+          Тренировка
+        </span>
       </div>
     </div>
   );

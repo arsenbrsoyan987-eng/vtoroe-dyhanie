@@ -2,7 +2,13 @@ import { useAuth } from '../../context/AuthContext';
 import { useTrainings } from '../../store/trainingsStore';
 import { visibleTrainings } from '../../lib/access';
 import { formatDate, isPastDate } from '../../lib/date';
-import Button from '../../components/ui/Button';
+import {
+  ActionButton,
+  EmptyState,
+  PageHeader,
+  Panel,
+  StatusBadge,
+} from '../../components/cabinet/ui';
 
 export default function TrainerSchedulePage() {
   const trainings = useTrainings();
@@ -15,63 +21,58 @@ export default function TrainerSchedulePage() {
   const past = mine.filter((t) => isPastDate(t.date)).reverse();
 
   return (
-    <div>
-      <h1 className="mb-2 text-2xl font-bold text-white">Моё расписание</h1>
-      <p className="mb-8 text-sm text-gray-400">
-        {upcoming.length} предстоящих тренировок · {past.length} прошедших
-      </p>
+    <div className="mx-auto max-w-4xl">
+      <PageHeader
+        eyebrow="Работа"
+        title="Моё расписание"
+        subtitle={`${upcoming.length} предстоящих · ${past.length} прошедших`}
+      />
 
-      {mine.length === 0 && (
-        <div className="rounded-sm border border-white/10 bg-surface p-8 text-center">
-          <p className="text-sm text-gray-400">
-            За вами пока не закреплено ни одной тренировки. Обратитесь к администратору школы.
-          </p>
+      {mine.length === 0 ? (
+        <EmptyState
+          title="Тренировок пока нет"
+          text="За вами не закреплено ни одной тренировки. Обратитесь к администратору школы — он ведёт расписание."
+        />
+      ) : (
+        <div className="space-y-3">
+          {[...upcoming, ...past].map((t) => {
+            const regCount = registrations.filter(
+              (r) => r.trainingId === t.id && r.status !== 'cancelled'
+            ).length;
+            const done = isPastDate(t.date);
+            return (
+              <Panel
+                key={t.id}
+                className={`flex flex-col justify-between gap-4 sm:flex-row sm:items-center ${
+                  done ? 'opacity-70' : ''
+                }`}
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="mb-2 flex flex-wrap items-center gap-2">
+                    <span className="text-[0.62rem] font-bold uppercase tracking-[0.1em] text-navy">
+                      {t.directionName}
+                    </span>
+                    <span className="text-xs text-graphite">{t.level}</span>
+                    {done && <StatusBadge tone="gray">Завершена</StatusBadge>}
+                  </div>
+                  <h3 className="text-base font-bold text-ink">{t.name}</h3>
+                  <p className="mt-1.5 text-xs text-graphite">
+                    {formatDate(t.date)} · {t.time} · {t.duration} · {t.location}
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
+                  <span className="rounded-full bg-navy/10 px-2.5 py-1 text-[0.68rem] font-bold text-navy">
+                    {regCount} чел.
+                  </span>
+                  <ActionButton to="/cabinet/attendance" variant="outline">
+                    Участники
+                  </ActionButton>
+                </div>
+              </Panel>
+            );
+          })}
         </div>
       )}
-
-      <div className="space-y-4">
-        {[...upcoming, ...past].map((t) => {
-          const regCount = registrations.filter(
-            (r) => r.trainingId === t.id && r.status !== 'cancelled'
-          ).length;
-          const done = isPastDate(t.date);
-          return (
-            <div
-              key={t.id}
-              className={`flex flex-col justify-between gap-4 rounded-sm border border-white/10 bg-surface p-5 sm:flex-row sm:items-center ${
-                done ? 'opacity-70' : ''
-              }`}
-            >
-              <div className="flex-1">
-                <div className="mb-2 flex flex-wrap items-center gap-2">
-                  <span className="text-xs font-semibold uppercase text-accent-blue">{t.directionName}</span>
-                  <span className="text-gray-600">·</span>
-                  <span className="text-xs text-gray-400">{t.level}</span>
-                  {done && (
-                    <span className="rounded-sm bg-white/10 px-2 py-0.5 text-[10px] font-bold uppercase text-gray-400">
-                      Завершена
-                    </span>
-                  )}
-                </div>
-                <h3 className="mb-1 text-lg font-bold text-white">{t.name}</h3>
-                <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-gray-400">
-                  <span>📅 {formatDate(t.date)}</span>
-                  <span>🕐 {t.time} · {t.duration}</span>
-                  <span>📍 {t.location}</span>
-                </div>
-              </div>
-              <div className="flex shrink-0 items-center gap-3">
-                <span className="rounded-sm bg-accent-blue/10 px-2 py-1 text-xs text-accent-blue">
-                  {regCount} чел.
-                </span>
-                <Button to="/cabinet/attendance" variant="outline" size="sm">
-                  Участники
-                </Button>
-              </div>
-            </div>
-          );
-        })}
-      </div>
     </div>
   );
 }

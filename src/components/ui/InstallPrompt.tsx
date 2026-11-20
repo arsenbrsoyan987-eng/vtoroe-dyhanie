@@ -44,11 +44,11 @@ export default function InstallPrompt() {
       aria-label="Установка приложения"
       className="fixed bottom-4 left-4 right-4 z-50 sm:left-auto sm:right-4 sm:max-w-sm"
     >
-      <div className="rounded-sm border border-white/10 bg-surface p-4 shadow-xl">
+      <div className="rounded-2xl border border-line bg-paper p-4 shadow-lift">
         <div className="mb-3 flex items-start justify-between gap-3">
           <div>
-            <h2 className="text-sm font-semibold text-white">Установить приложение</h2>
-            <p className="mt-0.5 text-xs text-gray-400">
+            <h2 className="text-sm font-bold text-ink">Установить приложение</h2>
+            <p className="mt-0.5 text-xs text-graphite">
               Расписание и запись — на главном экране
             </p>
           </div>
@@ -56,7 +56,7 @@ export default function InstallPrompt() {
             type="button"
             onClick={dismiss}
             aria-label="Скрыть предложение"
-            className="shrink-0 rounded-sm p-1 text-gray-500 transition-colors hover:text-white"
+            className="shrink-0 rounded-full p-1 text-graphite transition-colors hover:bg-mist hover:text-ink"
           >
             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -66,7 +66,7 @@ export default function InstallPrompt() {
         <button
           type="button"
           onClick={() => void install()}
-          className="w-full rounded-sm bg-accent-red py-2 text-sm font-semibold text-white transition-colors hover:bg-accent-red-hover"
+          className="w-full rounded-full bg-brand py-2.5 text-xs font-bold uppercase tracking-wide text-white transition-colors hover:bg-brand-dark"
         >
           Установить
         </button>

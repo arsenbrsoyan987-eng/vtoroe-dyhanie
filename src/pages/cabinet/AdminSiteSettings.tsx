@@ -1,5 +1,6 @@
 import SettingField, { type Field } from './SettingField';
 import { useSettings } from '../../store/settingsStore';
+import { PageHeader, Panel, PanelTitle } from '../../components/cabinet/ui';
 
 /**
  * Текстовые настройки сайта.
@@ -7,10 +8,11 @@ import { useSettings } from '../../store/settingsStore';
  * Тексты секций главной и внешний вид живут в разделе «Внешний вид» —
  * здесь только SEO, контакты и данные для политики конфиденциальности.
  */
-const SECTIONS: { key: string; label: string; fields: Field[] }[] = [
+const SECTIONS: { key: string; label: string; hint: string; fields: Field[] }[] = [
   {
     key: 'site',
     label: 'Сайт и поиск',
+    hint: 'Заголовок и описание главной попадают в метатеги и превью ссылок.',
     fields: [
       { key: 'siteName', label: 'Название школы', hint: 'Добавляется к заголовкам страниц и в og:site_name' },
       { key: 'siteTitle', label: 'Заголовок главной (SEO)', hint: 'До 60 символов' },
@@ -21,6 +23,7 @@ const SECTIONS: { key: string; label: string; fields: Field[] }[] = [
   {
     key: 'contacts',
     label: 'Контакты',
+    hint: 'Показываются в подвале, на странице тренировки и в политике.',
     fields: [
       { key: 'fullName', label: 'Полное название', hint: 'Например: Спортивная школа «Второе дыхание» — футер и политика' },
       { key: 'city', label: 'Город' },
@@ -34,6 +37,7 @@ const SECTIONS: { key: string; label: string; fields: Field[] }[] = [
   {
     key: 'owner',
     label: 'Владелец (для политики конфиденциальности)',
+    hint: 'Реквизиты оператора персональных данных.',
     fields: [
       { key: 'ownerName', label: 'Имя' },
       { key: 'ownerRole', label: 'Должность' },
@@ -48,23 +52,24 @@ export default function AdminSiteSettings() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <h1 className="mb-2 text-2xl font-bold text-white">Настройки сайта</h1>
-      <p className="mb-8 text-sm leading-relaxed text-gray-400">
-        Данные для поисковиков, контакты и сведения для политики
-        конфиденциальности. Значение сохраняется, когда вы уходите из поля, и
-        сразу становится видно всем посетителям.
-      </p>
+      <PageHeader
+        eyebrow="Настройки"
+        title="Настройки сайта"
+        subtitle="Данные для поисковиков, контакты и сведения для политики конфиденциальности. Значение сохраняется, когда вы уходите из поля, и сразу становится видно всем посетителям."
+      />
 
-      {SECTIONS.map((section) => (
-        <div key={section.key} className="mb-8 rounded-sm border border-white/10 bg-surface p-5">
-          <h2 className="mb-4 text-lg font-semibold text-white">{section.label}</h2>
-          <div className="space-y-4">
-            {section.fields.map((field) => (
-              <SettingField key={field.key} field={field} value={settings[field.key] ?? ''} />
-            ))}
-          </div>
-        </div>
-      ))}
+      <div className="space-y-4">
+        {SECTIONS.map((section) => (
+          <Panel key={section.key}>
+            <PanelTitle hint={section.hint}>{section.label}</PanelTitle>
+            <div className="space-y-4">
+              {section.fields.map((field) => (
+                <SettingField key={field.key} field={field} value={settings[field.key] ?? ''} />
+              ))}
+            </div>
+          </Panel>
+        ))}
+      </div>
     </div>
   );
 }

@@ -52,8 +52,9 @@ const DEVICES = [
 
           if (r.right > docW + 1 || r.left < -1) {
             const style = getComputedStyle(el);
-            // Декоративные пятна с отрицательными отступами и обрезкой — не баг
-            if (style.position !== 'absolute') {
+            // Декоративные пятна с отрицательными отступами и обрезкой — не баг.
+            // Ленты-карусели помечены aria-hidden: они специально шире экрана.
+            if (style.position !== 'absolute' && !el.closest('[aria-hidden="true"]')) {
               overflow.push(`${el.tagName.toLowerCase()}.${(el.className || '').toString().slice(0, 50)}`);
             }
           }

@@ -1,67 +1,94 @@
 import { useAuth } from '../../context/AuthContext';
+import { ActionButton, EmptyState, PageHeader, Panel, StatusBadge } from '../../components/cabinet/ui';
+
+const TYPE_LABEL: Record<string, string> = {
+  success: 'Успех',
+  warning: 'Внимание',
+  info: 'Инфо',
+};
+
+const TYPE_TONE: Record<string, 'green' | 'yellow' | 'blue'> = {
+  success: 'green',
+  warning: 'yellow',
+  info: 'blue',
+};
 
 export default function AthleteNotificationsPage() {
   const { currentUser, notifications, markNotificationRead } = useAuth();
 
   const userNotifs = notifications.filter((n) => n.userId === currentUser!.id);
   const unread = userNotifs.filter((n) => !n.read);
+  const sorted = [...userNotifs].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-2xl font-bold text-white">Уведомления</h1>
-          <p className="text-gray-400 text-sm">
-            {unread.length > 0 && <span>{unread.length} непрочитанных</span>}
-          </p>
-        </div>
-        {unread.length > 0 && (
-          <button
-            onClick={() => unread.forEach((n) => markNotificationRead(n.id))}
-            className="text-accent-blue text-sm hover:underline"
-          >
-            Прочитать все
-          </button>
-        )}
-      </div>
+    <div className="mx-auto max-w-3xl">
+      <PageHeader
+        eyebrow="Аккаунт"
+        title="Уведомления"
+        subtitle={
+          unread.length > 0
+            ? `${unread.length} непрочитанных — нажмите на сообщение, чтобы отметить прочитанным.`
+            : 'Все сообщения прочитаны.'
+        }
+        actions={
+          unread.length > 0 ? (
+            <ActionButton
+              variant="outline"
+              onClick={() => unread.forEach((n) => markNotificationRead(n.id))}
+            >
+              Прочитать все
+            </ActionButton>
+          ) : undefined
+        }
+      />
 
-      {userNotifs.length === 0 ? (
-        <div className="bg-surface border border-white/10 rounded-sm p-8 text-center">
-          <p className="text-gray-400">У вас нет уведомлений</p>
-        </div>
+      {sorted.length === 0 ? (
+        <EmptyState
+          title="Уведомлений нет"
+          text="Здесь появятся сообщения от школы: переносы тренировок, напоминания об оплате, новости сезона."
+        />
       ) : (
-        <div className="space-y-3">
-          {userNotifs
-            .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-            .map((n) => (
-              <div
-                key={n.id}
+        <ul className="space-y-2.5">
+          {sorted.map((n) => (
+            <li key={n.id}>
+              <button
+                type="button"
                 onClick={() => markNotificationRead(n.id)}
-                className={`bg-surface border rounded-sm p-4 cursor-pointer transition-colors ${
-                  n.read ? 'border-white/5' : 'border-accent-blue/30 bg-blue-500/5'
+                className={`w-full rounded-2xl border p-4 text-left transition-colors ${
+                  n.read
+                    ? 'border-line bg-paper hover:bg-mist/60'
+                    : 'border-navy/25 bg-navy/5 hover:bg-navy/10'
                 }`}
               >
                 <div className="flex items-start gap-3">
-                  <div className={`w-2 h-2 rounded-full mt-2 shrink-0 ${n.read ? 'bg-gray-600' : 'bg-accent-blue'}`} />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className={`text-xs px-2 py-0.5 rounded-sm ${
-                        n.type === 'success' ? 'bg-green-500/20 text-green-400' :
-                        n.type === 'warning' ? 'bg-yellow-500/20 text-yellow-400' :
-                        'bg-blue-500/20 text-blue-400'
-                      }`}>
-                        {n.type === 'success' ? 'Успех' : n.type === 'warning' ? 'Внимание' : 'Инфо'}
-                      </span>
-                      <span className="text-gray-500 text-xs">{n.createdAt}</span>
+                  <span
+                    className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${
+                      n.read ? 'bg-line' : 'bg-navy'
+                    }`}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="mb-1 flex flex-wrap items-center gap-2">
+                      <StatusBadge tone={TYPE_TONE[n.type] ?? 'blue'}>
+                        {TYPE_LABEL[n.type] ?? 'Инфо'}
+                      </StatusBadge>
+                      <span className="text-[0.68rem] text-graphite">{n.createdAt}</span>
                     </div>
-                    <div className="text-white font-medium text-sm">{n.title}</div>
-                    <div className="text-gray-400 text-xs mt-1">{n.message}</div>
+                    <p className="text-sm font-bold text-ink">{n.title}</p>
+                    <p className="mt-1 text-xs leading-relaxed text-graphite">{n.message}</p>
                   </div>
                 </div>
-              </div>
-            ))}
-        </div>
+              </button>
+            </li>
+          ))}
+        </ul>
       )}
+
+      <Panel className="mt-5 border-navy/20 bg-navy/5">
+        <p className="text-xs leading-relaxed text-navy">
+          Уведомления приходят от администраторов и тренеров школы. Отключить рассылку нельзя —
+          через неё передают переносы тренировок.
+        </p>
+      </Panel>
     </div>
   );
 }

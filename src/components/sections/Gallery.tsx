@@ -1,61 +1,68 @@
-import SectionTitle from '../ui/SectionTitle';
-import { useDirections } from '../../store/directionsStore';
 import { useSettingList } from '../../store/settingsStore';
 
 /** Плитки направлений: реальные фото, при желании заменяются снимками из админки */
 const PLACEHOLDER_TILES = [
-  { src: '/images/running.jpg', alt: 'Бег', span: 'col-span-2 row-span-2' },
-  { src: '/images/trail.jpg', alt: 'Трейлраннинг', span: '' },
-  { src: '/images/cycling.jpg', alt: 'Велоспорт', span: '' },
-  { src: '/images/ski.jpg', alt: 'Лыжные гонки', span: '' },
-  { src: '/images/triathlon.jpg', alt: 'Триатлон', span: '' },
-  { src: '/images/hiking.jpg', alt: 'Походы', span: '' },
-  { src: '/images/functional.jpg', alt: 'Функциональная подготовка', span: '' },
+  '/images/running.jpg',
+  '/images/trail.jpg',
+  '/images/cycling.jpg',
+  '/images/ski.jpg',
+  '/images/triathlon.jpg',
+  '/images/hiking.jpg',
+  '/images/functional.jpg',
 ];
 
+const ALT_BY_FILE: Record<string, string> = {
+  running: 'Бег',
+  trail: 'Трейлраннинг',
+  cycling: 'Велоспорт',
+  ski: 'Лыжные гонки',
+  triathlon: 'Триатлон',
+  hiking: 'Походы',
+  functional: 'Функциональная подготовка',
+};
+
+/**
+ * Галерея — мозаика фотографий школы.
+ *
+ * Первая плитка занимает два слота, чтобы мозаика не выглядела таблицей.
+ * Если администратор загрузил свои снимки, берём их, иначе — штатные фото
+ * направлений.
+ */
 export default function Gallery() {
-  const directions = useDirections();
   const customImages = useSettingList('galleryImages');
-
-  const tiles = customImages.length > 0
-    ? customImages.map((url) => ({ src: url, alt: '', span: '' }))
-    : PLACEHOLDER_TILES;
-
-  const spanClass = ['col-span-2 row-span-2', 'col-span-1 row-span-2', 'col-span-1 row-span-1'];
+  const sources = customImages.length > 0 ? customImages : PLACEHOLDER_TILES;
 
   return (
-    <section className="py-20 lg:py-28 bg-secondary">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <SectionTitle subtitle="Атмосфера" title="Как это выглядит" align="center" />
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 auto-rows-[200px] md:auto-rows-[250px]">
-          {tiles.map((img, i) => {
-            const span = img.span || spanClass[i % spanClass.length];
-            const alt = img.alt || img.src.split('/').pop()?.split('.')[0] || `Фото ${i + 1}`;
+    <section className="bg-mist py-20 lg:py-28">
+      <div className="container-x">
+        <div className="mb-10">
+          <span className="eyebrow mb-4">Атмосфера</span>
+          <h2 className="display max-w-xl text-4xl text-ink sm:text-5xl">Как это выглядит</h2>
+        </div>
+
+        <div className="grid auto-rows-[180px] grid-cols-2 gap-3 md:auto-rows-[220px] md:grid-cols-4">
+          {sources.map((src, i) => {
+            const key = src.split('/').pop()?.split('.')[0] ?? '';
+            const span = i === 0 ? 'col-span-2 row-span-2' : '';
             return (
-              <div key={img.src || i} className={`overflow-hidden rounded-sm group ${span}`}>
+              <div
+                key={`${src}-${i}`}
+                className={`group overflow-hidden rounded-2xl bg-navy/5 ${span}`}
+              >
                 <img
-                  src={img.src}
-                  alt={alt}
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                  src={src}
+                  alt={ALT_BY_FILE[key] ?? `Фото школы ${i + 1}`}
+                  className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                   loading="lazy"
                   onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.style.display = 'none';
+                    // битая ссылка из админки — прячем плитку, чтобы не рвать сетку
+                    e.currentTarget.closest('div')?.remove();
                   }}
                 />
-                {!img.src && (
-                  <div className="w-full h-full flex items-center justify-center bg-surface text-gray-600 text-sm">
-                    Нет фото
-                  </div>
-                )}
               </div>
             );
           })}
         </div>
-        <p className="text-gray-500 text-sm text-center mt-6">
-          {directions.length} направления школы — от городских пробежек до
-          многодневных походов.
-        </p>
       </div>
     </section>
   );

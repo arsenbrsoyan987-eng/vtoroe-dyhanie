@@ -2,7 +2,27 @@ import { useCallback, useState } from 'react';
 import { useToast } from '../../context/ToastContext';
 import { leadsStore, useLeads, type Lead } from '../../store/leadsStore';
 import { useTrainings } from '../../store/trainingsStore';
+import {
+  ActionButton,
+  EmptyState,
+  PageHeader,
+  Panel,
+  StatusBadge,
+  Tabs,
+} from '../../components/cabinet/ui';
 import { Loader2, RefreshCw, Trash2 } from 'lucide-react';
+
+const STATUS_LABEL: Record<Lead['status'], string> = {
+  new: 'Новая',
+  worked: 'Обработана',
+  closed: 'Закрыта',
+};
+
+const STATUS_TONE: Record<Lead['status'], 'yellow' | 'green' | 'gray'> = {
+  new: 'yellow',
+  worked: 'green',
+  closed: 'gray',
+};
 
 /**
  * Заявки от гостей, записавшихся без регистрации.
@@ -16,6 +36,7 @@ export default function AdminLeads() {
   const leads = useLeads();
   const [refreshing, setRefreshing] = useState(false);
   const [removing, setRemoving] = useState<string | null>(null);
+  const [tab, setTab] = useState<'open' | 'closed'>('open');
 
   const load = useCallback(async () => {
     setRefreshing(true);
@@ -54,145 +75,142 @@ export default function AdminLeads() {
 
   const trainingName = (id: string) => trainings.find((t) => t.id === id)?.name || id;
 
-  const statusBadge = (status: Lead['status']) => {
-    const cls: Record<Lead['status'], string> = {
-      new: 'bg-yellow-500/20 text-yellow-300',
-      worked: 'bg-green-500/20 text-green-300',
-      closed: 'bg-gray-500/20 text-gray-400',
-    };
-    const label: Record<Lead['status'], string> = {
-      new: 'Новая',
-      worked: 'Обработана',
-      closed: 'Закрыта',
-    };
-    return (
-      <span
-        className={`rounded-sm px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${cls[status]}`}
-      >
-        {label[status]}
-      </span>
-    );
-  };
-
   const open = leads.filter((l) => l.status !== 'closed');
   const closed = leads.filter((l) => l.status === 'closed');
+  const list = tab === 'open' ? open : closed;
 
-  const renderList = (list: Lead[]) =>
+  const renderList = () =>
     list.length === 0 ? (
-      <p className="py-8 text-center text-sm text-gray-500">Заявок пока нет</p>
+      <EmptyState
+        title={tab === 'open' ? 'Активных заявок нет' : 'Закрытых заявок нет'}
+        text={
+          tab === 'open'
+            ? 'Новые заявки с сайта появятся здесь сами — обновлять страницу не нужно.'
+            : 'Заявки, которые вы закрыли, соберутся здесь.'
+        }
+      />
     ) : (
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-white/10 text-left text-xs uppercase tracking-wider text-gray-500">
-            <th className="px-4 py-3">Имя</th>
-            <th className="px-4 py-3">Телефон</th>
-            <th className="hidden px-4 py-3 sm:table-cell">Email</th>
-            <th className="hidden px-4 py-3 md:table-cell">Тренировка</th>
-            <th className="px-4 py-3">Статус</th>
-            <th className="hidden px-4 py-3 lg:table-cell">Дата</th>
-            <th className="px-4 py-3">
-              <span className="sr-only">Действия</span>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {list.map((l) => (
-            <tr key={l.id} className="border-b border-white/5 hover:bg-white/5">
-              <td className="px-4 py-3 font-medium text-white">{l.name}</td>
-              <td className="px-4 py-3">
-                <a href={`tel:${l.phone}`} className="text-accent-blue hover:underline">
-                  {l.phone}
-                </a>
-              </td>
-              <td className="hidden px-4 py-3 text-gray-400 sm:table-cell">
-                {l.email ? (
-                  <a href={`mailto:${l.email}`} className="hover:underline">
-                    {l.email}
-                  </a>
-                ) : (
-                  '—'
-                )}
-              </td>
-              <td className="hidden px-4 py-3 text-gray-300 md:table-cell">
-                {l.trainingId ? trainingName(l.trainingId) : 'Свободная заявка'}
-              </td>
-              <td className="px-4 py-3">{statusBadge(l.status)}</td>
-              <td className="hidden px-4 py-3 text-xs text-gray-500 lg:table-cell">
-                {new Date(l.createdAt).toLocaleDateString('ru-RU')}
-              </td>
-              <td className="px-4 py-3">
-                <div className="flex items-center gap-3">
-                  {l.status === 'new' && (
-                    <button
-                      onClick={() => handleStatus(l.id, 'worked')}
-                      className="text-xs text-green-400 transition-colors hover:text-green-300"
-                      title="Отметить обработанной"
-                    >
-                      В работу
-                    </button>
-                  )}
-                  {l.status !== 'closed' && (
-                    <button
-                      onClick={() => handleStatus(l.id, 'closed')}
-                      className="text-xs text-gray-400 transition-colors hover:text-gray-300"
-                      title="Скрыть из активных"
-                    >
-                      Закрыть
-                    </button>
-                  )}
-                  <button
-                    onClick={() => handleDelete(l.id)}
-                    disabled={removing === l.id}
-                    className="text-red-400 transition-colors hover:text-red-300 disabled:opacity-50"
-                    title="Удалить"
-                  >
-                    {removing === l.id ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Trash2 className="h-3.5 w-3.5" />
-                    )}
-                  </button>
-                </div>
-              </td>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-line bg-mist/60 text-left">
+              <th className="px-4 py-2.5 text-[0.62rem] font-bold uppercase tracking-[0.1em] text-graphite">
+                Имя
+              </th>
+              <th className="px-4 py-2.5 text-[0.62rem] font-bold uppercase tracking-[0.1em] text-graphite">
+                Телефон
+              </th>
+              <th className="hidden px-4 py-2.5 text-[0.62rem] font-bold uppercase tracking-[0.1em] text-graphite sm:table-cell">
+                Email
+              </th>
+              <th className="hidden px-4 py-2.5 text-[0.62rem] font-bold uppercase tracking-[0.1em] text-graphite md:table-cell">
+                Тренировка
+              </th>
+              <th className="px-4 py-2.5 text-[0.62rem] font-bold uppercase tracking-[0.1em] text-graphite">
+                Статус
+              </th>
+              <th className="hidden px-4 py-2.5 text-[0.62rem] font-bold uppercase tracking-[0.1em] text-graphite lg:table-cell">
+                Дата
+              </th>
+              <th className="px-4 py-2.5">
+                <span className="sr-only">Действия</span>
+              </th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {list.map((l) => (
+              <tr key={l.id} className="border-b border-line last:border-0 hover:bg-mist/50">
+                <td className="px-4 py-3 font-semibold text-ink">{l.name}</td>
+                <td className="px-4 py-3">
+                  <a href={`tel:${l.phone}`} className="font-medium text-navy hover:underline">
+                    {l.phone}
+                  </a>
+                </td>
+                <td className="hidden px-4 py-3 text-graphite sm:table-cell">
+                  {l.email ? (
+                    <a href={`mailto:${l.email}`} className="hover:underline">
+                      {l.email}
+                    </a>
+                  ) : (
+                    '—'
+                  )}
+                </td>
+                <td className="hidden px-4 py-3 text-graphite md:table-cell">
+                  {l.trainingId ? trainingName(l.trainingId) : 'Свободная заявка'}
+                </td>
+                <td className="px-4 py-3">
+                  <StatusBadge tone={STATUS_TONE[l.status]}>{STATUS_LABEL[l.status]}</StatusBadge>
+                </td>
+                <td className="hidden px-4 py-3 text-xs text-graphite lg:table-cell">
+                  {new Date(l.createdAt).toLocaleDateString('ru-RU')}
+                </td>
+                <td className="px-4 py-3">
+                  <div className="flex items-center justify-end gap-3">
+                    {l.status === 'new' && (
+                      <button
+                        onClick={() => handleStatus(l.id, 'worked')}
+                        className="text-xs font-semibold text-emerald-700 transition-colors hover:text-emerald-900"
+                        title="Отметить обработанной"
+                      >
+                        В работу
+                      </button>
+                    )}
+                    {l.status !== 'closed' && (
+                      <button
+                        onClick={() => handleStatus(l.id, 'closed')}
+                        className="text-xs font-semibold text-graphite transition-colors hover:text-ink"
+                        title="Скрыть из активных"
+                      >
+                        Закрыть
+                      </button>
+                    )}
+                    <button
+                      onClick={() => handleDelete(l.id)}
+                      disabled={removing === l.id}
+                      className="text-brand transition-colors hover:text-brand-dark disabled:opacity-50"
+                      title="Удалить"
+                    >
+                      {removing === l.id ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-3.5 w-3.5" />
+                      )}
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     );
 
   return (
     <div>
-      <div className="mb-8 flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-white">Заявки</h1>
-          <p className="text-sm text-gray-400">
-            Записи гостей без регистрации — перезвоните, пока заявка горячая
-          </p>
-        </div>
-        <button
-          onClick={() => void load()}
-          disabled={refreshing}
-          className="flex items-center gap-2 rounded-sm border border-white/10 px-3 py-2 text-sm text-gray-400 transition-colors hover:bg-white/5 hover:text-white disabled:opacity-50"
-        >
-          <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-          Обновить
-        </button>
+      <PageHeader
+        eyebrow="Люди"
+        title="Заявки"
+        subtitle="Записи гостей без регистрации — перезвоните, пока заявка горячая."
+        actions={
+          <ActionButton variant="outline" onClick={() => void load()} disabled={refreshing}>
+            <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`} />
+            Обновить
+          </ActionButton>
+        }
+      />
+
+      <div className="mb-4">
+        <Tabs
+          value={tab}
+          onChange={setTab}
+          items={[
+            { value: 'open', label: `Активные (${open.length})` },
+            { value: 'closed', label: `Закрытые (${closed.length})` },
+          ]}
+        />
       </div>
 
-      <div className="space-y-6">
-        <div className="overflow-x-auto rounded-sm border border-white/10 bg-surface">
-          {renderList(open)}
-        </div>
-
-        {closed.length > 0 && (
-          <details className="rounded-sm border border-white/10 bg-surface">
-            <summary className="cursor-pointer px-4 py-3 text-sm text-gray-400 transition-colors hover:text-white">
-              Закрытые ({closed.length})
-            </summary>
-            <div className="overflow-x-auto">{renderList(closed)}</div>
-          </details>
-        )}
-      </div>
+      <Panel padded={false}>{renderList()}</Panel>
     </div>
   );
 }

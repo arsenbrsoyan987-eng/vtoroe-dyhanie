@@ -7,6 +7,8 @@ import { todayISO } from '../../lib/date';
 import Button from '../../components/ui/Button';
 import ImageUpload from '../../components/ui/ImageUpload';
 import { ExternalLink, Pencil, Plus, Trash2, X } from 'lucide-react';
+import { fieldClass, labelClass } from '../../components/cabinet/ui';
+import { countNoun } from '../../lib/plural';
 
 const CATEGORIES = ['События', 'Результаты', 'Школа', 'Тренировки', 'Анонс'];
 
@@ -36,10 +38,6 @@ export default function AdminNews() {
     () => (isAdmin ? items : items.filter((n) => n.authorId === currentUser?.id)),
     [items, isAdmin, currentUser?.id]
   );
-
-  const field =
-    'w-full rounded-sm border border-white/10 bg-primary px-3 py-2.5 text-sm text-white transition-colors placeholder:text-gray-600 focus:border-accent-red focus:outline-none';
-  const label = 'mb-1.5 block text-xs uppercase tracking-wider text-gray-400';
 
   const sorted = useMemo(
     () => [...mine].sort((a, b) => b.date.localeCompare(a.date)),
@@ -130,9 +128,9 @@ export default function AdminNews() {
     <div className="mx-auto max-w-4xl">
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="mb-1 text-2xl font-bold text-white">Новости</h1>
-          <p className="text-sm text-gray-400">
-            {sorted.length} публикаций · сразу появляются на сайте
+          <h1 className="mb-1 display text-2xl text-ink">Новости</h1>
+          <p className="text-sm text-graphite">
+            {countNoun(sorted.length, 'публикация', 'публикации', 'публикаций')} · сразу появляются на сайте
             {!isAdmin && ' · тренер правит только свои'}
           </p>
         </div>
@@ -150,42 +148,42 @@ export default function AdminNews() {
       </div>
 
       {open && (
-        <form onSubmit={submit} className="mb-6 space-y-4 rounded-sm border border-white/10 bg-surface p-6">
-          <h2 className="font-semibold text-white">
+        <form onSubmit={submit} className="mb-6 space-y-4 rounded-2xl border border-line bg-paper shadow-card p-6">
+          <h2 className="font-semibold text-ink">
             {editingId ? 'Редактирование новости' : 'Новая новость'}
           </h2>
 
           <div>
-            <label htmlFor="n-title" className={label}>Заголовок *</label>
+            <label htmlFor="n-title" className={labelClass}>Заголовок *</label>
             <input
               id="n-title"
               required
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
-              className={field}
+              className={fieldClass}
               placeholder="Открыта запись на осенний поход"
             />
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label htmlFor="n-date" className={label}>Дата</label>
+              <label htmlFor="n-date" className={labelClass}>Дата</label>
               <input
                 id="n-date"
                 type="date"
                 required
                 value={form.date}
                 onChange={(e) => setForm({ ...form, date: e.target.value })}
-                className={field}
+                className={fieldClass}
               />
             </div>
             <div>
-              <label htmlFor="n-cat" className={label}>Категория</label>
+              <label htmlFor="n-cat" className={labelClass}>Категория</label>
               <select
                 id="n-cat"
                 value={form.category}
                 onChange={(e) => setForm({ ...form, category: e.target.value })}
-                className={field}
+                className={fieldClass}
               >
                 {CATEGORIES.map((c) => (
                   <option key={c} value={c}>{c}</option>
@@ -195,25 +193,25 @@ export default function AdminNews() {
           </div>
 
           <div>
-            <label htmlFor="n-summary" className={label}>Краткое описание (для карточки)</label>
+            <label htmlFor="n-summary" className={labelClass}>Краткое описание (для карточки)</label>
             <textarea
               id="n-summary"
               rows={2}
               value={form.summary}
               onChange={(e) => setForm({ ...form, summary: e.target.value })}
-              className={`${field} resize-none`}
+              className={`${fieldClass} resize-none`}
               placeholder="Одно-два предложения, которые видно в списке новостей"
             />
           </div>
 
           <div>
-            <label htmlFor="n-content" className={label}>Полный текст</label>
+            <label htmlFor="n-content" className={labelClass}>Полный текст</label>
             <textarea
               id="n-content"
               rows={8}
               value={form.content}
               onChange={(e) => setForm({ ...form, content: e.target.value })}
-              className={`${field} resize-y`}
+              className={`${fieldClass} resize-y`}
               placeholder="Текст новости. Пустая строка между абзацами сохраняется."
             />
           </div>
@@ -228,7 +226,7 @@ export default function AdminNews() {
             <Button type="submit" variant="primary" size="sm" disabled={busy}>
               {editingId ? 'Сохранить' : 'Опубликовать'}
             </Button>
-            <button type="button" onClick={closeForm} className="text-xs text-gray-400 hover:text-white">
+            <button type="button" onClick={closeForm} className="text-xs text-graphite hover:text-ink">
               Отмена
             </button>
           </div>
@@ -237,21 +235,21 @@ export default function AdminNews() {
 
       <div className="space-y-3">
         {sorted.map((n) => (
-          <div key={n.id} className="flex flex-col gap-3 rounded-sm border border-white/10 bg-surface p-4 sm:flex-row sm:items-center">
+          <div key={n.id} className="flex flex-col gap-3 rounded-2xl border border-line bg-paper shadow-card p-4 sm:flex-row sm:items-center">
             {n.image && (
               <img
                 src={n.image}
                 alt=""
-                className="h-16 w-24 shrink-0 rounded-sm object-cover"
+                className="h-16 w-24 shrink-0 rounded-xl object-cover"
                 loading="lazy"
               />
             )}
             <div className="min-w-0 flex-1">
               <div className="mb-1 flex flex-wrap items-center gap-2">
-                <span className="rounded-sm bg-accent-red/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-accent-red">
+                <span className="rounded-xl bg-brand/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-brand">
                   {n.category}
                 </span>
-                <span className="text-xs text-gray-500">
+                <span className="text-xs text-graphite">
                   {new Date(`${n.date}T12:00:00`).toLocaleDateString('ru-RU', {
                     day: 'numeric',
                     month: 'long',
@@ -259,19 +257,19 @@ export default function AdminNews() {
                   })}
                 </span>
                 {isAdmin && n.authorName && (
-                  <span className="text-[10px] uppercase tracking-wide text-gray-600">
+                  <span className="text-[10px] uppercase tracking-wide text-graphite/70">
                     {n.authorName}
                   </span>
                 )}
               </div>
-              <p className="truncate font-medium text-white">{n.title}</p>
-              <p className="truncate text-xs text-gray-500">{n.summary || '—'}</p>
+              <p className="truncate font-medium text-ink">{n.title}</p>
+              <p className="truncate text-xs text-graphite">{n.summary || '—'}</p>
             </div>
 
             <div className="flex shrink-0 items-center gap-3">
               <Link
                 to={`/news/${n.id}`}
-                className="text-gray-500 transition-colors hover:text-accent-blue"
+                className="text-graphite transition-colors hover:text-navy"
                 title="Открыть на сайте"
                 aria-label={`Открыть ${n.title}`}
               >
@@ -279,7 +277,7 @@ export default function AdminNews() {
               </Link>
               <button
                 onClick={() => startEdit(n.id)}
-                className="text-gray-500 transition-colors hover:text-accent-blue"
+                className="text-graphite transition-colors hover:text-navy"
                 aria-label={`Редактировать ${n.title}`}
                 title="Редактировать"
               >
@@ -287,17 +285,17 @@ export default function AdminNews() {
               </button>
               {confirmId === n.id ? (
                 <div className="flex items-center gap-2">
-                  <span className="text-[11px] text-gray-400">Удалить?</span>
+                  <span className="text-[11px] text-graphite">Удалить?</span>
                   <button
                     onClick={() => void remove(n.id, n.title)}
                     disabled={busy}
-                    className="rounded-sm bg-red-500/20 px-2 py-1 text-[11px] font-semibold text-red-300 hover:bg-red-500/30"
+                    className="rounded-xl bg-brand/10 px-2 py-1 text-[11px] font-semibold text-brand hover:bg-brand/15"
                   >
                     Да
                   </button>
                   <button
                     onClick={() => setConfirmId(null)}
-                    className="rounded-sm px-2 py-1 text-[11px] text-gray-400 hover:text-white"
+                    className="rounded-xl px-2 py-1 text-[11px] text-graphite hover:text-ink"
                   >
                     Нет
                   </button>
@@ -305,7 +303,7 @@ export default function AdminNews() {
               ) : (
                 <button
                   onClick={() => setConfirmId(n.id)}
-                  className="text-gray-500 transition-colors hover:text-red-400"
+                  className="text-graphite transition-colors hover:text-brand"
                   aria-label={`Удалить ${n.title}`}
                   title="Удалить"
                 >
@@ -317,7 +315,7 @@ export default function AdminNews() {
         ))}
 
         {sorted.length === 0 && (
-          <div className="rounded-sm border border-white/10 bg-surface p-8 text-center text-sm text-gray-400">
+          <div className="rounded-2xl border border-line bg-paper shadow-card p-8 text-center text-sm text-graphite">
             Новостей пока нет — создайте первую.
           </div>
         )}

@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useMemo, useState } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Clock, MapPin, Users } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTrainings } from '../store/trainingsStore';
 import { useDirections } from '../store/directionsStore';
@@ -8,8 +8,23 @@ import { useTrainers } from '../store/trainersStore';
 import { freeSpots } from '../lib/access';
 import { MONTHS, WEEK_DAYS, formatDate, isPastDate, todayISO } from '../lib/date';
 import { displayValue, realValue } from '../lib/placeholder';
+import { countNoun } from '../lib/plural';
 import Button from '../components/ui/Button';
-import SectionTitle from '../components/ui/SectionTitle';
+import Breadcrumbs from '../components/ui/Breadcrumbs';
+
+/** Кубик даты: день крупно, месяц и год под ним — как в афише */
+function DateCube({ iso }: { iso: string }) {
+  const [, , day] = iso.split('-');
+  const month = new Date(`${iso}T12:00:00`).toLocaleDateString('ru-RU', { month: 'short' });
+  return (
+    <div className="flex w-16 shrink-0 flex-col items-center justify-center rounded-xl bg-navy py-3 text-paper">
+      <span className="display text-2xl leading-none">{day}</span>
+      <span className="mt-1 text-[0.62rem] uppercase tracking-[0.14em] text-white/60">
+        {month}
+      </span>
+    </div>
+  );
+}
 
 export default function SchedulePage() {
   const trainings = useTrainings();
@@ -68,131 +83,144 @@ export default function SchedulePage() {
   };
 
   const selectClass =
-    'rounded-sm border border-white/10 bg-surface px-4 py-2 text-sm text-white focus:border-accent-red focus:outline-none';
+    'rounded-full border border-line bg-paper px-4 py-2 text-sm text-ink transition-colors focus:border-brand focus:outline-none';
 
   return (
-    <div className="py-16 lg:py-24">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <SectionTitle subtitle="Тренировки" title="Расписание" as="h1" />
+    <>
+      <Breadcrumbs items={[{ label: 'Расписание' }]} />
 
-        {/* Filters */}
-        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center">
-          <select
-            value={filterDir}
-            onChange={(e) => setFilterDir(e.target.value)}
-            className={selectClass}
-            aria-label="Фильтр по направлению"
-          >
-            <option value="all">Все направления</option>
-            {directions.map((d) => (
-              <option key={d.id} value={d.id}>{d.name}</option>
-            ))}
-          </select>
-          <select
-            value={filterLevel}
-            onChange={(e) => setFilterLevel(e.target.value)}
-            className={selectClass}
-            aria-label="Фильтр по уровню"
-          >
-            <option value="all">Все уровни</option>
-            {levels.map((l) => (
-              <option key={l} value={l}>{l}</option>
-            ))}
-          </select>
-          <select
-            value={filterFormat}
-            onChange={(e) => setFilterFormat(e.target.value)}
-            className={selectClass}
-            aria-label="Фильтр по формату"
-          >
-            <option value="all">Любой формат</option>
-            <option value="group">Групповые</option>
-            <option value="individual">Индивидуальные</option>
-          </select>
-
-          <div className="flex gap-1 sm:ml-auto">
-            <button
-              onClick={() => setView('list')}
-              className={`rounded-sm px-3 py-2 text-xs font-medium transition-colors ${
-                view === 'list' ? 'bg-accent-red text-white' : 'bg-white/5 text-gray-400 hover:text-white'
-              }`}
-            >
-              Список
-            </button>
-            <button
-              onClick={() => setView('calendar')}
-              className={`rounded-sm px-3 py-2 text-xs font-medium transition-colors ${
-                view === 'calendar' ? 'bg-accent-red text-white' : 'bg-white/5 text-gray-400 hover:text-white'
-              }`}
-            >
-              Календарь
-            </button>
-          </div>
+      <section className="bg-ink pb-14 pt-8 text-paper lg:pb-16">
+        <div className="container-x">
+          <span className="eyebrow mb-4 text-brand">
+            <span className="h-[2px] w-8 bg-brand" />
+            {upcoming.length > 0
+              ? `${countNoun(upcoming.length, 'тренировка', 'тренировки', 'тренировок')} впереди`
+              : 'Расписание сезона'}
+          </span>
+          <h1 className="display max-w-3xl text-[2.5rem] sm:text-6xl lg:text-7xl">
+            Расписание
+          </h1>
+          <p className="mt-5 max-w-2xl text-base leading-relaxed text-white/65 sm:text-lg">
+            Групповые и персональные занятия школы. Первое занятие бесплатное —
+            выберите удобную дату и площадку.
+          </p>
         </div>
+      </section>
 
-        {view === 'list' && (
-          <>
-            <div className="mb-6 inline-flex rounded-sm border border-white/10 bg-surface p-1">
+      <section className="bg-paper py-12 lg:py-16">
+        <div className="container-x">
+          {/* Фильтры */}
+          <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+            <select
+              value={filterDir}
+              onChange={(e) => setFilterDir(e.target.value)}
+              className={selectClass}
+              aria-label="Фильтр по направлению"
+            >
+              <option value="all">Все направления</option>
+              {directions.map((d) => (
+                <option key={d.id} value={d.id}>{d.name}</option>
+              ))}
+            </select>
+            <select
+              value={filterLevel}
+              onChange={(e) => setFilterLevel(e.target.value)}
+              className={selectClass}
+              aria-label="Фильтр по уровню"
+            >
+              <option value="all">Все уровни</option>
+              {levels.map((l) => (
+                <option key={l} value={l}>{l}</option>
+              ))}
+            </select>
+            <select
+              value={filterFormat}
+              onChange={(e) => setFilterFormat(e.target.value)}
+              className={selectClass}
+              aria-label="Фильтр по формату"
+            >
+              <option value="all">Любой формат</option>
+              <option value="group">Групповые</option>
+              <option value="individual">Индивидуальные</option>
+            </select>
+
+            <div className="inline-flex rounded-full border border-line bg-mist p-1 sm:ml-auto">
               {(
                 [
-                  ['upcoming', `Предстоящие (${upcoming.length})`],
-                  ['past', `Прошедшие (${past.length})`],
+                  ['list', 'Список'],
+                  ['calendar', 'Календарь'],
                 ] as const
               ).map(([key, label]) => (
                 <button
                   key={key}
-                  onClick={() => setTab(key)}
-                  className={`rounded-sm px-4 py-2 text-xs font-medium transition-colors ${
-                    tab === key ? 'bg-accent-red text-white' : 'text-gray-400 hover:text-white'
+                  onClick={() => setView(key)}
+                  className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-colors ${
+                    view === key ? 'bg-ink text-white' : 'text-graphite hover:text-ink'
                   }`}
                 >
                   {label}
                 </button>
               ))}
             </div>
+          </div>
 
-            <div className="space-y-4">
-              {list.length === 0 ? (
-                <div className="rounded-sm border border-white/10 bg-surface py-12 text-center text-sm text-gray-400">
-                  {tab === 'upcoming'
-                    ? 'Пока нет запланированных тренировок — загляните позже'
-                    : 'Прошедших тренировок нет'}
-                </div>
-              ) : (
-                list.map((t) => {
-                  const left = leftSpots(t);
-                  const done = isPastDate(t.date);
-                  const individual = t.format === 'individual';
-                  const price = individual ? t.priceIndividual : t.priceGroup;
-                  return (
-                    <div
-                      key={t.id}
-                      className={`rounded-sm border border-white/10 bg-surface p-6 transition-colors hover:border-accent-red/30 ${
-                        done ? 'opacity-70' : ''
-                      }`}
-                    >
-                      <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
+          {view === 'list' && (
+            <>
+              <div className="mb-6 inline-flex rounded-full border border-line bg-mist p-1">
+                {(
+                  [
+                    ['upcoming', `Предстоящие (${upcoming.length})`],
+                    ['past', `Прошедшие (${past.length})`],
+                  ] as const
+                ).map(([key, label]) => (
+                  <button
+                    key={key}
+                    onClick={() => setTab(key)}
+                    className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-colors ${
+                      tab === key ? 'bg-ink text-white' : 'text-graphite hover:text-ink'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="space-y-3">
+                {list.length === 0 ? (
+                  <div className="rounded-2xl border border-dashed border-line bg-mist p-12 text-center text-sm text-graphite">
+                    {tab === 'upcoming'
+                      ? 'Пока нет запланированных тренировок — загляните позже'
+                      : 'Прошедших тренировок нет'}
+                  </div>
+                ) : (
+                  list.map((t) => {
+                    const left = leftSpots(t);
+                    const done = isPastDate(t.date);
+                    const individual = t.format === 'individual';
+                    const price = individual ? t.priceIndividual : t.priceGroup;
+
+                    return (
+                      <article
+                        key={t.id}
+                        className={`card-lift flex flex-col gap-5 p-5 sm:flex-row sm:items-start ${
+                          done ? 'opacity-70' : ''
+                        }`}
+                      >
+                        <DateCube iso={t.date} />
+
                         <div className="min-w-0 flex-1">
                           <div className="mb-2 flex flex-wrap items-center gap-2">
-                            <span className="text-xs font-semibold uppercase text-accent-blue">
+                            <span className="text-[0.65rem] font-bold uppercase tracking-[0.12em] text-brand">
                               {t.directionName}
                             </span>
-                            <span className="text-gray-600">·</span>
-                            <span
-                              className={`rounded-sm px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
-                                individual
-                                  ? 'bg-purple-500/15 text-purple-300'
-                                  : 'bg-blue-500/15 text-blue-300'
-                              }`}
-                            >
-                              {individual ? 'Индивидуальная' : 'Групповая'}
+                            <span className="text-line">·</span>
+                            <span className="text-[0.7rem] text-graphite">{t.level}</span>
+                            <span className="rounded-full bg-mist px-2.5 py-0.5 text-[0.62rem] font-semibold uppercase tracking-wide text-graphite">
+                              {individual ? 'Персональная' : 'Групповая'}
                             </span>
-                            <span className="text-gray-600">·</span>
-                            <span className="text-xs text-gray-400">{t.level}</span>
-                            <span className="text-gray-600">·</span>
                             <span
-                              className={`text-xs font-semibold ${
-                                done ? 'text-gray-500' : left > 0 ? 'text-green-400' : 'text-red-400'
+                              className={`text-[0.7rem] font-semibold ${
+                                done ? 'text-graphite' : left > 0 ? 'text-emerald-600' : 'text-brand'
                               }`}
                             >
                               {done
@@ -200,102 +228,133 @@ export default function SchedulePage() {
                                 : left > 0
                                   ? individual
                                     ? 'Есть свободные тренеры'
-                                    : `${left} мест`
+                                    : `${left} свобод. мест`
                                   : 'Мест нет'}
                             </span>
                           </div>
-                          <h3 className="mb-1 text-lg font-bold text-white">
-                            <Link to={`/schedule/${t.id}`} className="transition-colors hover:text-accent-red">
+
+                          <h2 className="text-lg font-bold leading-snug text-ink">
+                            <Link to={`/schedule/${t.id}`} className="transition-colors hover:text-brand">
                               {t.name}
                             </Link>
-                          </h3>
-                          <p className="mb-3 text-sm text-gray-400">{t.description}</p>
-                          <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-gray-400">
-                            <span>📅 {formatDate(t.date)}</span>
-                            <span>🕐 {t.time} · {t.duration}</span>
-                            <span>📍 {displayValue(t.location, 'точка сбора в анонсе')}</span>
-                            {!individual && realValue(t.trainer) && <span>👤 {t.trainer}</span>}
-                            {price && <span className="font-semibold text-white">💳 {price} ₽</span>}
+                          </h2>
+
+                          {t.description && (
+                            <p className="mt-1.5 line-clamp-2 text-sm leading-relaxed text-graphite">
+                              {t.description}
+                            </p>
+                          )}
+
+                          <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5 text-[0.8rem] text-graphite">
+                            <span className="flex items-center gap-1.5">
+                              <Clock className="h-3.5 w-3.5 shrink-0 text-brand" />
+                              {formatDate(t.date)} · {t.time} · {t.duration}
+                            </span>
+                            <span className="flex items-center gap-1.5">
+                              <MapPin className="h-3.5 w-3.5 shrink-0 text-brand" />
+                              {displayValue(t.location, 'Точка сбора — в анонсе')}
+                            </span>
+                            {!individual && realValue(t.trainer) && (
+                              <span className="flex items-center gap-1.5">
+                                <Users className="h-3.5 w-3.5 shrink-0 text-brand" />
+                                {t.trainer}
+                              </span>
+                            )}
                           </div>
                         </div>
-                        <div className="flex shrink-0 gap-2">
-                          <Button to={`/schedule/${t.id}`} variant={done ? 'outline' : 'primary'} size="sm">
+
+                        <div className="flex shrink-0 flex-col items-start gap-3 sm:items-end">
+                          {price && (
+                            <span className="display text-xl text-ink">{price} ₽</span>
+                          )}
+                          <Button
+                            to={`/schedule/${t.id}`}
+                            variant={done ? 'outline' : 'primary'}
+                            size="sm"
+                          >
                             {done ? 'Подробнее' : individual ? 'Выбрать тренера' : 'Записаться'}
                           </Button>
                         </div>
-                      </div>
+                      </article>
+                    );
+                  })
+                )}
+              </div>
+            </>
+          )}
+
+          {view === 'calendar' && (
+            <div className="rounded-2xl border border-line bg-paper p-4 shadow-card sm:p-8">
+              <div className="mb-6 flex items-center justify-between">
+                <button
+                  onClick={() => shiftMonth(-1)}
+                  className="rounded-full p-2 text-graphite transition-colors hover:bg-mist hover:text-ink"
+                  aria-label="Предыдущий месяц"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <h2 className="display text-base text-ink sm:text-lg">
+                  {MONTHS[month.month]} {month.year}
+                </h2>
+                <button
+                  onClick={() => shiftMonth(1)}
+                  className="rounded-full p-2 text-graphite transition-colors hover:bg-mist hover:text-ink"
+                  aria-label="Следующий месяц"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+
+              <div className="mb-2 grid grid-cols-7 gap-1 sm:gap-2">
+                {WEEK_DAYS.map((d) => (
+                  <div
+                    key={d}
+                    className="py-2 text-center text-[0.65rem] font-bold uppercase tracking-[0.12em] text-graphite"
+                  >
+                    {d}
+                  </div>
+                ))}
+              </div>
+
+              <div className="grid grid-cols-7 gap-1 sm:gap-2">
+                {cells.map((cell, i) => {
+                  if (!cell) {
+                    return <div key={`empty-${i}`} className="min-h-[64px] rounded-lg sm:min-h-[80px]" />;
+                  }
+                  const dayTrainings = filtered.filter((t) => t.date === cell.iso);
+                  const isToday = cell.iso === today;
+                  return (
+                    <div
+                      key={cell.iso}
+                      className={`min-h-[64px] rounded-lg border p-1 sm:min-h-[80px] ${
+                        isToday ? 'border-brand bg-brand/5' : 'border-line bg-mist/40'
+                      }`}
+                    >
+                      <span
+                        className={`text-xs ${
+                          isToday ? 'font-bold text-brand' : 'text-graphite'
+                        }`}
+                      >
+                        {cell.day}
+                      </span>
+                      {dayTrainings.map((t) => (
+                        <Link
+                          key={t.id}
+                          to={`/schedule/${t.id}`}
+                          className="mt-1 block truncate rounded bg-brand/10 px-1 py-0.5 text-[10px] font-medium text-brand transition-colors hover:bg-brand/20"
+                          title={`${t.time} · ${t.name}`}
+                        >
+                          {t.name}
+                        </Link>
+                      ))}
                     </div>
                   );
-                })
-              )}
+                })}
+              </div>
             </div>
-          </>
-        )}
-
-        {view === 'calendar' && (
-          <div className="rounded-sm border border-white/10 bg-surface p-4 sm:p-8">
-            <div className="mb-6 flex items-center justify-between">
-              <button
-                onClick={() => shiftMonth(-1)}
-                className="rounded-sm p-2 text-gray-400 transition-colors hover:bg-white/5 hover:text-white"
-                aria-label="Предыдущий месяц"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-              <h2 className="text-sm font-bold text-white sm:text-base">
-                {MONTHS[month.month]} {month.year}
-              </h2>
-              <button
-                onClick={() => shiftMonth(1)}
-                className="rounded-sm p-2 text-gray-400 transition-colors hover:bg-white/5 hover:text-white"
-                aria-label="Следующий месяц"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            </div>
-
-            <div className="mb-2 grid grid-cols-7 gap-1 sm:gap-2">
-              {WEEK_DAYS.map((d) => (
-                <div key={d} className="py-2 text-center text-xs font-semibold uppercase text-gray-400">
-                  {d}
-                </div>
-              ))}
-            </div>
-
-            <div className="grid grid-cols-7 gap-1 sm:gap-2">
-              {cells.map((cell, i) => {
-                if (!cell) {
-                  return <div key={`empty-${i}`} className="min-h-[64px] rounded-sm sm:min-h-[80px]" />;
-                }
-                const dayTrainings = filtered.filter((t) => t.date === cell.iso);
-                const isToday = cell.iso === today;
-                return (
-                  <div
-                    key={cell.iso}
-                    className={`min-h-[64px] rounded-sm border p-1 sm:min-h-[80px] ${
-                      isToday ? 'border-accent-red bg-accent-red/5' : 'border-white/5'
-                    }`}
-                  >
-                    <span className={`text-xs ${isToday ? 'font-bold text-accent-red' : 'text-gray-500'}`}>
-                      {cell.day}
-                    </span>
-                    {dayTrainings.map((t) => (
-                      <Link
-                        key={t.id}
-                        to={`/schedule/${t.id}`}
-                        className="mt-1 block truncate rounded-sm bg-accent-red/20 px-1 py-0.5 text-[10px] text-accent-red hover:bg-accent-red/30"
-                        title={`${t.time} · ${t.name}`}
-                      >
-                        {t.name}
-                      </Link>
-                    ))}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
+          )}
+        </div>
+      </section>
+    </>
   );
 }

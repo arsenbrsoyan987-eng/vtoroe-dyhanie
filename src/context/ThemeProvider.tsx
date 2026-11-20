@@ -4,19 +4,19 @@ import { useSettings } from '../store/settingsStore';
 /**
  * Палитра сайта правится из админки.
  *
- * Tailwind собирает утилиты вида `bg-accent-red` как `var(--color-accent-red)`,
+ * Tailwind собирает утилиты вида `bg-brand` как `var(--color-brand)`,
  * поэтому достаточно переопределить CSS-переменные на <html> — и весь сайт
  * перекрасится без пересборки. Значения по умолчанию берёт @theme из index.css,
  * поэтому при пустых настройках здесь ничего не записываем.
+ *
+ * Фоны и поверхности больше не настраиваются: витрина и кабинет живут в одной
+ * светлой системе, и произвольный тёмный фон ломал контраст текста.
  */
 
 /** Пары: настраиваемый ключ → переменные, которые он задаёт (база и hover) */
 const COLOR_MAP: { key: string; vars: [string, string] }[] = [
-  { key: 'accentColor', vars: ['--color-accent-red', '--color-accent-red-hover'] },
-  { key: 'accentBlue', vars: ['--color-accent-blue', '--color-accent-blue-hover'] },
-  { key: 'primaryColor', vars: ['--color-primary', ''] },
-  { key: 'secondaryColor', vars: ['--color-secondary', ''] },
-  { key: 'surfaceColor', vars: ['--color-surface', ''] },
+  { key: 'accentColor', vars: ['--color-brand', '--color-brand-dark'] },
+  { key: 'accentBlue', vars: ['--color-navy', '--color-navy-soft'] },
 ];
 
 const HEX = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
@@ -44,19 +44,18 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
 
     for (const { key, vars } of COLOR_MAP) {
       const raw = (settings[key] ?? '').trim();
-      const base = vars[0];
-      const hover = vars[1];
+      const [base, hover] = vars;
 
       // Пустое или некорректное значение — возвращаем сборке дефолт из @theme
       if (!HEX.test(raw)) {
         root.style.removeProperty(base);
-        if (hover) root.style.removeProperty(hover);
+        root.style.removeProperty(hover);
         continue;
       }
 
       root.style.setProperty(base, raw);
       // Hover-оттенок выводим из базового, чтобы палитра не разъезжалась
-      if (hover) root.style.setProperty(hover, shade(raw, -0.15));
+      root.style.setProperty(hover, shade(raw, -0.15));
     }
   }, [settings]);
 
