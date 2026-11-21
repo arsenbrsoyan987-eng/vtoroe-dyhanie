@@ -22,6 +22,55 @@ const PORT = 5200;
 const ORIGIN = `http://127.0.0.1:${PORT}`;
 const SITE_URL = 'https://vtoroe-dyhanie.ru';
 
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL || '';
+const SUPABASE_KEY = process.env.VITE_SUPABASE_ANON_KEY || '';
+
+/** Получить динамические разделы из Supabase */
+async function getDynamicSections() {
+  if (!SUPABASE_URL || !SUPABASE_KEY) return [];
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/sections?select=id,slug,title&published=eq.true&order=title.asc`,
+      { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
+    );
+    if (!res.ok) return [];
+    return await res.json();
+  } catch {
+    return [];
+  }
+}
+
+/** Карточки разделов: их детальные страницы тоже должны отдавать 200.
+ *  Колонки published у карточек нет — опубликованность наследуется от раздела. */
+async function getSectionCards() {
+  if (!SUPABASE_URL || !SUPABASE_KEY) return [];
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/section_cards?select=id,section_id`,
+      { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
+    );
+    if (!res.ok) return [];
+    return await res.json();
+  } catch {
+    return [];
+  }
+}
+
+/** Получить опубликованные страницы из Supabase */
+async function getPublishedPages() {
+  if (!SUPABASE_URL || !SUPABASE_KEY) return [];
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/pages?select=slug&published=eq.true&order=title.asc`,
+      { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
+    );
+    if (!res.ok) return [];
+    return await res.json();
+  } catch {
+    return [];
+  }
+}
+
 const MIME = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
@@ -146,7 +195,22 @@ function rewriteSitemap(noindexRoutes, extraRoutes) {
   // Карточки из админки могут отсутствовать в статическом sitemap.xml —
   // добавляем их, иначе новый тренер не получит готовую страницу
   const publishedRoutes = routesFromPublished();
-  const routes = [...new Set([...routesFromSitemap(), ...publishedRoutes, ...EXTRA_ROUTES])];
+
+  // Динамические разделы и страницы из Supabase —
+  // без них новые записи дают 404 на GitHub Pages
+  const sections = await getDynamicSections();
+  const sectionsRoutes = sections.map((s) => `/section/${s.slug}/`);
+
+  const cards = await getSectionCards();
+  const slugById = new Map(sections.map((s) => [s.id, s.slug]));
+  const cardRoutes = cards
+    .filter((c) => slugById.has(c.section_id))
+    .map((c) => `/section/${slugById.get(c.section_id)}/${c.id}/`);
+
+  const pages = await getPublishedPages();
+  const pagesRoutes = pages.map((p) => `/${p.slug}/`);
+
+  const routes = [...new Set([...routesFromSitemap(), ...publishedRoutes, ...EXTRA_ROUTES, ...sectionsRoutes, ...cardRoutes, ...pagesRoutes])];
 
   // 404.html делаем из пустого шаблона: GitHub Pages отдаст его для любого
   // неизвестного адреса, а маршрут нарисует уже React.

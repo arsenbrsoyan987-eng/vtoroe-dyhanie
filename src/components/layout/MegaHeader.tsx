@@ -34,7 +34,7 @@ const NAV_GROUPS = [
   {
     label: 'О нас',
     items: [
-      { path: '/about', label: 'О школе' },
+      { path: '/section/about', label: 'О школе' },
       { path: '/trainers', label: 'Команда' },
       { path: '/loyalty', label: 'Программа лояльности' },
     ],
