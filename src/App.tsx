@@ -24,6 +24,7 @@ import PrivacyPage from './pages/PrivacyPage';
 import CorporatePage from './pages/CorporatePage';
 import LoyaltyPage from './pages/LoyaltyPage';
 import CertificatePage from './pages/CertificatePage';
+import AboutPage from './pages/AboutPage';
 import NotFoundPage from './pages/NotFoundPage';
 import { AuthProvider } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
@@ -102,6 +103,7 @@ export default function App() {
               <Route path="corporate" element={<CorporatePage />} />
               <Route path="loyalty" element={<LoyaltyPage />} />
               <Route path="certificate" element={<CertificatePage />} />
+              <Route path="about" element={<AboutPage />} />
               <Route path="zones" element={<ZonesPage />} />
               <Route path="privacy" element={<PrivacyPage />} />
               <Route path="login" element={<LoginPage />} />

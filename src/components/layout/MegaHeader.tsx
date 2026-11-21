@@ -16,6 +16,14 @@ import SocialIcon from '../ui/SocialIcons';
 
 const NAV_GROUPS = [
   {
+    label: 'О школе',
+    items: [
+      { path: '/about', label: 'О нас' },
+      { path: '/trainers', label: 'Команда' },
+      { path: '/loyalty', label: 'Программа лояльности' },
+    ],
+  },
+  {
     label: 'Направления',
     items: [
       { path: '/directions/running', label: 'Бег' },
@@ -29,24 +37,19 @@ const NAV_GROUPS = [
   },
   {
     label: 'Кемпы и сборы',
-    items: [
-      { path: '/camps', label: 'Все кемпы' },
-      { path: '/zones', label: 'Локации' },
-    ],
+    items: [{ path: '/camps', label: 'Все кемпы' }],
   },
   {
-    label: 'О нас',
-    items: [
-      { path: '/section/about', label: 'О школе' },
-      { path: '/trainers', label: 'Команда' },
-      { path: '/loyalty', label: 'Программа лояльности' },
-    ],
+    label: 'Локации',
+    items: [{ path: '/zones', label: 'Все локации' }],
+  },
+  {
+    label: 'Мероприятия',
+    items: [{ path: '/events', label: 'Афиша стартов' }],
   },
   {
     label: 'Блог',
-    items: [
-      { path: '/news', label: 'Статьи' },
-    ],
+    items: [{ path: '/news', label: 'Статьи' }],
   },
 ];
 

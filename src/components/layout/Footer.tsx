@@ -36,9 +36,10 @@ const CLUB_LINKS = [
 ];
 
 const ABOUT_LINKS = [
+  { to: '/about', label: 'О нас' },
   { to: '/trainers', label: 'Команда' },
-  { to: '/news', label: 'Статьи и новости' },
   { to: '/loyalty', label: 'Программа лояльности' },
+  { to: '/news', label: 'Статьи' },
   { to: '/certificate', label: 'Подарочный сертификат' },
   { to: '/privacy', label: 'Политика конфиденциальности' },
 ];

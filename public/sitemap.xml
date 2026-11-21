@@ -238,6 +238,12 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://vtoroe-dyhanie.ru/about/</loc>
+    <lastmod>2026-11-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://vtoroe-dyhanie.ru/zones/</loc>
     <lastmod>2026-11-21</lastmod>
     <changefreq>monthly</changefreq>

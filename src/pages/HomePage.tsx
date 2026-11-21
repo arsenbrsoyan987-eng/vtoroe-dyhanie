@@ -17,8 +17,9 @@ export default function HomePage() {
   return (
     <>
       <Hero />
-      <Directions />
       <About />
+      <Directions />
+      <Locations />
       <UpcomingTrainings />
       <Certificate />
       <ClubLoyalty />
@@ -26,7 +27,6 @@ export default function HomePage() {
       <Events />
       <Testimonials />
       <Partners />
-      <Locations />
       <Gallery />
       <DynamicSections />
       <CTA />
