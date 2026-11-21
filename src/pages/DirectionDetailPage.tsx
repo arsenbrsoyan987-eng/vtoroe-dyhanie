@@ -15,6 +15,7 @@ import {
 import Breadcrumbs from '../components/ui/Breadcrumbs';
 import FaqAccordion from '../components/ui/FaqAccordion';
 import LeadForm from '../components/ui/LeadForm';
+import SkiPricing from '../components/sections/SkiPricing';
 import { useDirections } from '../store/directionsStore';
 import { useTrainings } from '../store/trainingsStore';
 import { useTrainers } from '../store/trainersStore';
@@ -281,6 +282,9 @@ export default function DirectionDetailPage() {
           )}
         </div>
       </section>
+
+      {/* ───────────── Цены: группы и индивидуально (только лыжные гонки) ───────────── */}
+      {direction.id === 'ski' && <SkiPricing />}
 
       {/* ───────────── Под ваш уровень ───────────── */}
       <section className="bg-mist py-16 lg:py-24">
