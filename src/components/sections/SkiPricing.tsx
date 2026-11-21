@@ -28,18 +28,31 @@ import { countNoun } from '../../lib/plural';
 export default function SkiPricing() {
   return (
     <>
+      {/* ───────────── Объявление о наборе — перед всеми тарифами ───────────── */}
+      <section className="border-t border-line bg-navy py-12 text-paper lg:py-14">
+        <div className="container-x">
+          <p className="eyebrow mb-4 text-brand">
+            <span className="h-[2px] w-8 bg-brand" />
+            Набор открыт
+          </p>
+          <p className="max-w-3xl text-base leading-relaxed text-white/80 sm:text-lg">
+            В связи с открытием школы ведётся набор на сезон 2026–2027. Стартуем
+            15 декабря 2026 года — или по мере того, как ляжет снежный покров,
+            не препятствующий свободному передвижению на лыжах.
+          </p>
+        </div>
+      </section>
+
       {/* ───────────── Групповые тренировки ───────────── */}
-      <section id="group" className="scroll-mt-24 border-t border-line bg-paper py-16 lg:py-24">
+      <section id="group" className="scroll-mt-24 bg-paper py-16 lg:py-24">
         <div className="container-x">
           <span className="eyebrow mb-4">Набор 2026–2027</span>
           <h2 className="display max-w-3xl text-4xl text-ink sm:text-5xl">
             Групповые тренировки
           </h2>
           <p className="mt-4 max-w-2xl text-base leading-relaxed text-graphite">
-            В связи с открытием школы обучение лыжным гонкам ведётся с набора
-            на сезон 2026–2027. Стартуем 15 декабря 2026 года — или по мере того,
-            как ляжет снежный покров, не препятствующий свободному передвижению
-            на лыжах.
+            Обучение лыжным гонкам — с нуля до первых стартов. Две группы:
+            новички и PRO.
           </p>
 
           {/* Цены группового формата */}
@@ -72,8 +85,8 @@ export default function SkiPricing() {
               </p>
               <p className="display mt-2 text-4xl text-ink">2 × 12</p>
               <p className="mt-3 text-sm leading-relaxed text-graphite">
-                Всего две группы, до 12 человек в каждой: новички и PRO.
-                Место в группе закрепляется после оплаты.
+                Всего 2 группы до 12 человек в каждой: новички и PRO. Место
+                в группе закрепляется после регистрации и оплаты 6 000 рублей.
               </p>
             </div>
           </div>
