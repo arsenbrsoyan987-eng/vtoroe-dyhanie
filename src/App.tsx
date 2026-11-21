@@ -64,6 +64,9 @@ const SectionDetailPage = lazy(() => import('./pages/SectionDetailPage'));
 const PaymentPage = lazy(() => import('./pages/cabinet/PaymentPage'));
 const CalendarExport = lazy(() => import('./pages/cabinet/CalendarExport'));
 const EventQR = lazy(() => import('./pages/cabinet/EventQR'));
+// Leaflet с тайлами весит заметно больше остальных страниц — тянем его
+// отдельным чанком, чтобы не замедлять посадочную
+const ZonesPage = lazy(() => import('./pages/ZonesPage'));
 
 /** Пока грузится чанк кабинета — держим высоту, чтобы страница не «прыгала» */
 function CabinetFallback() {
@@ -99,6 +102,7 @@ export default function App() {
               <Route path="corporate" element={<CorporatePage />} />
               <Route path="loyalty" element={<LoyaltyPage />} />
               <Route path="certificate" element={<CertificatePage />} />
+              <Route path="zones" element={<ZonesPage />} />
               <Route path="privacy" element={<PrivacyPage />} />
               <Route path="login" element={<LoginPage />} />
               <Route path="register" element={<RegisterPage />} />

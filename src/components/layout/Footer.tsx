@@ -27,6 +27,7 @@ const PROGRAM_LINKS = [
 const CLUB_LINKS = [
   { to: '/directions', label: 'Все направления' },
   { to: '/schedule', label: 'Расписание' },
+  { to: '/zones', label: 'Локации' },
   { to: '/camps', label: 'Кэмпы и сборы' },
   { to: '/events', label: 'Мероприятия и старты' },
   { to: '/routes', label: 'Маршруты' },

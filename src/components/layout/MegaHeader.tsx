@@ -29,7 +29,10 @@ const NAV_GROUPS = [
   },
   {
     label: 'Кемпы и сборы',
-    items: [{ path: '/camps', label: 'Все кемпы' }],
+    items: [
+      { path: '/camps', label: 'Все кемпы' },
+      { path: '/zones', label: 'Локации' },
+    ],
   },
   {
     label: 'О нас',
