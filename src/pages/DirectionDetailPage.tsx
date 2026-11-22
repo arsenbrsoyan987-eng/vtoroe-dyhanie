@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
+  Activity,
   ArrowRight,
   BadgeCheck,
   CalendarX,
@@ -8,9 +9,8 @@ import {
   CircleAlert,
   Clock,
   MapPin,
-  Sparkles,
-  Trophy,
-  Users,
+  Snowflake,
+  Target,
 } from 'lucide-react';
 import Breadcrumbs from '../components/ui/Breadcrumbs';
 import FaqAccordion from '../components/ui/FaqAccordion';
@@ -27,9 +27,13 @@ import {
   DIRECTION_FAQ,
   DIRECTION_SEO_TEXT,
   DIRECTION_SLOGAN,
+  EQUIPMENT_NOTE,
+  EQUIPMENT_NOTE_DEFAULT,
   FORMAT_LABEL,
+  LESSON_STEPS,
   LEVEL_BLOCKS,
   WHY_US,
+  WHY_US_BY_DIRECTION,
   directionHeroTitle,
   formatOf,
   type FormatKey,
@@ -41,6 +45,9 @@ import { formatDate, isPastDate } from '../lib/date';
 
 /** Формат, который показываем в чипах: порядок фиксирован для всех страниц */
 const FORMAT_ORDER: FormatKey[] = ['school', 'club', 'individual', 'camp'];
+
+/** Иконки шагов занятия: тексты живут в site.ts, порядок один для всех направлений */
+const LESSON_ICONS = [Target, Activity, Snowflake, BadgeCheck];
 
 export default function DirectionDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -319,7 +326,7 @@ export default function DirectionDetailPage() {
           </h2>
 
           <ol className="mt-10 grid gap-x-8 gap-y-10 sm:grid-cols-2">
-            {WHY_US.map((reason) => (
+            {(WHY_US_BY_DIRECTION[direction.id] ?? WHY_US).map((reason) => (
               <li key={reason.index} className="border-t-2 border-brand pt-5">
                 <span className="display text-2xl text-brand/25">{reason.index}</span>
                 <h3 className="display mt-1 text-lg text-ink">{reason.title}</h3>
@@ -448,36 +455,18 @@ export default function DirectionDetailPage() {
           </h2>
 
           <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {[
-              {
-                icon: Users,
-                title: 'Разминка и техника',
-                body: 'Суставная гимнастика, специальные упражнения и работа над движением под контролем тренера.',
-              },
-              {
-                icon: Sparkles,
-                title: 'Основная часть',
-                body: 'Нагрузка по плану недели: темповая, интервальная или длинная — в зависимости от задачи.',
-              },
-              {
-                icon: Trophy,
-                title: 'Заминка и растяжка',
-                body: 'Плавное снижение пульса, мобильность и разбор ошибок — что получилось и что доделать.',
-              },
-              {
-                icon: BadgeCheck,
-                title: 'Обратная связь',
-                body: 'Тренер отмечает посещение, начисляет баллы и отвечает на вопросы в чате группы.',
-              },
-            ].map((step) => (
-              <div key={step.title} className="card-lift p-6">
-                <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-full bg-brand/10">
-                  <step.icon className="h-5 w-5 text-brand" />
+            {(LESSON_STEPS[direction.id] ?? LESSON_STEPS.common).map((step, i) => {
+              const Icon = LESSON_ICONS[i] ?? BadgeCheck;
+              return (
+                <div key={step.title} className="card-lift p-6">
+                  <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-full bg-brand/10">
+                    <Icon className="h-5 w-5 text-brand" />
+                  </div>
+                  <h3 className="text-sm font-bold leading-snug text-ink">{step.title}</h3>
+                  <p className="mt-2.5 text-[0.82rem] leading-relaxed text-graphite">{step.body}</p>
                 </div>
-                <h3 className="text-sm font-bold leading-snug text-ink">{step.title}</h3>
-                <p className="mt-2.5 text-[0.82rem] leading-relaxed text-graphite">{step.body}</p>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {direction.requiredEquipment.length > 0 && (
@@ -496,9 +485,8 @@ export default function DirectionDetailPage() {
                   </li>
                 ))}
               </ul>
-              <p className="mt-4 text-[0.78rem] text-graphite">
-                Покупать всё сразу не нужно: на первом занятии достаточно формы и
-                обуви, остальное подскажет тренер.
+              <p className="mt-4 text-[0.78rem] leading-relaxed text-graphite">
+                {EQUIPMENT_NOTE[direction.id] ?? EQUIPMENT_NOTE_DEFAULT}
               </p>
             </div>
           )}
