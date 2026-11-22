@@ -463,7 +463,17 @@ export default function DirectionDetailPage() {
                     <Icon className="h-5 w-5 text-brand" />
                   </div>
                   <h3 className="text-sm font-bold leading-snug text-ink">{step.title}</h3>
-                  <p className="mt-2.5 text-[0.82rem] leading-relaxed text-graphite">{step.body}</p>
+                  {step.points ? (
+                    <ul className="mt-2.5 space-y-1.5">
+                      {step.points.map((p) => (
+                        <li key={p} className="text-[0.82rem] leading-relaxed text-graphite">
+                          {p}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="mt-2.5 text-[0.82rem] leading-relaxed text-graphite">{step.body}</p>
+                  )}
                 </div>
               );
             })}
