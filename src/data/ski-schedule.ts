@@ -346,7 +346,7 @@ export const SKI_SKILLS: SkiSkill[] = [
     id: 'balance',
     tag: 'Баланс',
     title: 'Баланс на одной лыже',
-    body: 'Учимся держать вес на одной лыже.',
+    body: 'Учимся держать вес тела на одной лыже.',
   },
   {
     id: 'glide',
