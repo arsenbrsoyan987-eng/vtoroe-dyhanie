@@ -358,7 +358,7 @@ export const SKI_SKILLS: SkiSkill[] = [
     id: 'skate',
     tag: 'Конёк',
     title: 'Конёк без палок',
-    body: 'Скользим коньком, толкаясь обеими ногами.',
+    body: 'Скользим коньком без рук.',
   },
   {
     id: 'arms',
