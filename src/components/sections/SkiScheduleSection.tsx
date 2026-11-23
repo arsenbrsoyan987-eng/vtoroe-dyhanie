@@ -12,16 +12,19 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowRight, MapPin, UserCheck } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import {
   SKI_GROUP_LABEL,
   SKI_SCHEDULE,
   SKI_SKILLS,
+  SKI_TRAINER,
   type SkiGroupKind,
+  type SkiPlace,
+  type SkiSlot,
 } from '../../data/ski-schedule';
 
 /** Порядок чипов формата: фиксирован, чтобы не прыгало между локациями */
-const FORMAT_ORDER: SkiGroupKind[] = ['school', 'group', 'pro', 'mini'];
+const FORMAT_ORDER: SkiGroupKind[] = ['school', 'group', 'mini'];
 
 const DAY_ORDER = ['Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'];
 
@@ -80,7 +83,7 @@ function SkiSchedule() {
         </h2>
         <p className="mt-4 max-w-2xl text-base leading-relaxed text-graphite">
           Лыжная школа, групповые тренировки и мини-группы в Мещерском парке,
-          Одинцово и Лужниках. Все зимние группы ведёт тренер Армен — формат и
+          Одинцово и Лужниках. Все зимние группы ведёт Армен Бароян — формат и
           время подбираем под ваш уровень на первой встрече.
         </p>
 
@@ -129,50 +132,9 @@ function SkiSchedule() {
             </a>
           </div>
         ) : (
-          <div className="mt-10 space-y-12">
+          <div className="mt-10 space-y-10">
             {places.map((place) => (
-              <div key={place.id}>
-                {/* Шапка локации: чем хороша трасса + бытовые детали */}
-                <div className="flex flex-col gap-4 border-b border-line pb-5 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="flex items-start gap-3">
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand/10">
-                      <MapPin className="h-5 w-5 text-brand" />
-                    </span>
-                    <div>
-                      <h3 className="display text-xl text-ink sm:text-2xl">{place.title}</h3>
-                      <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-graphite">
-                        {place.lead}
-                      </p>
-                    </div>
-                  </div>
-                  <dl className="grid gap-1 text-[0.72rem] text-graphite sm:text-right">
-                    <div className="flex gap-2 sm:justify-end">
-                      <dt className="uppercase tracking-[0.1em] text-graphite/60">Адрес</dt>
-                      <dd className="font-semibold text-ink">{place.address}</dd>
-                    </div>
-                    <div className="flex gap-2 sm:justify-end">
-                      <dt className="uppercase tracking-[0.1em] text-graphite/60">Раздевалки</dt>
-                      <dd className="font-semibold text-ink">{place.changing}</dd>
-                    </div>
-                    <div className="flex gap-2 sm:justify-end">
-                      <dt className="uppercase tracking-[0.1em] text-graphite/60">Прокат</dt>
-                      <dd className="font-semibold text-ink">{place.rental}</dd>
-                    </div>
-                  </dl>
-                </div>
-
-                {/* Строка-заголовок только на десктопе: на мобильном всё в карточке */}
-                <div className="mt-5 hidden grid-cols-[7rem_1fr] gap-4 border-b border-line pb-2 text-[0.62rem] font-bold uppercase tracking-[0.12em] text-graphite/70 lg:grid">
-                  <span>День и время</span>
-                  <span>Группа · тренер · стоимость</span>
-                </div>
-
-                <ul className="divide-y divide-line">
-                  {place.slots.map((slot) => (
-                    <SlotRow key={slot.id} slot={slot} />
-                  ))}
-                </ul>
-              </div>
+              <PlaceCard key={place.id} place={place} />
             ))}
 
             {filtered && (
@@ -200,59 +162,110 @@ function SkiSchedule() {
   );
 }
 
-/** Одна строка расписания: на мобильном — карточка, на десктопе — две колонки */
-function SlotRow({ slot }: { slot: (typeof SKI_SCHEDULE)[number]['slots'][number] }) {
+/** Локация: фото трассы, бытовые детали и строки расписания */
+function PlaceCard({ place }: { place: SkiPlace }) {
   return (
-    <li className="grid gap-4 py-5 lg:grid-cols-[7rem_1fr] lg:items-center">
-      {/* День и время */}
-      <div className="flex items-baseline gap-3 lg:block">
-        <span className="display whitespace-nowrap text-base text-ink">{slot.day}</span>
-        <span className="whitespace-nowrap text-sm font-semibold tabular-nums text-brand">
-          {slot.time}
-        </span>
+    <article className="overflow-hidden rounded-3xl border border-line bg-white">
+      <div className="relative h-48 sm:h-56">
+        <img
+          src={place.photo}
+          alt={place.title}
+          loading="lazy"
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-ink/85 via-ink/35 to-ink/5" />
+        <div className="absolute inset-x-0 bottom-0 p-5 sm:p-7">
+          <h3 className="display text-2xl text-white sm:text-3xl">{place.title}</h3>
+          <p className="mt-2 max-w-xl text-sm leading-relaxed text-white/85">{place.lead}</p>
+        </div>
       </div>
 
-      {/* Группа, тренер, цена, действие */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full bg-brand/10 px-3 py-1 text-[0.6rem] font-bold uppercase tracking-[0.1em] text-brand">
-              {SKI_GROUP_LABEL[slot.kind]}
+      <dl className="grid gap-x-6 gap-y-2 border-b border-line bg-mist/60 px-5 py-4 text-[0.72rem] sm:grid-cols-3">
+        <div className="flex flex-col gap-0.5">
+          <dt className="font-bold uppercase tracking-[0.1em] text-graphite/60">Адрес</dt>
+          <dd className="font-semibold leading-snug text-ink">{place.address}</dd>
+        </div>
+        <div className="flex flex-col gap-0.5">
+          <dt className="font-bold uppercase tracking-[0.1em] text-graphite/60">Раздевалки</dt>
+          <dd className="font-semibold leading-snug text-ink">{place.changing}</dd>
+        </div>
+        <div className="flex flex-col gap-0.5">
+          <dt className="font-bold uppercase tracking-[0.1em] text-graphite/60">Прокат</dt>
+          <dd className="font-semibold leading-snug text-ink">{place.rental}</dd>
+        </div>
+      </dl>
+
+      <ul className="divide-y divide-line">
+        {place.slots.map((slot) => (
+          <SlotRow key={slot.id} slot={slot} />
+        ))}
+      </ul>
+    </article>
+  );
+}
+
+/**
+ * Строка расписания. Колонки фиксированные: день, детали, кнопка — текст
+ * каждой колонки ограничен min-w-0, поэтому строка переносится, а не налезает.
+ */
+function SlotRow({ slot }: { slot: SkiSlot }) {
+  return (
+    <li className="grid gap-4 px-5 py-5 lg:grid-cols-[9rem_minmax(0,1fr)_auto] lg:items-center lg:gap-6">
+      <div className="min-w-0">
+        <p className="display text-base leading-tight text-ink">{slot.day}</p>
+        <p className="mt-1 text-sm font-semibold tabular-nums leading-tight text-brand">
+          {slot.time}
+        </p>
+      </div>
+
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="rounded-full bg-brand/10 px-3 py-1 text-[0.6rem] font-bold uppercase tracking-[0.1em] text-brand">
+            {SKI_GROUP_LABEL[slot.kind]}
+          </span>
+          <span className="text-[0.72rem] leading-snug text-graphite">{slot.dates}</span>
+          {slot.status === 'soon' && (
+            <span className="rounded-full bg-navy px-2.5 py-0.5 text-[0.58rem] font-bold uppercase tracking-[0.1em] text-white">
+              Скоро старт
             </span>
-            <span className="text-[0.7rem] text-graphite">{slot.dates}</span>
-            {slot.status === 'soon' && (
-              <span className="rounded-full bg-navy px-2.5 py-0.5 text-[0.58rem] font-bold uppercase tracking-[0.1em] text-white">
-                Скоро старт
-              </span>
-            )}
-          </div>
-          <p className="mt-1.5 text-sm leading-snug text-ink">{slot.note}</p>
-          <p className="mt-1.5 flex items-center gap-1.5 text-[0.72rem] text-graphite">
-            <UserCheck className="h-3.5 w-3.5 shrink-0 text-brand" />
-            {slot.trainer}
-            {slot.price ? (
-              <>
-                <span className="text-graphite/40">·</span>
-                <span className="font-bold text-ink">{slot.price}</span>
-                <span className="text-graphite/70">{slot.priceNote}</span>
-              </>
-            ) : (
-              <>
-                <span className="text-graphite/40">·</span>
-                <span>{slot.priceNote}</span>
-              </>
-            )}
-          </p>
+          )}
         </div>
 
-        <a
-          href="#lead"
-          className="group inline-flex shrink-0 items-center gap-2 rounded-full border border-line px-5 py-2.5 text-[0.68rem] font-bold uppercase tracking-[0.1em] text-ink transition-colors hover:border-brand hover:bg-brand hover:text-white"
-        >
-          {slot.status === 'soon' ? 'Предзапись' : 'Записаться'}
-          <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
-        </a>
+        <p className="mt-2 text-sm leading-snug text-ink">{slot.note}</p>
+
+        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+          <span className="flex items-center gap-2">
+            <img
+              src={SKI_TRAINER.photo}
+              alt={SKI_TRAINER.name}
+              loading="lazy"
+              className="h-7 w-7 shrink-0 rounded-full object-cover"
+            />
+            <span className="text-[0.72rem] font-semibold text-graphite">
+              {SKI_TRAINER.name}
+            </span>
+          </span>
+
+          <span className="flex flex-wrap items-baseline gap-x-1.5 text-[0.72rem]">
+            <span className="text-sm font-bold tabular-nums text-ink">{slot.price}</span>
+            <span className="text-graphite/70">{slot.priceNote}</span>
+          </span>
+
+          {slot.free && (
+            <span className="rounded-full bg-brand/10 px-2.5 py-0.5 text-[0.62rem] font-bold uppercase tracking-[0.08em] text-brand">
+              {slot.free}
+            </span>
+          )}
+        </div>
       </div>
+
+      <a
+        href="#lead"
+        className="group inline-flex w-full shrink-0 items-center justify-center gap-2 rounded-full border border-line px-5 py-2.5 text-[0.68rem] font-bold uppercase tracking-[0.1em] text-ink transition-colors hover:border-brand hover:bg-brand hover:text-white sm:w-auto lg:w-auto"
+      >
+        {slot.cta}
+        <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+      </a>
     </li>
   );
 }
