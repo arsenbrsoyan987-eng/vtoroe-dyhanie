@@ -440,8 +440,9 @@ function SkiMethod() {
 
         <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="max-w-xl text-sm leading-relaxed text-white/55">
-            На тренировке тренер снимает вас на видео и разбирает технику по этим
-            шести пунктам — видно, какой навык уже стоит, а какой тянуть дальше.
+            На тренировке тренер осуществляет видеосъемку. В процессе тренировки
+            делает разбор техники. По этим шести пунктам видно, какой навык
+            поставлен, а над чем предстоит работать дальше.
           </p>
           <div className="flex gap-3">
             <button
