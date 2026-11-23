@@ -4,7 +4,7 @@
  * открывалась свежая версия) и stale-while-revalidate для статики.
  * При изменении логики обязательно увеличивайте CACHE_VERSION.
  */
-const CACHE_VERSION = 'v14';
+const CACHE_VERSION = 'v15';
 const CACHE_NAME = `vtoroe-dyhanie-${CACHE_VERSION}`;
 const BASE = '';
 const PRECACHE = [
