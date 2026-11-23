@@ -46,9 +46,9 @@ export const SKI_GROUP_LABEL: Record<SkiGroupKind, string> = {
   mini: 'Мини-группа',
 };
 
-/** Все зимние группы ведёт Армен Бароян — фото из админки школы */
+/** Все зимние группы ведёт Армен Барсоян — фото из админки школы */
 export const SKI_TRAINER = {
-  name: 'Армен Бароян',
+  name: 'Армен Барсоян',
   title: 'Школа «Второе Дыхание»',
   photo: '/images/uploads/trainer-1793287265436-photo.jpg',
 };

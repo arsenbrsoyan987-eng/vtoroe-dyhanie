@@ -83,7 +83,7 @@ function SkiSchedule() {
         </h2>
         <p className="mt-4 max-w-2xl text-base leading-relaxed text-graphite">
           Лыжная школа, групповые тренировки и мини-группы в Мещерском парке,
-          Одинцово и Лужниках. Все зимние группы ведёт Армен Бароян — формат и
+          Одинцово и Лужниках. Все зимние группы ведёт Армен Барсоян — формат и
           время подбираем под ваш уровень на первой встрече.
         </p>
 
@@ -234,21 +234,21 @@ function SlotRow({ slot }: { slot: SkiSlot }) {
         <p className="mt-2 text-sm leading-snug text-ink">{slot.note}</p>
 
         <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+          <span className="flex flex-wrap items-baseline gap-x-1.5 text-[0.72rem]">
+            <span className="text-sm font-bold tabular-nums text-ink">{slot.price}</span>
+            <span className="text-graphite/70">{slot.priceNote}</span>
+          </span>
+
           <span className="flex items-center gap-2">
             <img
               src={SKI_TRAINER.photo}
               alt={SKI_TRAINER.name}
               loading="lazy"
-              className="h-7 w-7 shrink-0 rounded-full object-cover"
+              className="h-8 w-8 shrink-0 rounded-full object-cover ring-1 ring-line"
             />
             <span className="text-[0.72rem] font-semibold text-graphite">
               {SKI_TRAINER.name}
             </span>
-          </span>
-
-          <span className="flex flex-wrap items-baseline gap-x-1.5 text-[0.72rem]">
-            <span className="text-sm font-bold tabular-nums text-ink">{slot.price}</span>
-            <span className="text-graphite/70">{slot.priceNote}</span>
           </span>
 
           {slot.free && (
