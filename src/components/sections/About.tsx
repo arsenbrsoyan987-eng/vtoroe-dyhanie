@@ -1,3 +1,4 @@
+import { Check } from 'lucide-react';
 import { useDirections } from '../../store/directionsStore';
 import { useTrainers } from '../../store/trainersStore';
 import { useSetting } from '../../store/settingsStore';
@@ -16,13 +17,26 @@ export default function About() {
   const aboutSubtitle = useSetting('aboutSubtitle');
   const aboutText1 = useSetting('aboutText1');
   const aboutText2 = useSetting('aboutText2');
+  const aboutText3 = useSetting('aboutText3');
   const aboutImage = useSetting('aboutImage');
+
+  /**
+   * Приоритеты школы: первая строка настройки — подпись, остальные — пункты.
+   * Если администратор вписал всё в одну строку, показываем её как абзац,
+   * чтобы блок не остался пустым.
+   */
+  const priorities = aboutText3
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
+  const prioritiesTitle = priorities[0] ?? '';
+  const priorityItems = priorities.slice(1);
 
   const stats = [
     { value: String(directions.length), label: 'Направления' },
     { value: String(trainers.length), label: 'Тренера в команде' },
     { value: city, label: 'Город и площадки' },
-    { value: '0 ₽', label: 'Первое занятие' },
+    { value: 'чашка кофе', label: 'Первое занятие' },
   ];
 
   return (
@@ -37,6 +51,25 @@ export default function About() {
               {aboutText1}
             </p>
             <p className="mt-4 text-base leading-relaxed text-graphite">{aboutText2}</p>
+
+            {priorities.length > 0 &&
+              (priorityItems.length > 0 ? (
+                <div className="mt-6">
+                  <div className="display text-lg text-ink">{prioritiesTitle}</div>
+                  <ul className="mt-3 space-y-2.5">
+                    {priorityItems.map((item) => (
+                      <li key={item} className="flex items-start gap-3">
+                        <div className="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand/10">
+                          <Check className="h-3 w-3 text-brand" />
+                        </div>
+                        <span className="text-sm text-ink sm:text-base">{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : (
+                <p className="mt-6 text-base leading-relaxed text-graphite">{prioritiesTitle}</p>
+              ))}
 
             <dl className="mt-10 grid grid-cols-2 gap-x-6 gap-y-8 border-t border-line pt-8 sm:grid-cols-4">
               {stats.map((stat) => (
@@ -71,7 +104,7 @@ export default function About() {
             <div className="absolute -bottom-5 left-5 rounded-2xl bg-brand px-5 py-4 text-white shadow-lift">
               <div className="display text-xl">Первое занятие</div>
               <div className="text-[0.7rem] uppercase tracking-[0.14em] text-white/80">
-                бесплатно и без абонемента
+                по цене чашки кофе
               </div>
             </div>
           </div>

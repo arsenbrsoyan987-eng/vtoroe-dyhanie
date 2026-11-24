@@ -140,7 +140,7 @@ export default function DirectionDetailPage() {
           : 'тренера в команде',
     },
     { value: `+${CLUB_WELCOME_POINTS}`, label: 'баллов после регистрации' },
-    { value: '0 ₽', label: 'первое занятие' },
+    { value: 'чашка кофе', label: 'первое занятие' },
   ];
 
   return (
@@ -553,7 +553,7 @@ export default function DirectionDetailPage() {
             <h2 className="display text-4xl sm:text-5xl">Не знаете, с чего начать?</h2>
             <p className="mt-5 max-w-lg text-base leading-relaxed text-white/70">
               Расскажите о своём уровне и цели — тренер подберёт группу и формат.
-              Первое занятие бесплатное и без абонемента.
+              Первое занятие — по цене чашки кофе и без абонемента.
             </p>
 
             {/* Отдельная заявка «сообщить о наборе» — для тех, кому сейчас нечего выбрать */}
@@ -572,7 +572,7 @@ export default function DirectionDetailPage() {
           <div className="rounded-2xl bg-white p-6 sm:p-8">
             <LeadForm
               source={`direction-${direction.id}`}
-              title="Записаться на бесплатное занятие"
+              title="Записаться на занятие по цене чашки кофе"
               subtitle="Имя и телефон — этого достаточно. Тренер свяжется и подберёт время."
               cta="Отправить заявку"
             />

@@ -423,7 +423,7 @@ export default function TrainingDetailPage() {
                       : 'Записаться без регистрации'}
                   </Button>
                   <p className="mt-3 text-center text-[0.7rem] text-graphite">
-                    Первое занятие — бесплатно
+                    Первое занятие — по цене чашки кофе
                   </p>
                 </div>
               )}

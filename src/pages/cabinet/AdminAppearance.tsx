@@ -49,6 +49,12 @@ const SECTIONS: { key: string; label: string; hint?: string; fields: Field[] }[]
       { key: 'aboutSubtitle', label: 'Надзаголовок' },
       { key: 'aboutText1', label: 'Первый абзац', multiline: true },
       { key: 'aboutText2', label: 'Второй абзац', multiline: true },
+      {
+        key: 'aboutText3',
+        label: 'Приоритеты школы',
+        multiline: true,
+        hint: 'Первая строка — заголовок, каждая следующая — отдельный пункт столбиком',
+      },
       { key: 'aboutImage', label: 'URL фото', hint: 'Картинка рядом с текстом' },
     ],
   },

@@ -32,7 +32,7 @@ export default function Hero() {
     { value: String(directions.length), label: 'Направлений' },
     { value: String(trainers.length), label: 'Тренеров' },
     { value: city, label: 'Площадки в городе' },
-    { value: '0 ₽', label: 'Первое занятие' },
+    { value: 'чашка кофе', label: 'Первое занятие' },
   ];
 
   return (
