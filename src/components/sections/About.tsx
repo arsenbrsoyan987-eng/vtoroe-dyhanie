@@ -32,6 +32,12 @@ export default function About() {
   const prioritiesTitle = priorities[0] ?? '';
   const priorityItems = priorities.slice(1);
 
+  /** Пустая строка в настройке = новый абзац: один <p> на весь текст читается стеной */
+  const aboutParagraphs = aboutText1
+    .split(/\n\s*\n/)
+    .map((block) => block.trim())
+    .filter(Boolean);
+
   const stats = [
     { value: String(directions.length), label: 'Направления' },
     { value: String(trainers.length), label: 'Тренера в команде' },
@@ -47,9 +53,16 @@ export default function About() {
           <div>
             <span className="eyebrow mb-4">{aboutSubtitle}</span>
             <h2 className="display text-4xl text-ink sm:text-5xl">{aboutTitle}</h2>
-            <p className="mt-6 text-base leading-relaxed text-graphite sm:text-lg">
-              {aboutText1}
-            </p>
+            {aboutParagraphs.map((block, i) => (
+              <p
+                key={block.slice(0, 24)}
+                className={`text-base leading-relaxed text-graphite ${
+                  i === 0 ? 'mt-6 sm:text-lg' : 'mt-4'
+                }`}
+              >
+                {block}
+              </p>
+            ))}
             <p className="mt-4 text-base leading-relaxed text-graphite">{aboutText2}</p>
 
             {priorities.length > 0 &&

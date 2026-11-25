@@ -19,7 +19,10 @@ export default function DynamicSections() {
       cover: cards.find((c) => c.section_id === sec.id && c.image)?.image ?? '',
       count: cards.filter((c) => c.section_id === sec.id).length,
     }))
-    .filter((x) => x.count > 0);
+    // Раздел без карточек остаётся плиткой, если у него есть описание:
+    // иначе удаление единственной (пустой) карточки снимает весь раздел
+    // с главной, а страница раздела с текстом никуда не девается.
+    .filter((x) => x.count > 0 || Boolean(x.sec.description?.trim()));
 
   if (visible.length === 0) return null;
 

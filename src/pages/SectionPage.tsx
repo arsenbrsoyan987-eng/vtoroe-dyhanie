@@ -65,9 +65,11 @@ export default function SectionPage() {
           )}
 
           {cards.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-line bg-mist px-6 py-16 text-center">
-              <p className="text-sm text-graphite">Материалы скоро появятся</p>
-            </div>
+            !section.description?.trim() && (
+              <div className="rounded-2xl border border-dashed border-line bg-mist px-6 py-16 text-center">
+                <p className="text-sm text-graphite">Материалы скоро появятся</p>
+              </div>
+            )
           ) : (
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {cards.map((card) => (
