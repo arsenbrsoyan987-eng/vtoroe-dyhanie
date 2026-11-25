@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useTrainings } from '../../store/trainingsStore';
@@ -60,6 +61,21 @@ export default function AthleteDashboard() {
 
   const loyalty = loyaltySummary(currentUser!.id, registrations, trainings, personalResults);
   const streak = weeklyStreak(currentUser!.id, registrations, trainings);
+
+  // Разбивка посещений по направлениям: видно, куда уходит сезон
+  const byDirection = useMemo(() => {
+    const map = new Map<string, { total: number; attended: number }>();
+    for (const reg of activeRegs) {
+      const training = trainings.find((t) => t.id === reg.trainingId);
+      if (!training) continue;
+      const key = training.directionName || 'Другое';
+      const entry = map.get(key) ?? { total: 0, attended: 0 };
+      entry.total += 1;
+      if (reg.attended) entry.attended += 1;
+      map.set(key, entry);
+    }
+    return [...map.entries()].sort((a, b) => b[1].total - a[1].total).slice(0, 4);
+  }, [activeRegs, trainings]);
 
   // Сколько дней осталось до ближайшей тренировки
   const nearest = upcomingRegs[0];
@@ -206,6 +222,41 @@ export default function AthleteDashboard() {
               </>
             )}
           </Panel>
+
+          {byDirection.length > 0 && (
+            <Panel>
+              <PanelTitle hint="Сколько раз записывались и сколько раз дошли.">
+                Мои направления
+              </PanelTitle>
+              <ul className="space-y-2">
+                {byDirection.map(([name, stat]) => {
+                  const rate = stat.total > 0 ? Math.round((stat.attended / stat.total) * 100) : 0;
+                  return (
+                    <li key={name}>
+                      <div className="mb-1 flex items-center justify-between text-xs">
+                        <span className="font-semibold text-ink">{name}</span>
+                        <span className="text-graphite">
+                          {stat.attended}/{stat.total}
+                        </span>
+                      </div>
+                      <div className="h-1.5 w-full overflow-hidden rounded-full bg-mist">
+                        <div
+                          className={`h-full rounded-full ${
+                            rate >= 70
+                              ? 'bg-emerald-500'
+                              : rate >= 40
+                                ? 'bg-amber-500'
+                                : 'bg-brand'
+                          }`}
+                          style={{ width: `${Math.max(4, rate)}%` }}
+                        />
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </Panel>
+          )}
 
           {unread > 0 && (
             <Panel>
