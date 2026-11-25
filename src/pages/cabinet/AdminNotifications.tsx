@@ -77,21 +77,33 @@ export default function AdminNotificationsPage() {
 
     setSending(true);
     let count = 0;
+    let failed = 0;
     for (const u of recipients) {
-      await addNotification({
-        userId: u.id,
-        title: form.title,
-        message: form.message,
-        type: form.type,
-        ...(form.link.trim() ? { link: form.link.trim() } : {}),
-      });
-      count += 1;
+      try {
+        await addNotification({
+          userId: u.id,
+          title: form.title,
+          message: form.message,
+          type: form.type,
+          ...(form.link.trim() ? { link: form.link.trim() } : {}),
+        });
+        count += 1;
+      } catch {
+        failed += 1;
+      }
     }
     setSending(false);
     setSent(count);
-    toast(
-      `Отправлено: ${count} ${countNoun(count, 'получатель', 'получателя', 'получателей')}`
-    );
+    if (failed > 0) {
+      toast(
+        `Доставлено ${count}, не удалось ${failed} — проверьте права доступа в базе`,
+        'error'
+      );
+    } else {
+      toast(
+        `Отправлено: ${count} ${countNoun(count, 'получатель', 'получателя', 'получателей')}`
+      );
+    }
     setShowForm(false);
     setForm({ title: '', message: '', segment: 'all', type: 'info', link: '' });
   };

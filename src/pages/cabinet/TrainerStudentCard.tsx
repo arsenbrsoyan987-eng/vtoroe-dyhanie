@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
 import { activeProfiles, useProfiles } from '../../store/profilesStore';
 import { useTrainings } from '../../store/trainingsStore';
 import { visibleTrainings } from '../../lib/access';
@@ -14,8 +15,21 @@ import {
   PanelTitle,
   StatCard,
   StatusBadge,
+  fieldClass,
+  labelClass,
 } from '../../components/cabinet/ui';
-import { ArrowLeft, CalendarDays, Clock, Mail, MapPin, Phone, Star, TrendingUp } from 'lucide-react';
+import {
+  ArrowLeft,
+  CalendarDays,
+  Clock,
+  Mail,
+  MapPin,
+  MessageSquare,
+  Phone,
+  Send,
+  Star,
+  TrendingUp,
+} from 'lucide-react';
 
 /**
  * Карточка спортсмена глазами тренера.
@@ -25,10 +39,13 @@ import { ArrowLeft, CalendarDays, Clock, Mail, MapPin, Phone, Star, TrendingUp }
  */
 export default function TrainerStudentCard() {
   const { id } = useParams<{ id: string }>();
-  const { currentUser, registrations } = useAuth();
+  const { currentUser, registrations, addNotification } = useAuth();
+  const { toast } = useToast();
   const profiles = activeProfiles(useProfiles());
   const trainings = useTrainings();
   const [tab, setTab] = useState<'visits' | 'results'>('visits');
+  const [message, setMessage] = useState('');
+  const [sending, setSending] = useState(false);
 
   const athlete = profiles.find((p) => p.id === id);
   const myTrainings = visibleTrainings(trainings, currentUser, registrations);
@@ -67,6 +84,26 @@ export default function TrainerStudentCard() {
   }).length;
   const loyalty = loyaltySummary(athlete.id, registrations, trainings, []);
   const last = regs.find((r) => r.attended);
+
+  const handleSend = async () => {
+    if (!message.trim()) return;
+    setSending(true);
+    try {
+      await addNotification({
+        userId: athlete.id,
+        title: 'Сообщение от тренера',
+        message: message.trim(),
+        type: 'info',
+        link: `/cabinet/notifications`,
+      });
+      toast('Сообщение отправлено');
+      setMessage('');
+    } catch {
+      toast('Не удалось отправить', 'error');
+    } finally {
+      setSending(false);
+    }
+  };
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -153,6 +190,37 @@ export default function TrainerStudentCard() {
               </li>
             )}
           </ul>
+
+          <div className="mt-4">
+            <label className={labelClass}>Написать спортсмену</label>
+            <textarea
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              rows={3}
+              placeholder="Напоминание, совет, план тренировки..."
+              className={`${fieldClass} resize-none`}
+              disabled={sending}
+            />
+            <ActionButton
+              onClick={handleSend}
+              variant="primary"
+              disabled={sending || !message.trim()}
+              className="mt-2"
+            >
+              {sending ? (
+                <>
+                  <Send className="h-3.5 w-3.5 animate-spin" /> Отправка...
+                </>
+              ) : (
+                <>
+                  <MessageSquare className="h-3.5 w-3.5" /> Отправить
+                </>
+              )}
+            </ActionButton>
+            <p className="mt-2 text-[0.68rem] text-graphite">
+              Спортсмен получит уведомление в кабинете
+            </p>
+          </div>
 
           <p className="mt-4 rounded-xl bg-navy/5 px-3 py-2.5 text-[0.68rem] leading-relaxed text-navy">
             Телефон и почта доступны только тренеру, у которого спортсмен

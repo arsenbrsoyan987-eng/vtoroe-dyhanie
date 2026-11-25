@@ -13,7 +13,7 @@ import {
   PanelTitle,
   StatCard,
 } from '../../components/cabinet/ui';
-import { Calendar, Users, ClipboardList, TrendingUp, CheckCircle2 } from 'lucide-react';
+import { Calendar, Camera, Users, ClipboardList, TrendingUp, CheckCircle2, Newspaper } from 'lucide-react';
 
 export default function TrainerDashboard() {
   const trainings = useTrainings();
@@ -57,8 +57,8 @@ export default function TrainerDashboard() {
       finished: finished.length,
       finishedMonth: finishedMonth.length,
       monthAttended,
+      monthRegs: monthRegs.length,
       attendanceRate,
-      monthUnique: new Set(monthRegs.map((r) => r.userId)).size,
     };
   }, [myTrainings, registrations, today]);
 
@@ -116,7 +116,7 @@ export default function TrainerDashboard() {
           icon={TrendingUp}
           label="Явка за месяц"
           value={`${stats.attendanceRate}%`}
-          hint={`${stats.monthAttended} из ${stats.monthUnique || 0} чел.`}
+          hint={`${stats.monthAttended} из ${stats.monthRegs} записей`}
           to="/cabinet/attendance"
         />
       </div>
@@ -250,11 +250,11 @@ export default function TrainerDashboard() {
                 Отметить посещение
               </ActionButton>
               <ActionButton to="/cabinet/photos" variant="ghost" className="w-full justify-start">
-                <TrendingUp className="h-4 w-4 text-navy" />
+                <Camera className="h-4 w-4 text-navy" />
                 Загрузить фото
               </ActionButton>
               <ActionButton to="/cabinet/admin/news" variant="ghost" className="w-full justify-start">
-                <ClipboardList className="h-4 w-4 text-brand" />
+                <Newspaper className="h-4 w-4 text-brand" />
                 Написать новость
               </ActionButton>
             </div>

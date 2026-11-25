@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { useProfiles } from '../../store/profilesStore';
@@ -6,8 +6,23 @@ import { supabase } from '../../lib/supabase';
 import type { User } from '../../store/database';
 import { canDeleteUser, isAdmin, isOwner } from '../../lib/permissions';
 import { useTrainers } from '../../store/trainersStore';
+import { useTrainings } from '../../store/trainingsStore';
 import Button from '../../components/ui/Button';
-import { Check, Copy, Download, Mail, Plus, Radio, Search, ShieldCheck, Trash2, X } from 'lucide-react';
+import {
+  Check,
+  ChevronDown,
+  ChevronUp,
+  Copy,
+  Download,
+  Mail,
+  Plus,
+  Radio,
+  Search,
+  Send,
+  ShieldCheck,
+  Trash2,
+  X,
+} from 'lucide-react';
 import { fieldClass, labelClass } from '../../components/cabinet/ui';
 import { countNoun } from '../../lib/plural';
 import { downloadCsv } from '../../lib/export';
@@ -34,13 +49,14 @@ const formatDate = (iso: string) =>
     : '—';
 
 export default function AdminUsers() {
-  const { currentUser, registrations, deleteUser } = useAuth();
+  const { currentUser, registrations, deleteUser, addNotification } = useAuth();
   const { toast } = useToast();
 
   // Список приходит из общей базы и обновляется по realtime:
   // регистрация с телефона появляется здесь без перезагрузки
   const profiles = useProfiles();
   const trainers = useTrainers();
+  const trainings = useTrainings();
 
   const [query, setQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<'all' | User['role']>('all');
@@ -55,6 +71,10 @@ export default function AdminUsers() {
   const [invited, setInvited] = useState<{ email: string; role: string } | null>(null);
   const [copied, setCopied] = useState(false);
   const [confirmId, setConfirmId] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [messageId, setMessageId] = useState<string | null>(null);
+  const [messageText, setMessageText] = useState('');
+  const [sendingMsg, setSendingMsg] = useState(false);
 
   const users = useMemo(() => profiles.filter((p) => !p.deleted), [profiles]);
 
@@ -181,6 +201,33 @@ export default function AdminUsers() {
   const regCountOf = (id: string) =>
     registrations.filter((r) => r.userId === id && r.status !== 'cancelled').length;
 
+  /** Личные записи пользователя — раскрываются прямо в строке таблицы */
+  const regsOf = (id: string) =>
+    registrations
+      .filter((r) => r.userId === id && r.status !== 'cancelled')
+      .sort((a, b) => b.registeredAt.localeCompare(a.registeredAt));
+
+  const sendMessage = async (u: User) => {
+    const text = messageText.trim();
+    if (!text || sendingMsg) return;
+
+    setSendingMsg(true);
+    try {
+      await addNotification({
+        userId: u.id,
+        title: 'Сообщение от администратора',
+        message: text,
+        type: 'info',
+        link: '/cabinet/notifications',
+      });
+      toast(`Сообщение отправлено: ${u.name}`, 'success');
+      setMessageId(null);
+      setMessageText('');
+    } finally {
+      setSendingMsg(false);
+    }
+  };
+
   const roleControl = (u: User) => {
     if (isOwner(u)) {
       return (
@@ -242,6 +289,20 @@ export default function AdminUsers() {
     }
     return (
       <div className="flex items-center justify-end gap-2">
+        <button
+          onClick={() => {
+            const next = messageId === u.id ? null : u.id;
+            setMessageId(next);
+            setMessageText('');
+            // Форма живёт в раскрытом блоке: без него на мобильном её не видно
+            if (next) setExpandedId(u.id);
+          }}
+          className="rounded-xl p-1.5 text-graphite transition-colors hover:bg-mist hover:text-navy"
+          aria-label={`Написать ${u.name}`}
+          title="Написать сообщение"
+        >
+          <Send className="h-4 w-4" />
+        </button>
         <button
           onClick={() => copyRegisterLink(u.email)}
           className="rounded-xl p-1.5 text-graphite transition-colors hover:bg-mist hover:text-navy"
@@ -449,24 +510,136 @@ export default function AdminUsers() {
             </tr>
           </thead>
           <tbody>
-            {filtered.map((u) => (
-              <tr key={u.id} className="border-b border-line bg-mist transition-colors last:border-0 hover:bg-mist">
-                <td className="px-4 py-3">
-                  <p className="font-medium text-ink">
-                    {u.name}
-                    {u.id === currentUser?.id && (
-                      <span className="ml-2 text-xs text-graphite">(вы)</span>
-                    )}
-                  </p>
-                  <p className="text-xs text-graphite">{u.email}</p>
-                </td>
-                <td className="hidden px-4 py-3 text-graphite md:table-cell">{u.phone || '—'}</td>
-                <td className="px-4 py-3">{roleControl(u)}</td>
-                <td className="hidden px-4 py-3 text-graphite sm:table-cell">{regCountOf(u.id)}</td>
-                <td className="hidden px-4 py-3 text-graphite lg:table-cell">{formatDate(u.created)}</td>
-                <td className="px-4 py-3">{rowActions(u)}</td>
-              </tr>
-            ))}
+            {filtered.map((u) => {
+              const expanded = expandedId === u.id;
+              const regs = expanded ? regsOf(u.id) : [];
+              return (
+                <Fragment key={u.id}>
+                  <tr
+                    className={`border-b border-line bg-mist transition-colors hover:bg-mist ${
+                      expanded ? 'bg-paper' : ''
+                    }`}
+                  >
+                    <td className="px-4 py-3">
+                      <button
+                        type="button"
+                        onClick={() => setExpandedId((prev) => (prev === u.id ? null : u.id))}
+                        aria-expanded={expanded}
+                        className="flex items-start gap-1.5 text-left"
+                      >
+                        {expanded ? (
+                          <ChevronUp className="mt-1 h-3.5 w-3.5 shrink-0 text-graphite" />
+                        ) : (
+                          <ChevronDown className="mt-1 h-3.5 w-3.5 shrink-0 text-graphite" />
+                        )}
+                        <span className="min-w-0">
+                          <span className="block font-medium text-ink">
+                            {u.name}
+                            {u.id === currentUser?.id && (
+                              <span className="ml-2 text-xs text-graphite">(вы)</span>
+                            )}
+                          </span>
+                          <span className="block text-xs text-graphite">{u.email}</span>
+                        </span>
+                      </button>
+                    </td>
+                    <td className="hidden px-4 py-3 text-graphite md:table-cell">{u.phone || '—'}</td>
+                    <td className="px-4 py-3">{roleControl(u)}</td>
+                    <td className="hidden px-4 py-3 text-graphite sm:table-cell">{regCountOf(u.id)}</td>
+                    <td className="hidden px-4 py-3 text-graphite lg:table-cell">{formatDate(u.created)}</td>
+                    <td className="px-4 py-3">{rowActions(u)}</td>
+                  </tr>
+
+                  {(expanded || messageId === u.id) && (
+                    <tr className="border-b border-line bg-paper">
+                      <td colSpan={6} className="px-4 py-4">
+                        <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
+                          <div>
+                            <p className="mb-2 text-[0.62rem] font-bold uppercase tracking-[0.1em] text-graphite">
+                              Записи на тренировки
+                            </p>
+                            {regs.length === 0 ? (
+                              <p className="rounded-xl bg-mist px-3 py-2.5 text-xs text-graphite">
+                                Активных записей нет.
+                              </p>
+                            ) : (
+                              <ul className="space-y-1.5">
+                                {regs.slice(0, 8).map((r) => {
+                                  const training = trainings.find((t) => t.id === r.trainingId);
+                                  return (
+                                    <li
+                                      key={r.id}
+                                      className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-mist px-3 py-2 text-xs"
+                                    >
+                                      <span className="min-w-0 truncate font-semibold text-ink">
+                                        {training?.name ?? 'Тренировка'}
+                                      </span>
+                                      <span className="flex shrink-0 items-center gap-2 text-graphite">
+                                        {training?.date && <span>{training.date}</span>}
+                                        <span
+                                          className={
+                                            r.attended
+                                              ? 'font-semibold text-emerald-700'
+                                              : r.status === 'waitlist'
+                                                ? 'font-semibold text-amber-700'
+                                                : ''
+                                          }
+                                        >
+                                          {r.attended
+                                            ? 'посетил'
+                                            : r.status === 'waitlist'
+                                              ? 'ожидание'
+                                              : 'записан'}
+                                        </span>
+                                      </span>
+                                    </li>
+                                  );
+                                })}
+                                {regs.length > 8 && (
+                                  <li className="px-3 text-[0.68rem] text-graphite">
+                                    и ещё {regs.length - 8}…
+                                  </li>
+                                )}
+                              </ul>
+                            )}
+                          </div>
+
+                          <div>
+                            <label
+                              htmlFor={`msg-${u.id}`}
+                              className={labelClass}
+                            >
+                              Сообщение пользователю
+                            </label>
+                            <textarea
+                              id={`msg-${u.id}`}
+                              value={messageId === u.id ? messageText : ''}
+                              onChange={(e) => {
+                                setMessageId(u.id);
+                                setMessageText(e.target.value);
+                              }}
+                              rows={2}
+                              placeholder="Например: подтвердите телефон для записи"
+                              className={`${fieldClass} resize-none`}
+                            />
+                            <Button
+                              onClick={() => void sendMessage(u)}
+                              variant="primary"
+                              size="sm"
+                              disabled={sendingMsg || messageId !== u.id || !messageText.trim()}
+                              className="mt-2"
+                            >
+                              <Send className="mr-1.5 h-3.5 w-3.5" />
+                              {sendingMsg ? 'Отправляем…' : 'Отправить'}
+                            </Button>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
+              );
+            })}
             {filtered.length === 0 && (
               <tr>
                 <td colSpan={6} className="bg-mist px-4 py-10 text-center text-sm text-graphite">
@@ -480,27 +653,94 @@ export default function AdminUsers() {
 
       {/* Мобильные карточки: на узких экранах таблица не помещается */}
       <ul className="space-y-3 sm:hidden">
-        {filtered.map((u) => (
-          <li key={u.id} className="rounded-2xl border border-line bg-paper shadow-card p-4">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="truncate font-medium text-ink">
-                  {u.name}
-                  {u.id === currentUser?.id && (
-                    <span className="ml-2 text-xs text-graphite">(вы)</span>
-                  )}
-                </p>
-                <p className="truncate text-xs text-graphite">{u.email}</p>
-                {u.phone && <p className="mt-0.5 text-xs text-graphite/70">{u.phone}</p>}
+        {filtered.map((u) => {
+          const expanded = expandedId === u.id;
+          const regs = expanded ? regsOf(u.id) : [];
+          return (
+            <li key={u.id} className="rounded-2xl border border-line bg-paper shadow-card p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <button
+                    type="button"
+                    onClick={() => setExpandedId((prev) => (prev === u.id ? null : u.id))}
+                    className="block w-full text-left"
+                  >
+                    <p className="truncate font-medium text-ink">
+                      {u.name}
+                      {u.id === currentUser?.id && (
+                        <span className="ml-2 text-xs text-graphite">(вы)</span>
+                      )}
+                    </p>
+                    <p className="truncate text-xs text-graphite">{u.email}</p>
+                    {u.phone && <p className="mt-0.5 text-xs text-graphite/70">{u.phone}</p>}
+                  </button>
+                </div>
+                <div className="shrink-0">{roleControl(u)}</div>
               </div>
-              <div className="shrink-0">{roleControl(u)}</div>
-            </div>
-            <div className="mt-3 flex items-center justify-between gap-2 border-t border-line pt-3">
-              <span className="text-xs text-graphite">{regCountOf(u.id)} записей</span>
-              {rowActions(u)}
-            </div>
-          </li>
-        ))}
+
+              {expanded && (
+                <div className="mt-3 border-t border-line pt-3">
+                  <p className="mb-2 text-[0.62rem] font-bold uppercase tracking-[0.1em] text-graphite">
+                    Записи ({regs.length})
+                  </p>
+                  {regs.length === 0 ? (
+                    <p className="text-xs text-graphite">Активных записей нет.</p>
+                  ) : (
+                    <ul className="space-y-1.5">
+                      {regs.slice(0, 5).map((r) => {
+                        const training = trainings.find((t) => t.id === r.trainingId);
+                        return (
+                          <li
+                            key={r.id}
+                            className="flex flex-wrap items-center justify-between gap-1 rounded-lg bg-mist px-2.5 py-1.5 text-[0.68rem]"
+                          >
+                            <span className="truncate font-semibold text-ink">
+                              {training?.name ?? 'Тренировка'}
+                            </span>
+                            <span className={r.attended ? 'text-emerald-700' : 'text-amber-700'}>
+                              {r.attended ? '✓' : '⏳'}
+                            </span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+
+                  <div className="mt-3">
+                    <label htmlFor={`msg-m-${u.id}`} className={labelClass}>
+                      Сообщение
+                    </label>
+                    <textarea
+                      id={`msg-m-${u.id}`}
+                      value={messageId === u.id ? messageText : ''}
+                      onChange={(e) => {
+                        setMessageId(u.id);
+                        setMessageText(e.target.value);
+                      }}
+                      rows={2}
+                      className={`${fieldClass} resize-none`}
+                    />
+                    <Button
+                      onClick={() => void sendMessage(u)}
+                      variant="primary"
+                      size="sm"
+                      disabled={sendingMsg || messageId !== u.id || !messageText.trim()}
+                      className="mt-2 w-full"
+                    >
+                      <Send className="mr-1.5 h-3.5 w-3.5" />
+                      {sendingMsg ? 'Отправляем…' : 'Отправить'}
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              <div className="mt-3 flex items-center justify-between gap-2 border-t border-line pt-3">
+                <span className="text-xs text-graphite">{regCountOf(u.id)} записей</span>
+                {rowActions(u)}
+              </div>
+            </li>
+          );
+        })}
         {filtered.length === 0 && (
           <li className="rounded-2xl border border-line bg-paper shadow-card px-4 py-10 text-center text-sm text-graphite">
             {users.length === 0 ? 'Загрузка списка…' : 'Ничего не найдено'}

@@ -476,7 +476,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         type: n.type,
         link: n.link ?? null,
       });
-      if (!error) refresh();
+      // Молча проглатывать нельзя: вызывающий код показывает «отправлено»
+      // только если запись действительно легла в базу (RLS может отказать)
+      if (error) throw new Error(describeError(error));
+      refresh();
     },
     [refresh]
   );
@@ -487,12 +490,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       message: string,
       options?: { type?: Notification['type']; link?: string }
     ) => {
-      await supabase.rpc('notify_admins', {
+      const { error } = await supabase.rpc('notify_admins', {
         p_title: title,
         p_message: message,
         p_type: options?.type ?? 'info',
         p_link: options?.link ?? null,
       });
+      if (error) throw new Error(describeError(error));
     },
     []
   );
@@ -530,16 +534,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { error } = await supabase.from('registrations').insert(payload);
       if (error) return 'error';
 
-      await addNotification({
-        userId: currentUser.id,
-        title: status === 'confirmed' ? 'Запись подтверждена' : 'Вы в листе ожидания',
-        message:
-          status === 'confirmed'
-            ? 'Ждём вас на тренировке. Подробности в разделе «Мои записи».'
-            : 'Мест нет, но мы сообщим, если кто-то отменит запись.',
-        type: status === 'confirmed' ? 'success' : 'warning',
-        link: '/cabinet/registrations',
-      });
+      // Письмо — вторично: запись уже создана, сбой уведомления не должен
+      // превращать успешную запись в ошибку на экране
+      try {
+        await addNotification({
+          userId: currentUser.id,
+          title: status === 'confirmed' ? 'Запись подтверждена' : 'Вы в листе ожидания',
+          message:
+            status === 'confirmed'
+              ? 'Ждём вас на тренировке. Подробности в разделе «Мои записи».'
+              : 'Мест нет, но мы сообщим, если кто-то отменит запись.',
+          type: status === 'confirmed' ? 'success' : 'warning',
+          link: '/cabinet/registrations',
+        });
+      } catch {
+        /* уведомление не доставлено — запись всё равно действует */
+      }
 
       refresh();
       return status;
@@ -565,13 +575,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             .update({ status: 'confirmed' })
             .eq('id', promoted.id);
 
-          await addNotification({
-            userId: promoted.userId,
-            title: 'Вы записаны на тренировку',
-            message: 'Освободилось место — ваша запись подтверждена.',
-            type: 'success',
-            link: '/cabinet/registrations',
-          });
+          try {
+            await addNotification({
+              userId: promoted.userId,
+              title: 'Вы записаны на тренировку',
+              message: 'Освободилось место — ваша запись подтверждена.',
+              type: 'success',
+              link: '/cabinet/registrations',
+            });
+          } catch {
+            /* статус в базе уже обновлён */
+          }
         }
       }
 
@@ -581,10 +595,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (reason?.trim()) {
         const who = currentUser?.name ?? 'Спортсмен';
         const what = trainingLabel ? `«${trainingLabel}»` : 'тренировку';
-        await notifyAdmins('Отмена записи', `${who} отменил ${what}. Причина: ${reason.trim()}`, {
-          type: 'warning',
-          link: '/cabinet/registrations',
-        });
+        try {
+          await notifyAdmins(
+            'Отмена записи',
+            `${who} отменил ${what}. Причина: ${reason.trim()}`,
+            { type: 'warning', link: '/cabinet/registrations' }
+          );
+        } catch {
+          /* функция notify_admins может быть ещё не применена в базе */
+        }
       }
 
       refresh();
