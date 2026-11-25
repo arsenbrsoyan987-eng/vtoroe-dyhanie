@@ -66,11 +66,10 @@ jobs:
       - name: Write CNAME
         run: echo 'vtoroe-dyhanie.ru' > dist/CNAME
 
-      # upload-pages-artifact@v5 и deploy-pages@v5 говорят на одном
-      # artifact API: старые v3/v4 писали артефакт, который деплой не находил
-      - name: Setup Pages
-        uses: actions/configure-pages@v6
-
+      # deploy-pages@v5 сам находит артефакт github-pages, созданный
+      # upload-pages-artifact@v5 в том же workflow run.
+      # actions/configure-pages@v6 создавал артефакт с другим именем,
+      # из-за чего deploy-pages@v5 не мог найти нужный.
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v5
         with:
