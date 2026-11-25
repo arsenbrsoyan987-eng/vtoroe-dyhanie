@@ -68,8 +68,10 @@ jobs:
 
       # deploy-pages@v5 сам находит артефакт github-pages, созданный
       # upload-pages-artifact@v5 в том же workflow run.
-      # actions/configure-pages@v6 создавал артефакт с другим именем,
-      # из-за чего deploy-pages@v5 не мог найти нужный.
+      #
+      # Артефакт загружается раньше, чем GitHub успевает проиндексировать
+      # его метаданные: первый вызов deploy-pages регулярно падает с
+      # «No artifacts named github-pages were found». Поэтому пробуем трижды.
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v5
         with:
@@ -78,3 +80,17 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5
+        continue-on-error: true
+
+      - name: Deploy retry 1
+        if: steps.deployment.outcome == 'failure'
+        run: sleep 30
+
+      - name: Deploy retry 2
+        id: deployment-retry
+        if: steps.deployment.outcome == 'failure'
+        uses: actions/deploy-pages@v5
+
+      - name: Fail if deploy never succeeded
+        if: steps.deployment.outcome == 'failure' && steps.deployment-retry.outcome == 'failure'
+        run: exit 1
