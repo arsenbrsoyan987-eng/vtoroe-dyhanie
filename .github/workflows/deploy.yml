@@ -8,6 +8,9 @@ permissions:
   contents: read
   pages: write
   id-token: write
+  # deploy-pages читает метаданные загруженного артефакта через Actions API:
+  # без этого права шаг падает с «No artifacts named github-pages were found»
+  actions: read
 
 concurrency:
   group: pages
