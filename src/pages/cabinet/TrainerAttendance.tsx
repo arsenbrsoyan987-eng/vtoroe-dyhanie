@@ -15,7 +15,7 @@ import { Check, Clock, Download, Search, Undo2 } from 'lucide-react';
 
 export default function TrainerAttendancePage() {
   const trainings = useTrainings();
-  const { currentUser, registrations, markAttended } = useAuth();
+  const { currentUser, registrations, markAttended, markManyAttended } = useAuth();
   const users = activeProfiles(useProfiles());
   const { toast } = useToast();
   const [showPast, setShowPast] = useState(true);
@@ -43,11 +43,17 @@ export default function TrainerAttendancePage() {
   }, [listed, activeRegs]);
 
   const markAllAttended = async (trainingId: string) => {
-    const regs = activeRegs.filter((r) => r.trainingId === trainingId && !r.attended);
-    for (const r of regs) {
-      await markAttended(r.id);
+    const ids = activeRegs
+      .filter((r) => r.trainingId === trainingId && !r.attended)
+      .map((r) => r.id);
+    if (ids.length === 0) return;
+    setBusy(`all-${trainingId}`);
+    try {
+      await markManyAttended(ids);
+      toast(`Отмечены все присутствующие — ${ids.length} чел.`, 'success');
+    } finally {
+      setBusy(null);
     }
-    toast(`Отмечены все присутствующие — ${regs.length} чел.`, 'success');
   };
 
   const exportCSV = () => {
@@ -157,9 +163,14 @@ export default function TrainerAttendancePage() {
                       {t.date} · {t.time} · {regs.length} чел.
                     </span>
                     {done && regs.some((r) => !r.attended) && (
-                      <ActionButton onClick={() => void markAllAttended(t.id)} variant="outline" size="sm">
+                      <ActionButton
+                        onClick={() => void markAllAttended(t.id)}
+                        variant="outline"
+                        size="sm"
+                        disabled={busy === `all-${t.id}`}
+                      >
                         <Check className="h-3 w-3" />
-                        Отметить всех
+                        {busy === `all-${t.id}` ? 'Отмечаем…' : 'Отметить всех'}
                       </ActionButton>
                     )}
                   </div>

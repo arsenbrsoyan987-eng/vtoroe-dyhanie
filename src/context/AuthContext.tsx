@@ -68,6 +68,11 @@ interface AuthContextType {
   ) => Promise<'confirmed' | 'waitlist' | 'already' | 'error'>;
   cancelRegistration: (regId: string, reason?: string, trainingLabel?: string) => Promise<void>;
   markAttended: (regId: string) => Promise<void>;
+  /**
+   * Массовая отметка «пришёл»: один update вместо цикла по записям.
+   * Кнопка «Отметить всех» иначе шлёт по запросу на человека.
+   */
+  markManyAttended: (regIds: string[]) => Promise<void>;
   addPersonalResult: (r: Omit<PersonalResult, 'id'>) => Promise<void>;
   removePersonalResult: (id: string) => Promise<void>;
   markNotificationRead: (id: string) => Promise<void>;
@@ -624,6 +629,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [registrations, refresh]
   );
 
+  const markManyAttended = useCallback(
+    async (regIds: string[]) => {
+      if (regIds.length === 0) return;
+      await supabase.from('registrations').update({ attended: true }).in('id', regIds);
+      refresh();
+    },
+    [refresh]
+  );
+
   const addPersonalResult = useCallback(
     async (r: Omit<PersonalResult, 'id'>) => {
       if (!currentUser) return;
@@ -740,6 +754,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       register,
       cancelRegistration,
       markAttended,
+      markManyAttended,
       addPersonalResult,
       removePersonalResult,
       markNotificationRead,
@@ -770,6 +785,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       register,
       cancelRegistration,
       markAttended,
+      markManyAttended,
       addPersonalResult,
       removePersonalResult,
       markNotificationRead,
