@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { activeProfiles, useProfiles } from '../../store/profilesStore';
 import {
   ActionButton,
   PageHeader,
@@ -41,37 +40,37 @@ const plans = [
 ];
 
 export default function PaymentPage() {
-  const { currentUser, addNotification } = useAuth();
-  const profiles = useProfiles();
-  const users = activeProfiles(profiles);
+  const { currentUser, notifyAdmins } = useAuth();
   const { toast } = useToast();
 
   const [selectedPlan, setSelectedPlan] = useState('monthly');
   const [comment, setComment] = useState('');
   const [sent, setSent] = useState(false);
+  const [sending, setSending] = useState(false);
 
   const plan = plans.find((p) => p.id === selectedPlan);
 
   const handleRequest = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!currentUser || !plan) return;
+    if (!currentUser || !plan || sending) return;
 
-    // Заявка уходит администраторам школы — карточные данные не собираются
-    const admins = users.filter((u) => u.role === 'admin');
-    for (const admin of admins) {
-      await addNotification({
-        userId: admin.id,
-        title: 'Заявка на абонемент',
-        message: `${currentUser.name} (${currentUser.email}) выбрал тариф «${plan.name}» — ${plan.price} ₽${plan.period}.${
+    setSending(true);
+    try {
+      // Карточные данные не собираются: заявка уходит администраторам школы
+      await notifyAdmins(
+        'Заявка на абонемент',
+        `${currentUser.name} (${currentUser.email}) выбрал тариф «${plan.name}» — ${plan.price} ₽${plan.period}.${
           comment.trim() ? ` Комментарий: ${comment.trim()}` : ''
         }`,
-        type: 'info',
-        link: '/cabinet/admin/users',
-      });
+        { type: 'info', link: '/cabinet/admin/users' }
+      );
+      setSent(true);
+      toast('Заявка отправлена администратору');
+    } catch {
+      toast('Не удалось отправить заявку — попробуйте позже', 'error');
+    } finally {
+      setSending(false);
     }
-
-    setSent(true);
-    toast('Заявка отправлена администратору');
   };
 
   if (sent) {

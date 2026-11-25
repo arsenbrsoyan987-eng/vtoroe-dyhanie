@@ -8,10 +8,11 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import type { Session } from '@supabase/supabase-js';
+import type { Session, UserIdentity } from '@supabase/supabase-js';
 import { describeError, isSupabaseConfigured, supabase } from '../lib/supabase';
 import { passwordIssues } from '../lib/crypto';
 import { canDeleteUser } from '../lib/permissions';
+import { providerInfo, type OAuthKey } from '../lib/oauth';
 import {
   isoDate,
   normalizePhone,
@@ -45,6 +46,16 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<LoginResult>;
   logout: () => Promise<void>;
   signUp: (input: SignUpInput) => Promise<LoginResult>;
+  /** Вход через Яндекс, Google или Apple: уводит со страницы на провайдера */
+  loginWithOAuth: (key: OAuthKey, next?: string) => Promise<LoginResult>;
+  /** Привязать внешний аккаунт к текущему профилю */
+  linkOAuth: (key: OAuthKey) => Promise<LoginResult>;
+  /** Отвязать внешний аккаунт (последний способ входа отвязать нельзя) */
+  unlinkOAuth: (identityId: string) => Promise<LoginResult>;
+  /** Способы входа, привязанные к аккаунту */
+  identities: UserIdentity[];
+  /** Профиль после OAuth без имени или телефона — надо дозаполнить */
+  profileIncomplete: boolean;
   changePassword: (currentPassword: string, nextPassword: string) => Promise<LoginResult>;
   updateProfile: (patch: { name?: string; phone?: string; photo?: string }) => Promise<LoginResult>;
   registrations: TrainingRegistration[];
@@ -55,16 +66,29 @@ interface AuthContextType {
     capacity: number,
     extra?: { trainerId: string; directionId: string }
   ) => Promise<'confirmed' | 'waitlist' | 'already' | 'error'>;
-  cancelRegistration: (regId: string) => Promise<void>;
+  cancelRegistration: (regId: string, reason?: string, trainingLabel?: string) => Promise<void>;
   markAttended: (regId: string) => Promise<void>;
   addPersonalResult: (r: Omit<PersonalResult, 'id'>) => Promise<void>;
   removePersonalResult: (id: string) => Promise<void>;
   markNotificationRead: (id: string) => Promise<void>;
   addNotification: (n: Omit<Notification, 'id' | 'read' | 'createdAt'>) => Promise<void>;
+  /**
+   * Письмо всем администраторам школы.
+   *
+   * Имена админов спортсмену RLS не отдаёт, поэтому список получателей
+   * выбирает SECURITY DEFINER-функция notify_admins прямо в базе.
+   */
+  notifyAdmins: (
+    title: string,
+    message: string,
+    options?: { type?: Notification['type']; link?: string }
+  ) => Promise<void>;
   /** Перечитывает записи, уведомления и результаты */
   refresh: () => void;
   /** Мягкое удаление аккаунта: доступно только администратору */
   deleteUser: (id: string) => Promise<LoginResult>;
+  /** Пользователь удаляет свой аккаунт сам — данные остаются в истории школы */
+  deleteOwnAccount: () => Promise<LoginResult>;
   /** Отправляет письмо со ссылкой на восстановление пароля */
   sendPasswordReset: (email: string) => Promise<LoginResult>;
 }
@@ -81,6 +105,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [registrations, setRegistrations] = useState<TrainingRegistration[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [personalResults, setPersonalResults] = useState<PersonalResult[]>([]);
+  const [identities, setIdentities] = useState<UserIdentity[]>([]);
   const [reloadToken, setReloadToken] = useState(0);
 
   const userId = currentUser?.id ?? null;
@@ -108,12 +133,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const apply = async (session: Session | null) => {
       sessionRef.current = session;
       if (!session?.user) {
+        setIdentities([]);
         if (active) {
           setCurrentUser(null);
           setReady(true);
         }
         return;
       }
+
+      setIdentities(session.user.identities ?? []);
 
       try {
         const profile = await loadProfile(session);
@@ -139,6 +167,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_OUT') {
         sessionRef.current = null;
+        setIdentities([]);
         setCurrentUser(null);
         setReady(true);
         return;
@@ -271,7 +300,66 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(async () => {
     await supabase.auth.signOut();
     setCurrentUser(null);
+    setIdentities([]);
   }, []);
+
+  /**
+   * Вход через внешний сервис.
+   *
+   * Браузер уходит на страницу провайдера, поэтому промис почти всегда
+   * завершается только ошибкой: успешный возврат ловит onAuthStateChange.
+   */
+  const loginWithOAuth = useCallback(async (key: OAuthKey, next = '/cabinet'): Promise<LoginResult> => {
+    if (!isSupabaseConfigured) {
+      return { ok: false, error: 'Вход через внешние сервисы недоступен: база не подключена' };
+    }
+
+    const info = providerInfo(key);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: info.provider,
+      options: {
+        redirectTo: `${window.location.origin}${next}`,
+        queryParams: key === 'google' ? { prompt: 'select_account' } : undefined,
+      },
+    });
+
+    if (error) return { ok: false, error: describeError(error) };
+    return { ok: true };
+  }, []);
+
+  /** Привязка второго способа входа: пароль остаётся, добавляется кнопка */
+  const linkOAuth = useCallback(async (key: OAuthKey): Promise<LoginResult> => {
+    if (!currentUser) return { ok: false, error: 'Требуется вход в аккаунт' };
+
+    const info = providerInfo(key);
+    const { error } = await supabase.auth.linkIdentity({
+      provider: info.provider,
+      options: { redirectTo: `${window.location.origin}/cabinet/settings?linked=${key}` },
+    });
+
+    if (error) return { ok: false, error: describeError(error) };
+    return { ok: true };
+  }, [currentUser]);
+
+  const unlinkOAuth = useCallback(
+    async (identityId: string): Promise<LoginResult> => {
+      const identity = identities.find((i) => i.identity_id === identityId);
+      if (!identity) return { ok: false, error: 'Способ входа не найден' };
+
+      // Оставить аккаунт без единого способа входа нельзя
+      if (identities.length <= 1) {
+        return { ok: false, error: 'Это единственный способ входа — сначала привяжите другой' };
+      }
+
+      const { error } = await supabase.auth.unlinkIdentity(identity);
+      if (error) return { ok: false, error: describeError(error) };
+
+      const { data } = await supabase.auth.getUser();
+      setIdentities(data.user?.identities ?? []);
+      return { ok: true };
+    },
+    [identities]
+  );
 
   const signUp = useCallback(
     async (input: SignUpInput): Promise<LoginResult> => {
@@ -393,6 +481,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [refresh]
   );
 
+  const notifyAdmins = useCallback(
+    async (
+      title: string,
+      message: string,
+      options?: { type?: Notification['type']; link?: string }
+    ) => {
+      await supabase.rpc('notify_admins', {
+        p_title: title,
+        p_message: message,
+        p_type: options?.type ?? 'info',
+        p_link: options?.link ?? null,
+      });
+    },
+    []
+  );
+
   const register = useCallback(
     async (
       trainingId: string,
@@ -444,7 +548,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const cancelRegistration = useCallback(
-    async (regId: string) => {
+    async (regId: string, reason?: string, trainingLabel?: string) => {
       const target = registrations.find((r) => r.id === regId);
       if (!target) return;
 
@@ -471,9 +575,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
 
+      // Причина отмены уходит администраторам школы. Спортсмен не читает
+      // чужие профили, поэтому id админа узнаёт SECURITY DEFINER-функция.
+      // Ошибка не блокирует отмену: запись уже отменена, а письма — вторично.
+      if (reason?.trim()) {
+        const who = currentUser?.name ?? 'Спортсмен';
+        const what = trainingLabel ? `«${trainingLabel}»` : 'тренировку';
+        await notifyAdmins('Отмена записи', `${who} отменил ${what}. Причина: ${reason.trim()}`, {
+          type: 'warning',
+          link: '/cabinet/registrations',
+        });
+      }
+
       refresh();
     },
-    [registrations, addNotification, refresh]
+    [registrations, addNotification, refresh, currentUser, notifyAdmins]
   );
 
   const markAttended = useCallback(
@@ -549,6 +665,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { ok: true };
   }, []);
 
+  /**
+   * Самостоятельное удаление аккаунта.
+   *
+   * Строка профиля не стирается: на неё ссылаются записи и результаты,
+   * которые нужны школе для истории. Ставим deleted_at — RLS сразу
+   * перестаёт отдавать профиль, и вход блокируется.
+   */
+  const deleteOwnAccount = useCallback(async (): Promise<LoginResult> => {
+    if (!currentUser) return { ok: false, error: 'Требуется вход в аккаунт' };
+    if (currentUser.role === 'admin') {
+      return { ok: false, error: 'Аккаунт администратора удаляет только владелец школы' };
+    }
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({ deleted_at: new Date().toISOString() })
+      .eq('id', currentUser.id);
+
+    if (error) return { ok: false, error: describeError(error) };
+
+    await supabase.auth.signOut();
+    setCurrentUser(null);
+    setIdentities([]);
+    return { ok: true };
+  }, [currentUser]);
+
+  // После входа через Яндекс/Google/Apple в профиле может не быть телефона:
+  // без него тренер не свяжется со спортсменом, поэтому просим дозаполнить
+  const profileIncomplete = Boolean(
+    currentUser &&
+      identities.some((i) => i.provider !== 'email') &&
+      phoneIssue(currentUser.phone) !== null
+  );
+
   const value = useMemo<AuthContextType>(
     () => ({
       currentUser,
@@ -558,6 +708,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login,
       logout,
       signUp,
+      loginWithOAuth,
+      linkOAuth,
+      unlinkOAuth,
+      identities,
+      profileIncomplete,
       changePassword,
       updateProfile,
       registrations,
@@ -570,8 +725,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       removePersonalResult,
       markNotificationRead,
       addNotification,
+      notifyAdmins,
       refresh,
       deleteUser,
+      deleteOwnAccount,
       sendPasswordReset,
     }),
     [
@@ -581,6 +738,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login,
       logout,
       signUp,
+      loginWithOAuth,
+      linkOAuth,
+      unlinkOAuth,
+      identities,
+      profileIncomplete,
       changePassword,
       updateProfile,
       registrations,
@@ -593,8 +755,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       removePersonalResult,
       markNotificationRead,
       addNotification,
+      notifyAdmins,
       refresh,
       deleteUser,
+      deleteOwnAccount,
       sendPasswordReset,
     ]
   );

@@ -20,8 +20,10 @@ import {
   Quote,
   Settings,
   Shield,
+  Sparkles,
   Tent,
   TrendingUp,
+  UserRound,
   Users,
 } from 'lucide-react';
 
@@ -41,6 +43,7 @@ const ATHLETE_NAV: NavGroup[] = [
   {
     title: 'Аккаунт',
     items: [
+      { to: '/cabinet/loyalty', icon: Sparkles, label: 'Баллы клуба' },
       { to: '/cabinet/payment', icon: CreditCard, label: 'Абонемент' },
       { to: '/cabinet/notifications', icon: Bell, label: 'Уведомления' },
       { to: '/cabinet/settings', icon: Settings, label: 'Настройки' },
@@ -128,7 +131,7 @@ const ROLE_LABEL: Record<string, string> = {
 };
 
 export default function CabinetLayout() {
-  const { currentUser, logout, notifications } = useAuth();
+  const { currentUser, logout, notifications, profileIncomplete } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -277,6 +280,21 @@ export default function CabinetLayout() {
         </nav>
 
         <div className="px-4 py-6 sm:px-6 lg:px-8 lg:py-10">
+          {profileIncomplete && (
+            <div className="mb-6 flex flex-wrap items-center gap-3 rounded-2xl border border-navy/30 bg-navy/5 px-4 py-3">
+              <UserRound className="h-4 w-4 shrink-0 text-navy" />
+              <p className="flex-1 text-xs leading-relaxed text-navy">
+                Вы вошли через внешний сервис. Укажите телефон — тренеру нужно,
+                чтобы связаться с вами перед тренировкой.
+              </p>
+              <NavLink
+                to="/cabinet/settings"
+                className="rounded-full bg-navy/10 px-3 py-1.5 text-xs font-bold text-navy transition-colors hover:bg-navy/20"
+              >
+                Дозаполнить профиль
+              </NavLink>
+            </div>
+          )}
           {currentUser.mustChangePassword && (
             <div className="mb-6 flex flex-wrap items-center gap-3 rounded-2xl border border-amber-500/40 bg-amber-500/10 px-4 py-3">
               <Shield className="h-4 w-4 shrink-0 text-amber-700" />

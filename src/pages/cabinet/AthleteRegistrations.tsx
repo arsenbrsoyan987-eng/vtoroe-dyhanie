@@ -12,8 +12,10 @@ import {
   Panel,
   StatusBadge,
   Tabs,
+  fieldClass,
+  labelClass,
 } from '../../components/cabinet/ui';
-import { CalendarDays, Clock, MapPin, Users, Wallet } from 'lucide-react';
+import { CalendarDays, Clock, MapPin, Users, Wallet, X } from 'lucide-react';
 
 const formatDate = (iso: string) =>
   new Date(iso).toLocaleDateString('ru-RU', {
@@ -29,6 +31,8 @@ export default function AthleteRegistrations() {
   const { currentUser, registrations, register, cancelRegistration } = useAuth();
   const { toast } = useToast();
   const [tab, setTab] = useState<'mine' | 'all'>('mine');
+  const [cancelTarget, setCancelTarget] = useState<{ id: string; name: string } | null>(null);
+  const [cancelReason, setCancelReason] = useState('');
 
   const mine = useMemo(
     () =>
@@ -57,8 +61,16 @@ export default function AthleteRegistrations() {
   };
 
   const handleCancel = (regId: string, name: string) => {
-    cancelRegistration(regId);
-    toast(`Запись отменена: «${name}»`, 'info');
+    setCancelTarget({ id: regId, name });
+    setCancelReason('');
+  };
+
+  const confirmCancel = async () => {
+    if (!cancelTarget) return;
+    await cancelRegistration(cancelTarget.id, cancelReason, cancelTarget.name);
+    toast(`Запись отменена: «${cancelTarget.name}»`, 'info');
+    setCancelTarget(null);
+    setCancelReason('');
   };
 
   return (
@@ -79,6 +91,58 @@ export default function AthleteRegistrations() {
           ]}
         />
       </div>
+
+      {cancelTarget && (
+        <Panel className="fixed inset-x-4 top-1/2 z-50 -translate-y-1/2 border-brand/30 shadow-lift sm:inset-x-auto sm:left-1/2 sm:w-full sm:max-w-md sm:-translate-x-1/2">
+          <div className="mb-3 flex items-start justify-between gap-3">
+            <div>
+              <h2 className="text-base font-bold text-ink">Отменить запись</h2>
+              <p className="mt-1 text-xs text-graphite">«{cancelTarget.name}»</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setCancelTarget(null)}
+              className="text-graphite transition-colors hover:text-ink"
+              aria-label="Закрыть"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+
+          <label htmlFor="cancel-reason" className={labelClass}>
+            Причина (необязательно)
+          </label>
+          <textarea
+            id="cancel-reason"
+            value={cancelReason}
+            onChange={(e) => setCancelReason(e.target.value)}
+            rows={3}
+            placeholder="Например: заболел, уехал в командировку"
+            className={`${fieldClass} resize-none`}
+          />
+          <p className="mt-1.5 text-[0.68rem] leading-relaxed text-graphite">
+            Причина уйдёт администратору школы — он предупредит тренера и поможет перенести
+            занятие.
+          </p>
+
+          <div className="mt-4 flex gap-2">
+            <ActionButton onClick={confirmCancel} variant="danger">
+              Подтвердить отмену
+            </ActionButton>
+            <ActionButton onClick={() => setCancelTarget(null)} variant="outline">
+              Оставить запись
+            </ActionButton>
+          </div>
+        </Panel>
+      )}
+      {cancelTarget && (
+        <button
+          type="button"
+          aria-label="Закрыть окно отмены"
+          onClick={() => setCancelTarget(null)}
+          className="fixed inset-0 z-40 bg-ink/30"
+        />
+      )}
 
       {tab === 'mine' && (
         <div className="space-y-3">

@@ -2,8 +2,9 @@ import { useAuth } from '../../context/AuthContext';
 import { activeProfiles, useProfiles } from '../../store/profilesStore';
 import { useTrainings } from '../../store/trainingsStore';
 import { visibleTrainings } from '../../lib/access';
-import { EmptyState, PageHeader, Panel } from '../../components/cabinet/ui';
+import { EmptyState, PageHeader } from '../../components/cabinet/ui';
 import { countNoun } from '../../lib/plural';
+import { Link } from 'react-router-dom';
 
 export default function TrainerStudentsPage() {
   const trainings = useTrainings();
@@ -40,7 +41,11 @@ export default function TrainerStudentsPage() {
             const attended = regs.filter((r) => r.attended).length;
 
             return (
-              <Panel key={athlete.id}>
+              <Link
+                key={athlete.id}
+                to={`/cabinet/students/${athlete.id}`}
+                className="block rounded-2xl border border-line bg-paper p-5 shadow-card transition-all hover:-translate-y-0.5 hover:shadow-lift"
+              >
                 <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
                   <div className="flex min-w-0 items-center gap-3">
                     {athlete.photo ? (
@@ -60,6 +65,7 @@ export default function TrainerStudentsPage() {
                       {athlete.phone && (
                         <a
                           href={`tel:${athlete.phone}`}
+                          onClick={(e) => e.stopPropagation()}
                           className="mt-0.5 block text-xs font-semibold text-navy hover:underline"
                         >
                           {athlete.phone}
@@ -102,7 +108,7 @@ export default function TrainerStudentsPage() {
                     </div>
                   </div>
                 )}
-              </Panel>
+              </Link>
             );
           })}
         </div>

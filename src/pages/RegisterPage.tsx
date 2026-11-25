@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import OAuthButtons from '../components/ui/OAuthButtons';
 import Breadcrumbs from '../components/ui/Breadcrumbs';
 import { passwordIssues } from '../lib/crypto';
 import { CLUB_WELCOME_POINTS } from '../data/site';
@@ -210,6 +211,11 @@ export default function RegisterPage() {
                 <p className="text-center text-xs text-graphite">
                   Тренером можно стать по приглашению администратора школы.
                 </p>
+
+                <OAuthButtons
+                  action="register"
+                  next="/cabinet/settings?onboard=1"
+                />
 
                 <p className="border-t border-line pt-4 text-center text-xs text-graphite">
                   Уже есть аккаунт?{' '}

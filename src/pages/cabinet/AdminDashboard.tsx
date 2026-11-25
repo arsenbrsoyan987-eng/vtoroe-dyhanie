@@ -1,7 +1,10 @@
+import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { activeProfiles, useProfiles } from '../../store/profilesStore';
 import { useTrainings } from '../../store/trainingsStore';
+import { todayISO } from '../../lib/date';
+import { countNoun } from '../../lib/plural';
 import { EmptyState, PageHeader, Panel, PanelTitle, StatCard, StatusBadge } from '../../components/cabinet/ui';
 import {
   Camera,
@@ -14,6 +17,9 @@ import {
   PartyPopper,
   Tent,
   Inbox,
+  Sparkles,
+  UserCheck,
+  Activity,
 } from 'lucide-react';
 
 const QUICK_LINKS = [
@@ -48,6 +54,49 @@ export default function AdminDashboard() {
   const totalAttended = registrations.filter((r) => r.attended).length;
   const recent = registrations.slice(-6).reverse();
 
+  const today = todayISO();
+
+  const metrics = useMemo(() => {
+    const monthAgo = new Date(`${today}T12:00:00`);
+    monthAgo.setDate(monthAgo.getDate() - 30);
+    const cutoff = monthAgo.toISOString().slice(0, 10);
+
+    const weekAgo = new Date(`${today}T12:00:00`);
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    const weekCutoff = weekAgo.toISOString().slice(0, 10);
+
+    const upcoming = trainings.filter((t) => t.date >= today).length;
+    const newUsers = users.filter((u) => u.created >= cutoff).length;
+    const newUsersWeek = users.filter((u) => u.created >= weekCutoff).length;
+
+    const activeRegs = registrations.filter((r) => r.status !== 'cancelled');
+    const attendedMonth = activeRegs.filter((r) => r.attended && r.registeredAt >= cutoff).length;
+    const activeAthletes = new Set(
+      activeRegs.filter((r) => r.registeredAt >= cutoff).map((r) => r.userId)
+    ).size;
+
+    // Заполняемость: сколько мест занято на предстоящих занятиях
+    const upcomingTrainings = trainings.filter((t) => t.date >= today);
+    let seats = 0;
+    let taken = 0;
+    for (const t of upcomingTrainings) {
+      seats += t.spotsAvailable;
+      taken += activeRegs.filter((r) => r.trainingId === t.id && r.status === 'confirmed').length;
+    }
+    const fillRate = seats > 0 ? Math.round((taken / seats) * 100) : 0;
+
+    return {
+      upcoming,
+      newUsers,
+      newUsersWeek,
+      attendedMonth,
+      activeAthletes,
+      fillRate,
+      seats,
+      taken,
+    };
+  }, [trainings, registrations, users, today]);
+
   return (
     <div>
       <PageHeader
@@ -56,12 +105,69 @@ export default function AdminDashboard() {
         subtitle="Сводка по школе «Второе дыхание» и быстрый доступ к разделам."
       />
 
-      <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+      <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         <StatCard icon={Users} label="Пользователей" value={users.length} to="/cabinet/admin/users" />
         <StatCard icon={TrendingUp} label="Спортсменов" value={athletes} to="/cabinet/admin/users" />
         <StatCard icon={Users} label="Тренеров" value={trainers} to="/cabinet/admin/trainers" />
         <StatCard icon={ClipboardList} label="Записей" value={totalRegs} hint="без отменённых" />
         <StatCard icon={ClipboardList} label="Посещений" value={totalAttended} hint="отмечено вручную" />
+      </div>
+
+      <div className="mb-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="rounded-2xl border border-line bg-paper px-4 py-3.5">
+          <div className="flex items-center gap-2">
+            <UserCheck className="h-4 w-4 text-emerald-600" />
+            <p className="text-[0.62rem] font-bold uppercase tracking-[0.1em] text-graphite">
+              Новые аккаунты
+            </p>
+          </div>
+          <p className="mt-1.5 display text-2xl text-ink">
+            +{metrics.newUsersWeek}
+            <span className="ml-1 text-xs font-normal text-graphite">за неделю</span>
+          </p>
+          <p className="text-[0.68rem] text-graphite">
+            +{metrics.newUsers} за 30 дней
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-line bg-paper px-4 py-3.5">
+          <div className="flex items-center gap-2">
+            <Activity className="h-4 w-4 text-navy" />
+            <p className="text-[0.62rem] font-bold uppercase tracking-[0.1em] text-graphite">
+              Активные за месяц
+            </p>
+          </div>
+          <p className="mt-1.5 display text-2xl text-ink">{metrics.activeAthletes}</p>
+          <p className="text-[0.68rem] text-graphite">
+            {countNoun(metrics.activeAthletes, 'спортсмен записывался', 'спортсмена записывались', 'спортсменов записывались')}
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-line bg-paper px-4 py-3.5">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-amber-600" />
+            <p className="text-[0.62rem] font-bold uppercase tracking-[0.1em] text-graphite">
+              Заполняемость
+            </p>
+          </div>
+          <p className="mt-1.5 display text-2xl text-ink">{metrics.fillRate}%</p>
+          <p className="text-[0.68rem] text-graphite">
+            {metrics.taken} из {metrics.seats} мест
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-line bg-paper px-4 py-3.5">
+          <div className="flex items-center gap-2">
+            <Calendar className="h-4 w-4 text-brand" />
+            <p className="text-[0.62rem] font-bold uppercase tracking-[0.1em] text-graphite">
+              Предстоящих
+            </p>
+          </div>
+          <p className="mt-1.5 display text-2xl text-ink">{metrics.upcoming}</p>
+          <p className="text-[0.68rem] text-graphite">
+            {countNoun(metrics.upcoming, 'тренировка', 'тренировки', 'тренировок')} в расписании
+          </p>
+        </div>
       </div>
 
       <Panel className="mb-8">

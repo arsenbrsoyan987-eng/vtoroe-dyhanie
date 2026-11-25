@@ -1,7 +1,9 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useTrainings } from '../../store/trainingsStore';
-import { formatDate } from '../../lib/date';
+import { formatDate, isPastDate, todayISO } from '../../lib/date';
+import { loyaltySummary, weeklyStreak } from '../../lib/loyalty';
+import { countNoun } from '../../lib/plural';
 import {
   EmptyState,
   PageHeader,
@@ -11,14 +13,26 @@ import {
   StatusBadge,
   ActionButton,
 } from '../../components/cabinet/ui';
-import { Calendar, ClipboardList, TrendingUp, Bell, Settings, CreditCard, Download } from 'lucide-react';
+import {
+  Calendar,
+  ClipboardList,
+  TrendingUp,
+  Bell,
+  Settings,
+  CreditCard,
+  Download,
+  Flame,
+  Sparkles,
+} from 'lucide-react';
 
 const QUICK_LINKS = [
   { to: '/cabinet/registrations', icon: ClipboardList, label: 'Записи' },
   { to: '/cabinet/results', icon: TrendingUp, label: 'Результаты' },
   { to: '/cabinet/calendar', icon: Calendar, label: 'Календарь' },
+  { to: '/cabinet/loyalty', icon: Sparkles, label: 'Баллы' },
   { to: '/cabinet/payment', icon: CreditCard, label: 'Абонемент' },
   { to: '/cabinet/calendar-export', icon: Download, label: 'Экспорт' },
+  { to: '/cabinet/notifications', icon: Bell, label: 'Уведомления' },
   { to: '/cabinet/settings', icon: Settings, label: 'Настройки' },
 ];
 
@@ -28,23 +42,48 @@ export default function AthleteDashboard() {
   const navigate = useNavigate();
 
   const activeRegs = registrations.filter((r) => r.userId === currentUser!.id && r.status !== 'cancelled');
-  const upcomingRegs = activeRegs.filter((r) => {
-    const training = trainings.find((t) => t.id === r.trainingId);
-    return training && new Date(training.date) >= new Date();
-  });
+  const today = todayISO();
+  const upcomingRegs = activeRegs
+    .filter((r) => {
+      const training = trainings.find((t) => t.id === r.trainingId);
+      return training && !isPastDate(training.date);
+    })
+    .sort((a, b) => {
+      const ta = trainings.find((t) => t.id === a.trainingId);
+      const tb = trainings.find((t) => t.id === b.trainingId);
+      return `${ta?.date ?? ''}${ta?.time ?? ''}`.localeCompare(`${tb?.date ?? ''}${tb?.time ?? ''}`);
+    });
+
   const totalResults = personalResults.filter((r) => r.userId === currentUser!.id).length;
   const unread = notifications.filter((n) => n.userId === currentUser!.id && !n.read).length;
   const unreadList = notifications.filter((n) => n.userId === currentUser!.id && !n.read);
+
+  const loyalty = loyaltySummary(currentUser!.id, registrations, trainings, personalResults);
+  const streak = weeklyStreak(currentUser!.id, registrations, trainings);
+
+  // Сколько дней осталось до ближайшей тренировки
+  const nearest = upcomingRegs[0];
+  const nearestTraining = nearest ? trainings.find((t) => t.id === nearest.trainingId) : undefined;
+  const daysLeft = nearestTraining
+    ? Math.max(
+        0,
+        Math.round(
+          (new Date(`${nearestTraining.date}T12:00:00`).getTime() -
+            new Date(`${today}T12:00:00`).getTime()) /
+            86_400_000
+        )
+      )
+    : 0;
 
   return (
     <div>
       <PageHeader
         eyebrow="Мой сезон"
         title={`Привет, ${currentUser?.name ?? ''}!`}
-        subtitle="Записи на тренировки, результаты и уведомления — всё в одном месте."
+        subtitle="Записи на тренировки, результаты и баллы клуба — всё в одном месте."
       />
 
-      <div className="mb-8 grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard
           icon={ClipboardList}
           label="Мои записи"
@@ -54,20 +93,47 @@ export default function AthleteDashboard() {
         />
         <StatCard icon={TrendingUp} label="Результаты" value={totalResults} to="/cabinet/results" />
         <StatCard
-          icon={Bell}
-          label="Уведомления"
-          value={unread}
-          hint={unread > 0 ? 'непрочитанные' : 'всё прочитано'}
-          to="/cabinet/notifications"
+          icon={Sparkles}
+          label="Баллы клуба"
+          value={loyalty.balance}
+          hint={`статус «${loyalty.tier.name}»`}
+          to="/cabinet/loyalty"
         />
         <StatCard
-          icon={Calendar}
-          label="Ближайшая"
-          value={upcomingRegs.length > 0 ? '1' : '—'}
-          hint="тренировка в плане"
-          to="/cabinet/registrations"
+          icon={Flame}
+          label="Серия"
+          value={streak}
+          hint={countNoun(streak, 'неделя', 'недели', 'недель')}
+          to="/cabinet/loyalty"
         />
       </div>
+
+      {nearestTraining && (
+        <div className="mb-8 flex flex-wrap items-center gap-4 rounded-2xl border border-brand/25 bg-brand/5 px-4 py-3.5 sm:px-5">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand/10">
+            <Calendar className="h-5 w-5 text-brand" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-bold text-ink">
+              {nearestTraining.name}
+              {daysLeft === 0 && <span className="ml-2 text-brand">— сегодня</span>}
+              {daysLeft === 1 && <span className="ml-2 text-brand">— завтра</span>}
+              {daysLeft > 1 && (
+                <span className="ml-2 font-normal text-graphite">
+                  — через {daysLeft} {countNoun(daysLeft, 'день', 'дня', 'дней')}
+                </span>
+              )}
+            </p>
+            <p className="mt-0.5 text-xs text-graphite">
+              {formatDate(nearestTraining.date)} · {nearestTraining.time} ·{' '}
+              {nearestTraining.location} · тренер {nearestTraining.trainer}
+            </p>
+          </div>
+          <ActionButton to="/cabinet/registrations" variant="outline">
+            Мои записи
+          </ActionButton>
+        </div>
+      )}
 
       <div className="mb-8 grid gap-5 lg:grid-cols-[1.6fr_1fr]">
         <Panel>
@@ -112,6 +178,35 @@ export default function AthleteDashboard() {
         </Panel>
 
         <div className="space-y-5">
+          <Panel>
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <PanelTitle>Баллы и статус</PanelTitle>
+              <ActionButton to="/cabinet/loyalty" variant="ghost">
+                Подробнее
+              </ActionButton>
+            </div>
+            <p className="display text-3xl text-ink">
+              {loyalty.balance} <span className="text-lg text-graphite">₽</span>
+            </p>
+            <p className="mt-1 text-xs text-graphite">
+              Статус «{loyalty.tier.name}» · кэшбэк {loyalty.tier.cashback}%
+            </p>
+            {loyalty.nextTier && (
+              <>
+                <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-mist">
+                  <div
+                    className="h-full rounded-full bg-brand transition-all"
+                    style={{ width: `${loyalty.progress}%` }}
+                  />
+                </div>
+                <p className="mt-1.5 text-[0.68rem] text-graphite">
+                  До «{loyalty.nextTier.name}» — {loyalty.toNext}{' '}
+                  {countNoun(loyalty.toNext, 'тренировка', 'тренировки', 'тренировок')}
+                </p>
+              </>
+            )}
+          </Panel>
+
           {unread > 0 && (
             <Panel>
               <div className="mb-4 flex items-center justify-between gap-3">
@@ -133,15 +228,15 @@ export default function AthleteDashboard() {
 
           <Panel>
             <PanelTitle hint="Частые разделы кабинета.">Быстрый переход</PanelTitle>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-4 gap-2">
               {QUICK_LINKS.map((item) => (
                 <Link
                   key={item.to}
                   to={item.to}
-                  className="group rounded-xl border border-line bg-mist/60 p-3 text-center transition-colors hover:border-ink/20 hover:bg-paper"
+                  className="group rounded-xl border border-line bg-mist/60 p-2.5 text-center transition-colors hover:border-ink/20 hover:bg-paper"
                 >
-                  <item.icon className="mx-auto mb-1.5 h-4.5 w-4.5 text-graphite transition-colors group-hover:text-brand" />
-                  <span className="text-[0.68rem] font-semibold text-ink">{item.label}</span>
+                  <item.icon className="mx-auto mb-1.5 h-4 w-4 text-graphite transition-colors group-hover:text-brand" />
+                  <span className="text-[0.62rem] font-semibold text-ink">{item.label}</span>
                 </Link>
               ))}
             </div>

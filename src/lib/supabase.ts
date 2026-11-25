@@ -8,6 +8,10 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 const url = (import.meta.env.VITE_SUPABASE_URL as string | undefined)?.trim();
 const key = (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined)?.trim();
 
+/** Нужны снаружи: проверка списка включённых OAuth-провайдеров */
+export const supabaseUrl = url || '';
+export const supabaseAnonKey = key || '';
+
 export const isSupabaseConfigured = Boolean(url && key);
 
 /** Пререндер собирает статические страницы без обращений к сети */

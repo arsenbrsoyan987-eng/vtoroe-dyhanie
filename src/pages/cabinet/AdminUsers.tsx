@@ -7,9 +7,10 @@ import type { User } from '../../store/database';
 import { canDeleteUser, isAdmin, isOwner } from '../../lib/permissions';
 import { useTrainers } from '../../store/trainersStore';
 import Button from '../../components/ui/Button';
-import { Check, Copy, Mail, Plus, Radio, Search, ShieldCheck, Trash2, X } from 'lucide-react';
+import { Check, Copy, Download, Mail, Plus, Radio, Search, ShieldCheck, Trash2, X } from 'lucide-react';
 import { fieldClass, labelClass } from '../../components/cabinet/ui';
 import { countNoun } from '../../lib/plural';
+import { downloadCsv } from '../../lib/export';
 
 const ROLE_LABEL: Record<User['role'], string> = {
   athlete: 'Спортсмен',
@@ -42,6 +43,7 @@ export default function AdminUsers() {
   const trainers = useTrainers();
 
   const [query, setQuery] = useState('');
+  const [roleFilter, setRoleFilter] = useState<'all' | User['role']>('all');
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [form, setForm] = useState({
@@ -58,17 +60,38 @@ export default function AdminUsers() {
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return users;
-    return users.filter(
-      (u) =>
+    return users.filter((u) => {
+      if (roleFilter !== 'all' && u.role !== roleFilter) return false;
+      if (!q) return true;
+      return (
         u.name.toLowerCase().includes(q) ||
         u.email.toLowerCase().includes(q) ||
         u.phone.includes(q) ||
         ROLE_LABEL[u.role].toLowerCase().includes(q)
-    );
-  }, [users, query]);
+      );
+    });
+  }, [users, query, roleFilter]);
 
   const athletes = users.filter((u) => u.role === 'athlete').length;
+
+  /** Выгрузка текущей выборки: то, что видно на экране, попадает в файл */
+  const exportUsers = () => {
+    const rows: (string | number)[][] = [
+      ['Имя', 'Email', 'Телефон', 'Роль', 'Записей', 'В школе с'],
+    ];
+    for (const u of filtered) {
+      rows.push([
+        u.name,
+        u.email,
+        u.phone,
+        ROLE_LABEL[u.role],
+        registrations.filter((r) => r.userId === u.id && r.status !== 'cancelled').length,
+        u.created,
+      ]);
+    }
+    downloadCsv(`users-${new Date().toISOString().slice(0, 10)}.csv`, rows);
+    toast(`Выгружено ${filtered.length} ${countNoun(filtered.length, 'аккаунт', 'аккаунта', 'аккаунтов')}`);
+  };
 
   const invite = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -266,17 +289,22 @@ export default function AdminUsers() {
             Список обновляется в реальном времени — новые регистрации появляются сами
           </p>
         </div>
-        <Button onClick={() => setOpen((v) => !v)} variant={open ? 'outline' : 'primary'} size="sm">
-          {open ? (
-            <>
-              <X className="mr-1.5 h-4 w-4" /> Отмена
-            </>
-          ) : (
-            <>
-              <Plus className="mr-1.5 h-4 w-4" /> Пригласить
-            </>
-          )}
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button onClick={exportUsers} variant="outline" size="sm">
+            <Download className="mr-1.5 h-4 w-4" /> Экспорт
+          </Button>
+          <Button onClick={() => setOpen((v) => !v)} variant={open ? 'outline' : 'primary'} size="sm">
+            {open ? (
+              <>
+                <X className="mr-1.5 h-4 w-4" /> Отмена
+              </>
+            ) : (
+              <>
+                <Plus className="mr-1.5 h-4 w-4" /> Пригласить
+              </>
+            )}
+          </Button>
+        </div>
       </div>
 
       {open && (
@@ -363,15 +391,47 @@ export default function AdminUsers() {
         </div>
       )}
 
-      <div className="relative mb-4">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-graphite" />
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Поиск по имени, email, телефону или роли"
-          className={`${fieldClass} pl-10`}
-          aria-label="Поиск пользователей"
-        />
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <div className="relative min-w-[16rem] flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-graphite" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Поиск по имени, email, телефону или роли"
+            className={`${fieldClass} pl-10`}
+            aria-label="Поиск пользователей"
+          />
+        </div>
+
+        <div className="inline-flex flex-wrap gap-1 rounded-full border border-line bg-paper p-1">
+          {(
+            [
+              { value: 'all', label: 'Все' },
+              { value: 'athlete', label: 'Спортсмены' },
+              { value: 'trainer', label: 'Тренеры' },
+            ] as const
+          ).map((item) => {
+            const count =
+              item.value === 'all'
+                ? users.length
+                : users.filter((u) => u.role === item.value).length;
+            return (
+              <button
+                key={item.value}
+                type="button"
+                onClick={() => setRoleFilter(item.value)}
+                aria-pressed={roleFilter === item.value}
+                className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors ${
+                  roleFilter === item.value
+                    ? 'bg-ink text-white'
+                    : 'text-graphite hover:text-ink'
+                }`}
+              >
+                {item.label} · {count}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <div className="hidden overflow-x-auto rounded-xl border border-line sm:block">

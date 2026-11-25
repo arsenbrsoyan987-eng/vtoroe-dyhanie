@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import OAuthButtons from '../components/ui/OAuthButtons';
 import Breadcrumbs from '../components/ui/Breadcrumbs';
 import { Eye, EyeOff, Lock, Mail, ShieldCheck } from 'lucide-react';
 
@@ -185,6 +186,8 @@ export default function LoginPage() {
                     Забыли пароль?
                   </button>
                 </form>
+
+                <OAuthButtons action="login" next={from} />
 
                 <p className="mt-6 border-t border-line pt-5 text-center text-xs text-graphite">
                   Нет аккаунта?{' '}
