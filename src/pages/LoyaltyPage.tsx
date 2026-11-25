@@ -190,9 +190,9 @@ export default function LoyaltyPage() {
                 Сколько накопится за сезон
               </h2>
               <p className="mt-4 max-w-lg text-base leading-relaxed text-graphite">
-                Восемь групповых тренировок в месяц, одно мероприятие и один кемп —
-                это {example.toLocaleString('ru-RU')} баллов, то есть столько же рублей
-                на следующую программу.
+                Восемь групповых тренировок в месяц, один учебно-тренировочный сбор
+                и одна гонка — это {example.toLocaleString('ru-RU')} баллов, то есть
+                столько же рублей на следующую программу.
               </p>
               <p className="mt-3 max-w-lg text-sm leading-relaxed text-graphite">
                 Баллы живут 12 месяцев с момента начисления, приветственные — 60 дней.
@@ -207,15 +207,15 @@ export default function LoyaltyPage() {
               </div>
               <ul className="space-y-2.5 text-sm">
                 <li className="flex justify-between gap-4">
-                  <span className="text-graphite">8 тренировок × {CLUB_EARN[0].points}</span>
+                  <span className="text-graphite">8 групповых тренировок × {CLUB_EARN[0].points}</span>
                   <span className="font-semibold text-ink">{CLUB_EARN[0].points * 8}</span>
                 </li>
                 <li className="flex justify-between gap-4">
-                  <span className="text-graphite">1 мероприятие</span>
+                  <span className="text-graphite">1 учебно-тренировочный сбор</span>
                   <span className="font-semibold text-ink">{CLUB_EARN[2].points}</span>
                 </li>
                 <li className="flex justify-between gap-4">
-                  <span className="text-graphite">1 кемп</span>
+                  <span className="text-graphite">1 гонка</span>
                   <span className="font-semibold text-ink">{CLUB_EARN[3].points}</span>
                 </li>
                 <li className="flex justify-between gap-4 border-t border-line pt-3 text-base">

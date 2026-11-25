@@ -17,13 +17,12 @@ export default function ClubLoyalty() {
         <div className="grid gap-12 lg:grid-cols-[1.1fr_1fr] lg:items-start">
           {/* Заголовок + приветственные баллы */}
           <div>
-            <span className="eyebrow mb-4 text-brand">Клуб «Второго дыхания»</span>
             <h2 className="display text-4xl sm:text-5xl">
-              Тренировки, за которые возвращают деньги
+              Школа и команда Второе Дыхание
             </h2>
             <p className="mt-5 max-w-xl text-base leading-relaxed text-white/70 sm:text-lg">
               Баллы приходят за каждое занятие и событие, а списать их можно до 100%
-              стоимости абонемента, кемпа или мерча. 1 балл = 1 ₽.
+              стоимости абонемента или мерча. 1 балл = 1 ₽.
             </p>
 
             <div className="mt-8 flex items-center gap-5 rounded-2xl border border-white/10 bg-white/5 p-5">
