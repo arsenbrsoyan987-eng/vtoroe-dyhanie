@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { useTrainings } from '../../store/trainingsStore';
@@ -48,8 +49,11 @@ export default function TrainerPhotos() {
   const [onlyWithFiles, setOnlyWithFiles] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
+  // Переход из расписания: ?t=<id> сразу открывает нужное занятие
+  const [searchParams] = useSearchParams();
+  const fromUrl = searchParams.get('t') ?? '';
 
-  const activeId = selected || mine[0]?.id || '';
+  const activeId = selected || (mine.some((t) => t.id === fromUrl) ? fromUrl : '') || mine[0]?.id || '';
   const active = mine.find((t) => t.id === activeId);
   const gallery = photos.filter((p) => p.trainingId === activeId);
 
