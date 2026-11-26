@@ -13,6 +13,7 @@ import {
 } from '../../components/cabinet/ui';
 import { countNoun } from '../../lib/plural';
 import { BarChart3, Medal, Plus, Star, Trash2, X } from 'lucide-react';
+import { ProgressChart } from '../../components/cabinet/ProgressChart';
 
 const empty = {
   trainingId: '',
@@ -122,6 +123,61 @@ export default function AthleteResults() {
     ? (mine.reduce((s, r) => s + (r.rating ?? 0), 0) / mine.length).toFixed(1)
     : '—';
 
+  // --- График прогресса ---
+  const chartTrainings = useMemo(() => {
+    const ids = Array.from(new Set(mine.map((r) => r.trainingId)));
+    return ids.map((id) => ({
+      id,
+      name: trainings.find((t) => t.id === id)?.name ?? 'Тренировка',
+    }));
+  }, [mine, trainings]);
+
+  const [chartTraining, setChartTraining] = useState<string>('');
+  const activeTraining = chartTraining || chartTrainings[0]?.id || '';
+
+  const chartPoints = useMemo(() => {
+    if (!activeTraining) return [];
+    return mine
+      .filter((r) => r.trainingId === activeTraining)
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .map((r) => {
+        const sec = parseTime(r.time);
+        const km = parseDistance(r.distance);
+        return {
+          date: r.date,
+          caption: new Date(`${r.date}T12:00:00`).toLocaleDateString('ru-RU'),
+          seconds: sec,
+          km,
+        };
+      })
+      .filter((p) => p.seconds > 0 || p.km > 0);
+  }, [mine, activeTraining]);
+
+  const canChartTime = chartPoints.filter((p) => p.seconds > 0).length >= 2;
+  const canChartKm = chartPoints.filter((p) => p.km > 0).length >= 2;
+  const [metric, setMetric] = useState<'time' | 'distance'>('time');
+  const activeMetric = metric === 'time' ? (canChartTime ? 'time' : 'distance') : canChartKm ? 'distance' : 'time';
+
+  const timePoints = useMemo(
+    () =>
+      chartPoints
+        .filter((p) => p.seconds > 0)
+        .map((p) => ({
+          date: p.date,
+          caption: p.caption,
+          value: Math.round((p.seconds / 60) * 10) / 10,
+        })),
+    [chartPoints]
+  );
+
+  const kmPoints = useMemo(
+    () =>
+      chartPoints
+        .filter((p) => p.km > 0)
+        .map((p) => ({ date: p.date, caption: p.caption, value: p.km })),
+    [chartPoints]
+  );
+
   return (
     <div className="mx-auto max-w-4xl">
       <PageHeader
@@ -166,6 +222,63 @@ export default function AthleteResults() {
             <p className="text-xs text-graphite">Средняя оценка</p>
           </Panel>
         </div>
+      )}
+
+      {/* График прогресса */}
+      {chartPoints.length >= 2 && (canChartTime || canChartKm) && (
+        <Panel className="mb-6">
+          <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 className="text-base font-bold text-ink">Прогресс</h2>
+              <p className="mt-1 text-xs leading-relaxed text-graphite">
+                Линия идёт вверх — вы растёте: время считается так, что быстрее значит выше.
+              </p>
+            </div>
+            {(canChartTime && canChartKm) && (
+              <div className="flex gap-1 rounded-full border border-line bg-mist p-1">
+                <button
+                  onClick={() => setMetric('time')}
+                  className={`rounded-full px-3 py-1 text-[0.68rem] font-bold uppercase tracking-[0.08em] transition-colors ${
+                    activeMetric === 'time' ? 'bg-ink text-white' : 'text-graphite hover:text-ink'
+                  }`}
+                >
+                  Время
+                </button>
+                <button
+                  onClick={() => setMetric('distance')}
+                  className={`rounded-full px-3 py-1 text-[0.68rem] font-bold uppercase tracking-[0.08em] transition-colors ${
+                    activeMetric === 'distance' ? 'bg-ink text-white' : 'text-graphite hover:text-ink'
+                  }`}
+                >
+                  Дистанция
+                </button>
+              </div>
+            )}
+          </div>
+
+          {chartTrainings.length > 1 && (
+            <div className="mb-4">
+              <select
+                value={activeTraining}
+                onChange={(e) => setChartTraining(e.target.value)}
+                className={`${fieldClass} max-w-xs`}
+                aria-label="Тренировка для графика"
+              >
+                {chartTrainings.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {activeMetric === 'time' ? (
+            <ProgressChart points={timePoints} lowerIsBetter unit="мин" />
+          ) : (
+            <ProgressChart points={kmPoints} unit="км" />
+          )}
+        </Panel>
       )}
 
       {/* Лучшие результаты */}

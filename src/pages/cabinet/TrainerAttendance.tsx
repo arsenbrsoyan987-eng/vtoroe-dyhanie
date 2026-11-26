@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { useTrainings } from '../../store/trainingsStore';
@@ -11,7 +12,7 @@ import {
   PageHeader,
   Panel,
 } from '../../components/cabinet/ui';
-import { Check, Clock, Download, Search, Undo2 } from 'lucide-react';
+import { Check, Clock, Download, Search, Undo2, X } from 'lucide-react';
 
 export default function TrainerAttendancePage() {
   const trainings = useTrainings();
@@ -21,13 +22,21 @@ export default function TrainerAttendancePage() {
   const [showPast, setShowPast] = useState(true);
   const [search, setSearch] = useState('');
   const [busy, setBusy] = useState<string | null>(null);
+  const [params, setParams] = useSearchParams();
+  // Переход из расписания открывает сразу нужную тренировку
+  const focused = params.get('t') ?? '';
 
   const todayISO = todayISODate();
 
   const myTrainings = visibleTrainings(trainings, currentUser, registrations).sort((a, b) =>
     (a.date + a.time).localeCompare(b.date + b.time)
   );
-  const listed = showPast ? myTrainings : myTrainings.filter((t) => t.date >= todayISO);
+  const listed = useMemo(() => {
+    if (focused) return myTrainings.filter((t) => t.id === focused);
+    return showPast ? myTrainings : myTrainings.filter((t) => t.date >= todayISO);
+  }, [myTrainings, showPast, focused, todayISO]);
+
+  const focusedTraining = focused ? myTrainings.find((t) => t.id === focused) : undefined;
 
   const activeRegs = registrations.filter((r) => r.status !== 'cancelled');
 
@@ -104,6 +113,7 @@ export default function TrainerAttendancePage() {
             checked={showPast}
             onChange={(e) => setShowPast(e.target.checked)}
             className="h-4 w-4 accent-brand"
+            disabled={Boolean(focused)}
           />
           Показывать прошедшие
         </label>
@@ -119,6 +129,25 @@ export default function TrainerAttendancePage() {
           />
         </div>
       </div>
+
+      {focusedTraining && (
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-navy/20 bg-navy/5 px-4 py-3">
+          <p className="text-xs text-navy">
+            Показана одна тренировка:{' '}
+            <span className="font-bold">{focusedTraining.name}</span> · {focusedTraining.date}
+          </p>
+          <button
+            onClick={() => {
+              const next = new URLSearchParams(params);
+              next.delete('t');
+              setParams(next);
+            }}
+            className="flex items-center gap-1 rounded-full bg-paper px-3 py-1.5 text-[0.68rem] font-bold uppercase tracking-[0.08em] text-graphite transition-colors hover:text-ink"
+          >
+            <X className="h-3 w-3" /> Показать все
+          </button>
+        </div>
+      )}
 
       <div className="mb-5 grid grid-cols-3 gap-3">
         <div className="rounded-xl border border-line bg-paper px-4 py-3 text-center">

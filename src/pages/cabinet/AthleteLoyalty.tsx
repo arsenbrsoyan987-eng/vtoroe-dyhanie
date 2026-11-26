@@ -1,11 +1,13 @@
 import { useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useTrainings } from '../../store/trainingsStore';
 import { CLUB_EARN, CLUB_TIERS } from '../../data/site';
 import { loyaltySummary, shortDate, weeklyStreak } from '../../lib/loyalty';
+import { dateFromToday, todayISO } from '../../lib/date';
 import { ActionButton, EmptyState, PageHeader, Panel, PanelTitle, StatCard } from '../../components/cabinet/ui';
 import { countNoun } from '../../lib/plural';
-import { Flame, Gift, Sparkles, Trophy } from 'lucide-react';
+import { Flame, Gift, History, Hourglass, Sparkles, Trophy } from 'lucide-react';
 
 const KIND_STYLE: Record<string, string> = {
   welcome: 'bg-brand/10 text-brand',
@@ -33,6 +35,10 @@ export default function AthleteLoyalty() {
     () => weeklyStreak(currentUser?.id, registrations, trainings),
     [currentUser?.id, registrations, trainings]
   );
+
+  // Сроки сгорания считаем от сегодняшнего дня, а не от времени рендера
+  const today = todayISO();
+  const soonISO = dateFromToday(30);
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -63,6 +69,30 @@ export default function AthleteLoyalty() {
           hint={countNoun(streak, 'неделя подряд', 'недели подряд', 'недель подряд')}
         />
       </div>
+
+      {(summary.expiringSoon > 0 || summary.expired > 0) && (
+        <div className="mb-5 space-y-2">
+          {summary.expiringSoon > 0 && (
+            <div className="flex items-start gap-2.5 rounded-2xl border border-amber-500/30 bg-amber-500/5 px-4 py-3">
+              <Hourglass className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+              <p className="text-xs leading-relaxed text-amber-800">
+                <span className="font-bold">{summary.expiringSoon}</span>{' '}
+                {countNoun(summary.expiringSoon, 'балл сгорит', 'балла сгорят', 'баллов сгорят')}{' '}
+                в ближайшие 30 дней. Скажите администратору при оплате — спишем их первыми.
+              </p>
+            </div>
+          )}
+          {summary.expired > 0 && (
+            <div className="flex items-start gap-2.5 rounded-2xl border border-line bg-mist px-4 py-3">
+              <History className="mt-0.5 h-4 w-4 shrink-0 text-graphite" />
+              <p className="text-xs leading-relaxed text-graphite">
+                За всё время сгорело <span className="font-bold text-ink">{summary.expired}</span>{' '}
+                {countNoun(summary.expired, 'балл', 'балла', 'баллов')}: срок хранения истёк.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
 
       <Panel className="mb-5">
         <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
@@ -143,24 +173,55 @@ export default function AthleteLoyalty() {
             </div>
           ) : (
             <ul className="divide-y divide-line">
-              {summary.entries.slice(0, 25).map((entry) => (
-                <li key={entry.id} className="flex items-center justify-between gap-3 px-5 py-3 sm:px-6">
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-[0.58rem] font-bold uppercase tracking-[0.08em] ${KIND_STYLE[entry.kind]}`}
-                      >
-                        {KIND_LABEL[entry.kind]}
-                      </span>
-                      <span className="text-xs text-graphite">{shortDate(entry.date)}</span>
+              {summary.entries.slice(0, 25).map((entry) => {
+                const burned = entry.expiresOn < today;
+                const soon = !burned && entry.expiresOn <= soonISO;
+                return (
+                  <li
+                    key={entry.id}
+                    className={`flex items-center justify-between gap-3 px-5 py-3 sm:px-6 ${
+                      burned ? 'opacity-60' : ''
+                    }`}
+                  >
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-[0.58rem] font-bold uppercase tracking-[0.08em] ${KIND_STYLE[entry.kind]}`}
+                        >
+                          {KIND_LABEL[entry.kind]}
+                        </span>
+                        <span className="text-xs text-graphite">{shortDate(entry.date)}</span>
+                        {burned && (
+                          <span className="rounded-full bg-mist px-2 py-0.5 text-[0.58rem] font-bold uppercase tracking-[0.08em] text-graphite">
+                            Сгорело {shortDate(entry.expiresOn)}
+                          </span>
+                        )}
+                        {soon && (
+                          <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[0.58rem] font-bold uppercase tracking-[0.08em] text-amber-700">
+                            До {shortDate(entry.expiresOn)}
+                          </span>
+                        )}
+                      </div>
+                      <p className="mt-1 truncate text-sm font-semibold text-ink">{entry.title}</p>
+                      {entry.trainingId && (
+                        <Link
+                          to={`/schedule/${entry.trainingId}`}
+                          className="text-[0.68rem] font-semibold text-brand hover:underline"
+                        >
+                          Карточка тренировки
+                        </Link>
+                      )}
                     </div>
-                    <p className="mt-1 truncate text-sm font-semibold text-ink">{entry.title}</p>
-                  </div>
-                  <span className="shrink-0 text-sm font-bold text-emerald-700">
-                    +{entry.points}
-                  </span>
-                </li>
-              ))}
+                    <span
+                      className={`shrink-0 text-sm font-bold ${
+                        burned ? 'text-graphite line-through' : 'text-emerald-700'
+                      }`}
+                    >
+                      +{entry.points}
+                    </span>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </Panel>

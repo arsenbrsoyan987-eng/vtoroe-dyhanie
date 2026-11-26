@@ -13,6 +13,10 @@ export interface LoyaltyEntry {
   title: string;
   points: number;
   kind: 'welcome' | 'training' | 'camp' | 'race';
+  /** Тренировка, за которую начислены баллы — для перехода в карточку */
+  trainingId?: string;
+  /** Дата сгорания, YYYY-MM-DD; пусто — срок не ограничен */
+  expiresOn: string;
 }
 
 export interface LoyaltySummary {
@@ -20,8 +24,12 @@ export interface LoyaltySummary {
   earned: number;
   /** Начислено за последние 30 дней */
   recent: number;
-  /** Баланс к списанию */
+  /** Баланс к списанию: начислено минус сгоревшее */
   balance: number;
+  /** Уже сгорело */
+  expired: number;
+  /** Сгорит в ближайшие 30 дней */
+  expiringSoon: number;
   entries: LoyaltyEntry[];
   /** Текущий статус клуба */
   tier: (typeof CLUB_TIERS)[number];
@@ -57,6 +65,20 @@ function tierThreshold(requirement: string): number {
   return match ? Number(match[1]) : 0;
 }
 
+/** Приветственные баллы живут 60 дней, остальные — 12 месяцев */
+const WELCOME_TTL_DAYS = 60;
+const POINTS_TTL_MONTHS = 12;
+
+function expiresAfter(iso: string, kind: LoyaltyEntry['kind']): string {
+  const date = new Date(`${iso}T12:00:00`);
+  if (kind === 'welcome') {
+    date.setDate(date.getDate() + WELCOME_TTL_DAYS);
+  } else {
+    date.setMonth(date.getMonth() + POINTS_TTL_MONTHS);
+  }
+  return toISO(date);
+}
+
 export function loyaltySummary(
   userId: string | undefined,
   registrations: TrainingRegistration[],
@@ -76,16 +98,21 @@ export function loyaltySummary(
       if (points === 0) continue;
 
       const haystack = `${training?.name ?? ''} ${training?.level ?? ''}`.toLowerCase();
+      const kind: LoyaltyEntry['kind'] = /гонк|забег|старт|соревнов/.test(haystack)
+        ? 'race'
+        : /сбор|кемп|выезд/.test(haystack)
+          ? 'camp'
+          : 'training';
+      const date = training?.date ?? reg.registeredAt;
+
       entries.push({
         id: reg.id,
-        date: training?.date ?? reg.registeredAt,
+        date,
         title: training?.name ?? 'Тренировка',
         points,
-        kind: /гонк|забег|старт|соревнов/.test(haystack)
-          ? 'race'
-          : /сбор|кемп|выезд/.test(haystack)
-            ? 'camp'
-            : 'training',
+        kind,
+        ...(training ? { trainingId: training.id } : {}),
+        expiresOn: expiresAfter(date, kind),
       });
     }
 
@@ -98,6 +125,7 @@ export function loyaltySummary(
         title: 'Приветственные баллы',
         points: CLUB_WELCOME_POINTS,
         kind: 'welcome',
+        expiresOn: expiresAfter(first.registeredAt, 'welcome'),
       });
     }
   }
@@ -109,11 +137,23 @@ export function loyaltySummary(
     (r) => r.userId === userId && r.attended && r.status !== 'cancelled'
   ).length;
 
+  const today = toISO(new Date());
+  const expired = entries
+    .filter((e) => e.expiresOn < today)
+    .reduce((sum, e) => sum + e.points, 0);
+
   const monthAgo = new Date();
   monthAgo.setDate(monthAgo.getDate() - 30);
   const cutoff = monthAgo.toISOString().slice(0, 10);
   const recent = entries
     .filter((e) => e.date >= cutoff)
+    .reduce((sum, e) => sum + e.points, 0);
+
+  const soon = new Date();
+  soon.setDate(soon.getDate() + 30);
+  const soonCutoff = toISO(soon);
+  const expiringSoon = entries
+    .filter((e) => e.expiresOn >= today && e.expiresOn <= soonCutoff)
     .reduce((sum, e) => sum + e.points, 0);
 
   // Статус определяется числом посещений, а не баллами
@@ -135,7 +175,9 @@ export function loyaltySummary(
   return {
     earned,
     recent,
-    balance: earned,
+    balance: Math.max(0, earned - expired),
+    expired,
+    expiringSoon,
     entries,
     tier,
     nextTier,
