@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useTrainings } from '../../store/trainingsStore';
 import { toISODate } from '../../lib/date';
+import { countNoun } from '../../lib/plural';
 import {
   ActionButton,
   PageHeader,
@@ -70,6 +71,14 @@ export default function AthleteCalendarPage() {
 
   const monthCount = days.reduce((sum, day) => sum + getDayTrainings(day).length, 0);
 
+  // Сколько занятий месяца уже прошло и сколько ещё впереди
+  const todayStr = toISODate(now);
+  let pastCount = 0;
+  for (const day of days) {
+    if (toISODate(new Date(year, month, day)) < todayStr) pastCount += getDayTrainings(day).length;
+  }
+  const futureCount = monthCount - pastCount;
+
   const shiftMonth = (delta: number) =>
     setCursor(({ year, month }) => {
       const d = new Date(year, month + delta, 1);
@@ -126,7 +135,11 @@ export default function AthleteCalendarPage() {
       <PageHeader
         eyebrow="Мой сезон"
         title="Календарь"
-        subtitle={`${monthCount} тренировок в ${MONTHS[month].toLowerCase()}е — только ваши записи.`}
+        subtitle={
+          monthCount > 0
+            ? `${monthCount} ${countNoun(monthCount, 'тренировка', 'тренировки', 'тренировок')} в ${MONTHS[month].toLowerCase()}е — ${pastCount} прошло, ${futureCount} впереди.`
+            : `В ${MONTHS[month].toLowerCase()}е записей нет — самое время выбрать тренировку.`
+        }
         actions={
           <ActionButton onClick={handleExport} variant="outline">
             <Download className="h-3.5 w-3.5" />
