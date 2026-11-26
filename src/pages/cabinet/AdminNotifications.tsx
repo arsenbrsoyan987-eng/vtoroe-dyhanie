@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useProfiles } from '../../store/profilesStore';
 import { activeProfiles } from '../../store/profilesStore';
+import { describeError, supabase } from '../../lib/supabase';
 import {
   ActionButton,
   EmptyState,
@@ -33,7 +34,7 @@ const TYPE_LABEL: Record<string, string> = {
 };
 
 export default function AdminNotificationsPage() {
-  const { notifications, addNotification, registrations } = useAuth();
+  const { notifications, registrations, refresh } = useAuth();
   const profiles = useProfiles();
   // Рассылка идёт по живому списку из общей базы, а не по локальным копиям
   const users = activeProfiles(profiles);
@@ -76,34 +77,29 @@ export default function AdminNotificationsPage() {
     }
 
     setSending(true);
-    let count = 0;
-    let failed = 0;
-    for (const u of recipients) {
-      try {
-        await addNotification({
-          userId: u.id,
-          title: form.title,
-          message: form.message,
-          type: form.type,
-          ...(form.link.trim() ? { link: form.link.trim() } : {}),
-        });
-        count += 1;
-      } catch {
-        failed += 1;
-      }
-    }
+    // Один insert на всех получателей: цикл по addNotification давал
+    // по запросу на человека и перезагружал список после каждого
+    const payload = recipients.map((u) => ({
+      user_id: u.id,
+      title: form.title.trim(),
+      message: form.message.trim(),
+      type: form.type,
+      link: form.link.trim() || null,
+    }));
+
+    const { error } = await supabase.from('notifications').insert(payload);
     setSending(false);
-    setSent(count);
-    if (failed > 0) {
-      toast(
-        `Доставлено ${count}, не удалось ${failed} — проверьте права доступа в базе`,
-        'error'
-      );
-    } else {
-      toast(
-        `Отправлено: ${count} ${countNoun(count, 'получатель', 'получателя', 'получателей')}`
-      );
+
+    if (error) {
+      toast(describeError(error), 'error');
+      return;
     }
+
+    setSent(payload.length);
+    toast(
+      `Отправлено: ${payload.length} ${countNoun(payload.length, 'получатель', 'получателя', 'получателей')}`
+    );
+    refresh();
     setShowForm(false);
     setForm({ title: '', message: '', segment: 'all', type: 'info', link: '' });
   };
