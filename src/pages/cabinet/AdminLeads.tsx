@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { useToast } from '../../context/ToastContext';
 import { leadsStore, useLeads, type Lead } from '../../store/leadsStore';
 import { useTrainings } from '../../store/trainingsStore';
+import { dateFromToday } from '../../lib/date';
 import {
   ActionButton,
   EmptyState,
@@ -10,7 +11,8 @@ import {
   StatusBadge,
   Tabs,
 } from '../../components/cabinet/ui';
-import { Loader2, RefreshCw, Trash2 } from 'lucide-react';
+import { countNoun } from '../../lib/plural';
+import { Loader2, MessageSquare, RefreshCw, Search, Trash2, X } from 'lucide-react';
 
 const STATUS_LABEL: Record<Lead['status'], string> = {
   new: 'Новая',
@@ -77,7 +79,25 @@ export default function AdminLeads() {
 
   const open = leads.filter((l) => l.status !== 'closed');
   const closed = leads.filter((l) => l.status === 'closed');
-  const list = tab === 'open' ? open : closed;
+
+  // Заявка «остыла», если висит в статусе «новая» дольше трёх дней
+  const staleCutoff = dateFromToday(-3);
+  const stale = open.filter(
+    (l) => l.status === 'new' && l.createdAt.slice(0, 10) < staleCutoff
+  ).length;
+
+  const [search, setSearch] = useState('');
+  const base = tab === 'open' ? open : closed;
+  const q = search.trim().toLowerCase();
+  const list = q
+    ? base.filter(
+        (l) =>
+          l.name.toLowerCase().includes(q) ||
+          l.phone.includes(q) ||
+          l.email.toLowerCase().includes(q) ||
+          (l.trainingId ? trainingName(l.trainingId).toLowerCase().includes(q) : false)
+      )
+    : base;
 
   const renderList = () =>
     list.length === 0 ? (
@@ -106,6 +126,9 @@ export default function AdminLeads() {
               <th className="hidden px-4 py-2.5 text-[0.62rem] font-bold uppercase tracking-[0.1em] text-graphite md:table-cell">
                 Тренировка
               </th>
+              <th className="hidden px-4 py-2.5 text-[0.62rem] font-bold uppercase tracking-[0.1em] text-graphite lg:table-cell">
+                Сообщение
+              </th>
               <th className="px-4 py-2.5 text-[0.62rem] font-bold uppercase tracking-[0.1em] text-graphite">
                 Статус
               </th>
@@ -120,7 +143,14 @@ export default function AdminLeads() {
           <tbody>
             {list.map((l) => (
               <tr key={l.id} className="border-b border-line last:border-0 hover:bg-mist/50">
-                <td className="px-4 py-3 font-semibold text-ink">{l.name}</td>
+                <td className="px-4 py-3 font-semibold text-ink">
+                  {l.name}
+                  {l.message && (
+                    <span className="mt-1 block max-w-[14rem] text-[0.68rem] font-normal leading-relaxed text-graphite lg:hidden">
+                      {l.message}
+                    </span>
+                  )}
+                </td>
                 <td className="px-4 py-3">
                   <a href={`tel:${l.phone}`} className="font-medium text-navy hover:underline">
                     {l.phone}
@@ -137,6 +167,16 @@ export default function AdminLeads() {
                 </td>
                 <td className="hidden px-4 py-3 text-graphite md:table-cell">
                   {l.trainingId ? trainingName(l.trainingId) : 'Свободная заявка'}
+                </td>
+                <td className="hidden max-w-[16rem] px-4 py-3 text-graphite lg:table-cell">
+                  {l.message ? (
+                    <span className="flex items-start gap-1.5" title={l.message}>
+                      <MessageSquare className="mt-0.5 h-3.5 w-3.5 shrink-0 text-graphite/60" />
+                      <span className="line-clamp-2 text-xs leading-relaxed">{l.message}</span>
+                    </span>
+                  ) : (
+                    '—'
+                  )}
                 </td>
                 <td className="px-4 py-3">
                   <StatusBadge tone={STATUS_TONE[l.status]}>{STATUS_LABEL[l.status]}</StatusBadge>
@@ -208,6 +248,36 @@ export default function AdminLeads() {
             { value: 'closed', label: `Закрытые (${closed.length})` },
           ]}
         />
+      </div>
+
+      {stale > 0 && tab === 'open' && (
+        <div className="mb-4 rounded-2xl border border-amber-500/30 bg-amber-500/5 px-4 py-3">
+          <p className="text-xs leading-relaxed text-amber-800">
+            <span className="font-bold">{stale}</span>{' '}
+            {countNoun(stale, 'заявка ждёт', 'заявки ждут', 'заявок ждут')} ответа больше трёх
+            дней — позвоните, пока человек не ушёл к конкурентам.
+          </p>
+        </div>
+      )}
+
+      <div className="mb-4 flex items-center gap-2 rounded-full border border-line bg-paper px-3.5 py-2 text-xs">
+        <Search className="h-3.5 w-3.5 shrink-0 text-graphite/60" />
+        <input
+          type="text"
+          placeholder="Имя, телефон, email или тренировка…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full bg-transparent outline-none"
+        />
+        {search && (
+          <button
+            onClick={() => setSearch('')}
+            aria-label="Очистить поиск"
+            className="shrink-0 text-graphite hover:text-ink"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        )}
       </div>
 
       <Panel padded={false}>{renderList()}</Panel>
