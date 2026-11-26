@@ -7,6 +7,7 @@ import { useTrainings } from '../../store/trainingsStore';
 import { visibleTrainings } from '../../lib/access';
 import { formatDate, isPastDate } from '../../lib/date';
 import { loyaltySummary } from '../../lib/loyalty';
+import { countNoun } from '../../lib/plural';
 import {
   ActionButton,
   EmptyState,
@@ -30,6 +31,13 @@ import {
   Star,
   TrendingUp,
 } from 'lucide-react';
+
+/** Готовые сообщения: тренер пишет в спешке между занятиями */
+const TEMPLATES = [
+  'Не забудьте форму и воду на завтрашнюю тренировку.',
+  'Вы пропустили занятие — напишите, если нужна помощь с планом.',
+  'Отличный прогресс! Продолжаем в том же темпе.',
+];
 
 /**
  * Карточка спортсмена глазами тренера.
@@ -77,11 +85,17 @@ export default function TrainerStudentCard() {
     );
   }
 
-  const attended = regs.filter((r) => r.attended).length;
+  const past = regs.filter((r) => {
+    const t = trainings.find((x) => x.id === r.trainingId);
+    return t && isPastDate(t.date);
+  });
   const upcoming = regs.filter((r) => {
     const t = trainings.find((x) => x.id === r.trainingId);
     return t && !isPastDate(t.date);
-  }).length;
+  });
+  const attended = past.filter((r) => r.attended).length;
+  const missed = past.length - attended;
+  const rate = past.length > 0 ? Math.round((attended / past.length) * 100) : 0;
   const loyalty = loyaltySummary(athlete.id, registrations, trainings, []);
   const last = regs.find((r) => r.attended);
 
@@ -118,17 +132,22 @@ export default function TrainerStudentCard() {
       <PageHeader
         eyebrow="Карточка спортсмена"
         title={athlete.name}
-        subtitle={`Записей на ваши тренировки: ${regs.length} · посещений: ${attended}`}
+        subtitle={`${countNoun(regs.length, 'запись', 'записи', 'записей')} на ваши тренировки · ${countNoun(attended, 'посещение', 'посещения', 'посещений')}`}
       />
 
       <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatCard icon={CalendarDays} label="Посещений" value={attended} hint="у вас" />
-        <StatCard icon={Clock} label="Предстоящих" value={upcoming} hint="записей" />
+        <StatCard
+          icon={CalendarDays}
+          label="Посещений"
+          value={attended}
+          hint={missed > 0 ? `пропущено ${missed}` : 'без пропусков'}
+        />
+        <StatCard icon={Clock} label="Предстоящих" value={upcoming.length} hint="записей" />
         <StatCard
           icon={TrendingUp}
-          label="Баллы клуба"
-          value={loyalty.balance}
-          hint={`статус «${loyalty.tier.name}»`}
+          label="Явка"
+          value={`${rate}%`}
+          hint={past.length > 0 ? `из ${past.length}` : 'нет истории'}
         />
         <StatCard
           icon={Star}
@@ -136,6 +155,14 @@ export default function TrainerStudentCard() {
           value={last ? formatDate(last.registeredAt, false) : '—'}
         />
       </div>
+
+      {past.length >= 3 && rate < 60 && (
+        <div className="mb-5 rounded-2xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-xs leading-relaxed text-amber-800">
+          Спортсмен пропустил {missed} из {past.length} занятий у вас. Стоит
+          написать ему — возможно, изменилось расписание или не подходит
+          нагрузка.
+        </div>
+      )}
 
       <div className="grid gap-5 lg:grid-cols-[1fr_1.6fr]">
         <Panel>
@@ -192,15 +219,31 @@ export default function TrainerStudentCard() {
           </ul>
 
           <div className="mt-4">
-            <label className={labelClass}>Написать спортсмену</label>
+            <label htmlFor="student-message" className={labelClass}>
+              Написать спортсмену
+            </label>
             <textarea
+              id="student-message"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               rows={3}
               placeholder="Напоминание, совет, план тренировки..."
               className={`${fieldClass} resize-none`}
               disabled={sending}
+              maxLength={500}
             />
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {TEMPLATES.map((template) => (
+                <button
+                  key={template}
+                  type="button"
+                  onClick={() => setMessage(template)}
+                  className="rounded-full border border-line px-2.5 py-1 text-[0.62rem] text-graphite transition-colors hover:border-ink/25 hover:text-ink"
+                >
+                  {template.length > 32 ? `${template.slice(0, 30)}…` : template}
+                </button>
+              ))}
+            </div>
             <ActionButton
               onClick={handleSend}
               variant="primary"
@@ -229,11 +272,11 @@ export default function TrainerStudentCard() {
         </Panel>
 
         <Panel padded={false}>
-          <div className="flex items-center justify-between gap-3 p-5 pb-3 sm:p-6 sm:pb-3">
+          <div className="flex flex-wrap items-center justify-between gap-3 p-5 pb-3 sm:p-6 sm:pb-3">
             <div className="inline-flex flex-wrap gap-1 rounded-full border border-line bg-paper p-1">
               {(
                 [
-                  { value: 'visits', label: 'Посещения' },
+                  { value: 'visits', label: `Посещения (${regs.length})` },
                   { value: 'results', label: 'Результаты' },
                 ] as const
               ).map((item) => (
@@ -250,6 +293,9 @@ export default function TrainerStudentCard() {
                 </button>
               ))}
             </div>
+            <span className="text-[0.62rem] text-graphite">
+              Баллы: {loyalty.balance} · «{loyalty.tier.name}»
+            </span>
           </div>
 
           {tab === 'visits' && (
@@ -263,7 +309,7 @@ export default function TrainerStudentCard() {
                   {regs.map((reg) => {
                     const training = trainings.find((t) => t.id === reg.trainingId);
                     if (!training) return null;
-                    const past = isPastDate(training.date);
+                    const isPast = isPastDate(training.date);
                     return (
                       <li key={reg.id} className="px-5 py-3 sm:px-6">
                         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -286,11 +332,11 @@ export default function TrainerStudentCard() {
                           </div>
                           <div className="flex shrink-0 gap-1.5">
                             {reg.attended && <StatusBadge tone="green">Посетил</StatusBadge>}
-                            {!reg.attended && past && <StatusBadge tone="red">Пропуск</StatusBadge>}
-                            {!past && reg.status === 'waitlist' && (
+                            {!reg.attended && isPast && <StatusBadge tone="red">Пропуск</StatusBadge>}
+                            {!isPast && reg.status === 'waitlist' && (
                               <StatusBadge tone="yellow">Ожидание</StatusBadge>
                             )}
-                            {!past && reg.status === 'confirmed' && (
+                            {!isPast && reg.status === 'confirmed' && (
                               <StatusBadge tone="blue">Записан</StatusBadge>
                             )}
                           </div>
