@@ -77,6 +77,41 @@ export default function TrainerDashboard() {
     return [...firstSeen.entries()].filter(([, date]) => date >= cutoff).length;
   }, [myRegs, today]);
 
+  // Сегодняшние занятия: их тренер ведёт прямо сейчас
+  const todayTrainings = myTrainings.filter((t) => t.date === today);
+  // Незакрытые отметки: прошедшие занятия, где кого-то ещё не отметили
+  const pendingMarks = useMemo(() => {
+    const rows: { training: (typeof myTrainings)[number]; count: number }[] = [];
+    for (const t of myTrainings) {
+      if (t.date > today) continue;
+      const unmarked = registrations.filter(
+        (r) => r.trainingId === t.id && r.status !== 'cancelled' && !r.attended
+      ).length;
+      if (unmarked > 0) rows.push({ training: t, count: unmarked });
+    }
+    return rows.sort((a, b) => b.training.date.localeCompare(a.training.date)).slice(0, 4);
+  }, [myTrainings, registrations, today]);
+
+  // Явка по направлениям, которые ведёт тренер
+  const byDirection = useMemo(() => {
+    const map = new Map<string, { regs: number; attended: number }>();
+    for (const r of myRegs) {
+      const training = myTrainings.find((t) => t.id === r.trainingId);
+      if (!training) continue;
+      const item = map.get(training.directionName) ?? { regs: 0, attended: 0 };
+      item.regs += 1;
+      if (r.attended) item.attended += 1;
+      map.set(training.directionName, item);
+    }
+    return [...map.entries()]
+      .map(([name, v]) => ({
+        name,
+        ...v,
+        rate: v.regs > 0 ? Math.round((v.attended / v.regs) * 100) : 0,
+      }))
+      .sort((a, b) => b.regs - a.regs);
+  }, [myRegs, myTrainings]);
+
   return (
     <div>
       <PageHeader
@@ -155,6 +190,70 @@ export default function TrainerDashboard() {
         </div>
       </div>
 
+      {todayTrainings.length > 0 && (
+        <Panel className="mb-5 border-brand/25 bg-brand/5">
+          <PanelTitle hint="Начинаются сегодня — проверьте списки участников заранее.">
+            Сегодня у вас {todayTrainings.length}{' '}
+            {countNoun(todayTrainings.length, 'тренировка', 'тренировки', 'тренировок')}
+          </PanelTitle>
+          <ul className="space-y-2">
+            {todayTrainings.map((t) => {
+              const regCount = registrations.filter(
+                (r) => r.trainingId === t.id && r.status !== 'cancelled'
+              ).length;
+              return (
+                <li
+                  key={t.id}
+                  className="flex flex-col gap-2 rounded-xl bg-paper px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-ink">{t.name}</p>
+                    <p className="text-xs text-graphite">
+                      {t.time} · {t.duration} · {t.location}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <span className="rounded-full bg-navy/10 px-2.5 py-1 text-[0.68rem] font-bold text-navy">
+                      {regCount} {countNoun(regCount, 'человек', 'человека', 'человек')}
+                    </span>
+                    <ActionButton to={`/cabinet/attendance?t=${t.id}`} variant="outline">
+                      Отметить
+                    </ActionButton>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </Panel>
+      )}
+
+      {pendingMarks.length > 0 && (
+        <Panel className="mb-5 border-amber-500/30 bg-amber-500/5">
+          <PanelTitle hint="Занятие прошло, а посещение отмечено не у всех — баллы спортсмены не получат.">
+            Нужно закрыть отметки
+          </PanelTitle>
+          <ul className="space-y-2">
+            {pendingMarks.map(({ training, count }) => (
+              <li
+                key={training.id}
+                className="flex flex-col gap-2 rounded-xl bg-paper px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold text-ink">{training.name}</p>
+                  <p className="text-xs text-graphite">
+                    {formatDate(training.date)} · не отмечено {count}{' '}
+                    {countNoun(count, 'человек', 'человека', 'человек')}
+                  </p>
+                </div>
+                <ActionButton to={`/cabinet/attendance?t=${training.id}`} variant="outline">
+                  Доотметить
+                </ActionButton>
+              </li>
+            ))}
+          </ul>
+        </Panel>
+      )}
+
       <div className="grid gap-5 lg:grid-cols-[1.5fr_1fr]">
         <Panel>
           <div className="mb-4 flex items-center justify-between gap-3">
@@ -189,9 +288,9 @@ export default function TrainerDashboard() {
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
                       <span className="rounded-full bg-navy/10 px-2.5 py-1 text-[0.68rem] font-bold text-navy">
-                        {regCount} чел.
+                        {regCount} {countNoun(regCount, 'человек', 'человека', 'человек')}
                       </span>
-                      <ActionButton to="/cabinet/attendance" variant="outline">
+                      <ActionButton to={`/cabinet/attendance?t=${t.id}`} variant="outline">
                         Участники
                       </ActionButton>
                     </div>
@@ -240,6 +339,40 @@ export default function TrainerDashboard() {
             <ActionButton to="/cabinet/students" variant="outline" className="mt-3 w-full">
               Все спортсмены
             </ActionButton>
+          </Panel>
+
+          <Panel>
+            <PanelTitle hint="Явка по направлениям, которые вы ведёте.">
+              Направления
+            </PanelTitle>
+            {byDirection.length === 0 ? (
+              <EmptyState title="Пока пусто" text="Появится после первых записей." />
+            ) : (
+              <ul className="space-y-2.5">
+                {byDirection.map((d) => (
+                  <li key={d.name}>
+                    <div className="mb-1 flex items-center justify-between gap-2">
+                      <span className="truncate text-xs font-semibold text-ink">{d.name}</span>
+                      <span className="shrink-0 text-[0.68rem] text-graphite">
+                        {d.attended}/{d.regs} · {d.rate}%
+                      </span>
+                    </div>
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-mist">
+                      <div
+                        className={`h-full rounded-full ${
+                          d.rate >= 70
+                            ? 'bg-emerald-500'
+                            : d.rate >= 40
+                              ? 'bg-amber-500'
+                              : 'bg-brand'
+                        }`}
+                        style={{ width: `${Math.max(4, d.rate)}%` }}
+                      />
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
           </Panel>
 
           <Panel>
