@@ -5,14 +5,23 @@ import { useTrainings } from '../../store/trainingsStore';
 import {
   addTrainingPhoto,
   removeTrainingPhoto,
+  updateTrainingPhoto,
   useTrainingPhotos,
 } from '../../store/trainingPhotosStore';
 import { deleteStorageFile, isVideoUrl } from '../../lib/upload';
 import { visibleTrainings } from '../../lib/access';
 import { formatDate, isPastDate } from '../../lib/date';
+import { countNoun } from '../../lib/plural';
 import PhotoUploader from '../../components/ui/PhotoUploader';
-import { EmptyState, PageHeader, Panel, fieldClass, labelClass } from '../../components/cabinet/ui';
-import { Camera, Trash2 } from 'lucide-react';
+import {
+  EmptyState,
+  PageHeader,
+  Panel,
+  StatusBadge,
+  fieldClass,
+  labelClass,
+} from '../../components/cabinet/ui';
+import { Camera, Check, Film, Image, Pencil, Trash2, X } from 'lucide-react';
 
 /**
  * Фото и видео тренировок: тренер выбирает своё занятие и загружает файлы.
@@ -33,13 +42,34 @@ export default function TrainerPhotos() {
       if (pastA !== pastB) return pastA - pastB;
       return (b.date + b.time).localeCompare(a.date + a.time);
     });
-  }, [trainings, currentUser]);
+  }, [trainings, currentUser, registrations]);
 
   const [selected, setSelected] = useState<string>('');
+  const [onlyWithFiles, setOnlyWithFiles] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [draft, setDraft] = useState('');
+
   const activeId = selected || mine[0]?.id || '';
   const active = mine.find((t) => t.id === activeId);
   const gallery = photos.filter((p) => p.trainingId === activeId);
-  const totalMine = photos.filter((p) => mine.some((t) => t.id === p.trainingId)).length;
+
+  /** Сколько файлов у каждой тренировки — по нему считаем итоги и фильтр */
+  const counts = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const p of photos) {
+      map.set(p.trainingId, (map.get(p.trainingId) ?? 0) + 1);
+    }
+    return map;
+  }, [photos]);
+
+  const totalMine = mine.reduce((sum, t) => sum + (counts.get(t.id) ?? 0), 0);
+  const covered = mine.filter((t) => (counts.get(t.id) ?? 0) > 0).length;
+
+  const options = onlyWithFiles ? mine.filter((t) => (counts.get(t.id) ?? 0) > 0) : mine;
+  const pastOptions = options.filter((t) => isPastDate(t.date));
+  const futureOptions = options.filter((t) => !isPastDate(t.date));
+
+  const galleryVideos = gallery.filter((p) => isVideoUrl(p.url)).length;
 
   const handleUploaded = async (url: string) => {
     if (!currentUser || !activeId) return;
@@ -52,13 +82,41 @@ export default function TrainerPhotos() {
   };
 
   const remove = async (id: string, url: string) => {
+    if (!window.confirm('Удалить файл из галереи безвозвратно?')) return;
     try {
       await removeTrainingPhoto(id);
       await deleteStorageFile(url);
-      toast('Фото удалено', 'info');
+      toast('Файл удалён', 'info');
     } catch (err) {
-      toast(err instanceof Error ? err.message : 'Не удалось удалить фото', 'error');
+      toast(err instanceof Error ? err.message : 'Не удалось удалить файл', 'error');
     }
+  };
+
+  const startEdit = (id: string, caption: string) => {
+    setEditingId(id);
+    setDraft(caption);
+  };
+
+  const saveCaption = async (id: string) => {
+    try {
+      await updateTrainingPhoto(id, draft.trim());
+      toast('Подпись сохранена');
+      setEditingId(null);
+      setDraft('');
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Не удалось сохранить подпись', 'error');
+    }
+  };
+
+  const renderOption = (t: (typeof mine)[number]) => {
+    const total = counts.get(t.id) ?? 0;
+    return (
+      <option key={t.id} value={t.id}>
+        {formatDate(t.date, false)} · {t.name}
+        {total > 0 ? ` — ${total}` : ''}
+        {isPastDate(t.date) ? ' (прошла)' : ''}
+      </option>
+    );
   };
 
   return (
@@ -66,7 +124,7 @@ export default function TrainerPhotos() {
       <PageHeader
         eyebrow="Контент"
         title="Фото и видео тренировок"
-        subtitle={`${totalMine} файлов — сразу появляются в галерее на странице тренировки.`}
+        subtitle={`${countNoun(totalMine, 'файл', 'файла', 'файлов')} — сразу появляются в галерее на странице тренировки.`}
       />
 
       {mine.length === 0 ? (
@@ -76,26 +134,75 @@ export default function TrainerPhotos() {
         />
       ) : (
         <>
+          <div className="mb-4 grid grid-cols-3 gap-3">
+            {[
+              { icon: Image, label: 'Всего файлов', value: totalMine },
+              { icon: Camera, label: 'С галереей', value: `${covered} из ${mine.length}` },
+              {
+                icon: Film,
+                label: 'В этой тренировке',
+                value: gallery.length,
+              },
+            ].map((stat) => (
+              <div
+                key={stat.label}
+                className="rounded-2xl border border-line bg-paper p-3.5 shadow-card"
+              >
+                <stat.icon className="mb-2 h-4 w-4 text-brand" />
+                <p className="display text-xl text-ink">{stat.value}</p>
+                <p className="text-[0.62rem] text-graphite">{stat.label}</p>
+              </div>
+            ))}
+          </div>
+
           <Panel className="mb-4">
-            <label htmlFor="photo-training" className={labelClass}>
-              Тренировка
-            </label>
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <label htmlFor="photo-training" className={`${labelClass} mb-0`}>
+                Тренировка
+              </label>
+              <button
+                type="button"
+                onClick={() => setOnlyWithFiles((v) => !v)}
+                aria-pressed={onlyWithFiles}
+                className={`rounded-full border px-3 py-1 text-[0.62rem] font-bold uppercase tracking-[0.08em] transition-colors ${
+                  onlyWithFiles
+                    ? 'border-brand/40 bg-brand/5 text-brand'
+                    : 'border-line text-graphite hover:text-ink'
+                }`}
+              >
+                Только с файлами
+              </button>
+            </div>
             <select
               id="photo-training"
-              value={activeId}
+              value={options.some((t) => t.id === activeId) ? activeId : (options[0]?.id ?? '')}
               onChange={(e) => setSelected(e.target.value)}
-              className={fieldClass}
+              className={`${fieldClass} mt-1.5`}
             >
-              {mine.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {formatDate(t.date, false)} · {t.name}
-                  {isPastDate(t.date) ? ' (прошла)' : ''}
-                </option>
-              ))}
+              {pastOptions.length > 0 && (
+                <optgroup label="Прошедшие">
+                  {pastOptions.map(renderOption)}
+                </optgroup>
+              )}
+              {futureOptions.length > 0 && (
+                <optgroup label="Предстоящие">
+                  {futureOptions.map(renderOption)}
+                </optgroup>
+              )}
             </select>
-            {active && (
+            {options.length === 0 && (
               <p className="mt-2 text-xs text-graphite">
+                Ни у одной тренировки ещё нет файлов — снимите фильтр, чтобы выбрать занятие.
+              </p>
+            )}
+            {active && (
+              <p className="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-graphite">
                 {active.directionName} · {active.location} · файлы видит любой посетитель сайта
+                {galleryVideos > 0 && (
+                  <StatusBadge tone="blue">
+                    {countNoun(galleryVideos, 'видео', 'видео', 'видео')}
+                  </StatusBadge>
+                )}
               </p>
             )}
             <div className="mt-4">
@@ -139,15 +246,70 @@ export default function TrainerPhotos() {
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
-                  {photo.authorName && (
+
+                  {editingId === photo.id ? (
+                    <div className="flex items-center gap-1 px-2 py-1.5">
+                      <input
+                        value={draft}
+                        onChange={(e) => setDraft(e.target.value)}
+                        placeholder="Подпись к файлу"
+                        maxLength={120}
+                        autoFocus
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') void saveCaption(photo.id);
+                          if (e.key === 'Escape') setEditingId(null);
+                        }}
+                        className="min-w-0 flex-1 rounded-lg border border-line bg-mist px-2 py-1 text-[0.68rem] text-ink focus:border-brand focus:outline-none"
+                        aria-label="Подпись к файлу"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => void saveCaption(photo.id)}
+                        className="rounded-full p-1 text-emerald-700 hover:bg-emerald-500/10"
+                        aria-label="Сохранить подпись"
+                      >
+                        <Check className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEditingId(null)}
+                        className="rounded-full p-1 text-graphite hover:bg-mist"
+                        aria-label="Отменить"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ) : (
                     <figcaption className="flex items-center gap-1.5 px-3 py-1.5 text-[0.62rem] text-graphite">
-                      <Camera className="h-3 w-3" />
-                      {photo.authorName}
+                      {isVideoUrl(photo.url) ? (
+                        <Film className="h-3 w-3 shrink-0" />
+                      ) : (
+                        <Camera className="h-3 w-3 shrink-0" />
+                      )}
+                      <span className="min-w-0 flex-1 truncate">
+                        {photo.caption || photo.authorName || 'Без подписи'}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => startEdit(photo.id, photo.caption)}
+                        className="shrink-0 rounded-full p-1 text-graphite opacity-0 transition-opacity hover:text-ink group-hover:opacity-100 focus:opacity-100"
+                        aria-label="Изменить подпись"
+                        title="Изменить подпись"
+                      >
+                        <Pencil className="h-3 w-3" />
+                      </button>
                     </figcaption>
                   )}
                 </figure>
               ))}
             </div>
+          )}
+
+          {gallery.length > 0 && (
+            <p className="mt-4 text-[0.68rem] text-graphite">
+              Подпись видна под файлом на странице тренировки. Нажмите на карандаш, чтобы
+              добавить контекст: дистанцию, погоду, имена участников.
+            </p>
           )}
         </>
       )}
