@@ -26,6 +26,7 @@ import {
 import { fieldClass, labelClass } from '../../components/cabinet/ui';
 import { countNoun } from '../../lib/plural';
 import { downloadCsv } from '../../lib/export';
+import { dateFromToday } from '../../lib/date';
 
 const ROLE_LABEL: Record<User['role'], string> = {
   athlete: 'Спортсмен',
@@ -60,6 +61,7 @@ export default function AdminUsers() {
 
   const [query, setQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<'all' | User['role']>('all');
+  const [segment, setSegment] = useState<'all' | 'new' | 'idle'>('all');
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [form, setForm] = useState({
@@ -78,7 +80,24 @@ export default function AdminUsers() {
 
   const users = useMemo(() => profiles.filter((p) => !p.deleted), [profiles]);
 
-  const filtered = useMemo(() => {
+  // Активность: последняя запись и число посещений по каждому пользователю
+  const activity = useMemo(() => {
+    const map = new Map<string, { last: string; attended: number; total: number }>();
+    for (const r of registrations) {
+      if (r.status === 'cancelled') continue;
+      const item = map.get(r.userId) ?? { last: '', attended: 0, total: 0 };
+      item.total += 1;
+      if (r.attended) item.attended += 1;
+      if (r.registeredAt > item.last) item.last = r.registeredAt;
+      map.set(r.userId, item);
+    }
+    return map;
+  }, [registrations]);
+
+  const monthAgoISO = dateFromToday(-30);
+
+  // База для сегментов: роль и поиск уже учтены, активность — ещё нет
+  const byRoleQuery = useMemo(() => {
     const q = query.trim().toLowerCase();
     return users.filter((u) => {
       if (roleFilter !== 'all' && u.role !== roleFilter) return false;
@@ -91,6 +110,28 @@ export default function AdminUsers() {
       );
     });
   }, [users, query, roleFilter]);
+
+  const idleCutoff = dateFromToday(-60);
+  const isNew = (u: User) => u.created >= monthAgoISO;
+  // «Неактивный»: нет записей вовсе или последняя старше 60 дней
+  const isIdle = (u: User) => {
+    const act = activity.get(u.id);
+    return !act || act.last < idleCutoff;
+  };
+
+  const filtered = useMemo(() => {
+    if (segment === 'new') return byRoleQuery.filter(isNew);
+    if (segment === 'idle') return byRoleQuery.filter(isIdle);
+    return byRoleQuery;
+    // isNew/isIdle читают свежие activity и границы периода
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [byRoleQuery, segment]);
+
+  const segmentCounts = {
+    all: byRoleQuery.length,
+    new: byRoleQuery.filter(isNew).length,
+    idle: byRoleQuery.filter(isIdle).length,
+  };
 
   const athletes = users.filter((u) => u.role === 'athlete').length;
 
@@ -493,6 +534,32 @@ export default function AdminUsers() {
             );
           })}
         </div>
+
+        <div className="inline-flex flex-wrap gap-1 rounded-full border border-line bg-paper p-1">
+          {(
+            [
+              { value: 'all', label: 'Все' },
+              { value: 'new', label: 'Новые' },
+              { value: 'idle', label: 'Неактивные' },
+            ] as const
+          ).map((item) => {
+            return (
+              <button
+                key={item.value}
+                type="button"
+                onClick={() => setSegment(item.value)}
+                aria-pressed={segment === item.value}
+                className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors ${
+                  segment === item.value
+                    ? 'bg-ink text-white'
+                    : 'text-graphite hover:text-ink'
+                }`}
+              >
+                {item.label} · {segmentCounts[item.value]}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <div className="hidden overflow-x-auto rounded-xl border border-line sm:block">
@@ -503,6 +570,7 @@ export default function AdminUsers() {
               <th scope="col" className="hidden px-4 py-3 text-left text-xs font-medium text-graphite md:table-cell">Телефон</th>
               <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-graphite">Роль</th>
               <th scope="col" className="hidden px-4 py-3 text-left text-xs font-medium text-graphite sm:table-cell">Записей</th>
+              <th scope="col" className="hidden px-4 py-3 text-left text-xs font-medium text-graphite xl:table-cell">Активность</th>
               <th scope="col" className="hidden px-4 py-3 text-left text-xs font-medium text-graphite lg:table-cell">В школе с</th>
               <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-graphite">
                 <span className="sr-only">Действия</span>
@@ -546,13 +614,38 @@ export default function AdminUsers() {
                     <td className="hidden px-4 py-3 text-graphite md:table-cell">{u.phone || '—'}</td>
                     <td className="px-4 py-3">{roleControl(u)}</td>
                     <td className="hidden px-4 py-3 text-graphite sm:table-cell">{regCountOf(u.id)}</td>
+                    <td className="hidden px-4 py-3 xl:table-cell">
+                      {(() => {
+                        const act = activity.get(u.id);
+                        if (!act) {
+                          return <span className="text-xs text-graphite/70">нет записей</span>;
+                        }
+                        const rate = Math.round((act.attended / act.total) * 100);
+                        return (
+                          <span className="text-xs">
+                            <span
+                              className={`font-semibold ${
+                                rate >= 70
+                                  ? 'text-emerald-700'
+                                  : rate >= 40
+                                    ? 'text-amber-700'
+                                    : 'text-brand'
+                              }`}
+                            >
+                              {act.attended}/{act.total}
+                            </span>
+                            <span className="ml-1.5 text-graphite/70">{formatDate(act.last)}</span>
+                          </span>
+                        );
+                      })()}
+                    </td>
                     <td className="hidden px-4 py-3 text-graphite lg:table-cell">{formatDate(u.created)}</td>
                     <td className="px-4 py-3">{rowActions(u)}</td>
                   </tr>
 
                   {(expanded || messageId === u.id) && (
                     <tr className="border-b border-line bg-paper">
-                      <td colSpan={6} className="px-4 py-4">
+                      <td colSpan={7} className="px-4 py-4">
                         <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
                           <div>
                             <p className="mb-2 text-[0.62rem] font-bold uppercase tracking-[0.1em] text-graphite">
@@ -642,7 +735,7 @@ export default function AdminUsers() {
             })}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={6} className="bg-mist px-4 py-10 text-center text-sm text-graphite">
+                <td colSpan={7} className="bg-mist px-4 py-10 text-center text-sm text-graphite">
                   {users.length === 0 ? 'Загрузка списка…' : 'Ничего не найдено'}
                 </td>
               </tr>
