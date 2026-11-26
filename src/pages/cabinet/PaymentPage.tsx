@@ -214,7 +214,8 @@ export default function PaymentPage() {
                 Выгода {comparison.percent}%
               </StatusBadge>
               Экономия {rub(comparison.saved)} ₽ против{' '}
-              {countNoun(plan?.months ?? 1, 'месяца', 'месяцев', 'месяцев')} по 990 ₽.
+              {countNoun(plan?.months ?? 1, 'месяца', 'месяцев', 'месяцев')} по{' '}
+              {rub(plans[0].price)} ₽.
             </div>
           )}
 
