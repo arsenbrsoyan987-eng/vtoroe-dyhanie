@@ -42,7 +42,11 @@ export default function AthleteDashboard() {
   const { currentUser, registrations, notifications, personalResults } = useAuth();
   const navigate = useNavigate();
 
-  const activeRegs = registrations.filter((r) => r.userId === currentUser!.id && r.status !== 'cancelled');
+  const activeRegs = useMemo(
+    () =>
+      registrations.filter((r) => r.userId === currentUser!.id && r.status !== 'cancelled'),
+    [registrations, currentUser]
+  );
   const today = todayISO();
   const upcomingRegs = activeRegs
     .filter((r) => {
@@ -90,6 +94,19 @@ export default function AthleteDashboard() {
         )
       )
     : 0;
+
+  // Последняя запись дневника: показываем, что изменилось с прошлого раза
+  const myResults = useMemo(
+    () =>
+      personalResults
+        .filter((r) => r.userId === currentUser!.id)
+        .sort((a, b) => b.date.localeCompare(a.date)),
+    [personalResults, currentUser]
+  );
+  const lastResult = myResults[0];
+  const lastTraining = lastResult
+    ? trainings.find((t) => t.id === lastResult.trainingId)
+    : undefined;
 
   return (
     <div>
@@ -207,6 +224,11 @@ export default function AthleteDashboard() {
             <p className="mt-1 text-xs text-graphite">
               Статус «{loyalty.tier.name}» · кэшбэк {loyalty.tier.cashback}%
             </p>
+            {loyalty.expiringSoon > 0 && (
+              <p className="mt-2 rounded-lg bg-amber-500/10 px-2.5 py-2 text-[0.68rem] font-semibold text-amber-800">
+                {loyalty.expiringSoon} {countNoun(loyalty.expiringSoon, 'балл сгорит', 'балла сгорят', 'баллов сгорят')} в течение 30 дней
+              </p>
+            )}
             {loyalty.nextTier && (
               <>
                 <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-mist">
@@ -274,6 +296,43 @@ export default function AthleteDashboard() {
                   </li>
                 ))}
               </ul>
+            </Panel>
+          )}
+
+          {lastResult && (
+            <Panel>
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <PanelTitle>Последний результат</PanelTitle>
+                <ActionButton to="/cabinet/results" variant="ghost">
+                  Дневник
+                </ActionButton>
+              </div>
+              <p className="text-sm font-bold text-ink">
+                {lastTraining?.name ?? 'Тренировка'}
+              </p>
+              <p className="mt-0.5 text-xs text-graphite">{formatDate(lastResult.date)}</p>
+              <div className="mt-2.5 flex flex-wrap gap-2">
+                {lastResult.distance && (
+                  <span className="rounded-full bg-navy/10 px-2.5 py-1 text-[0.68rem] font-bold text-navy">
+                    {lastResult.distance}
+                  </span>
+                )}
+                {lastResult.time && (
+                  <span className="rounded-full bg-emerald-500/10 px-2.5 py-1 text-[0.68rem] font-bold text-emerald-700">
+                    {lastResult.time}
+                  </span>
+                )}
+                {lastResult.rating ? (
+                  <span className="rounded-full bg-amber-500/10 px-2.5 py-1 text-[0.68rem] font-bold text-amber-700">
+                    ★ {lastResult.rating}/5
+                  </span>
+                ) : null}
+              </div>
+              {lastResult.notes && (
+                <p className="mt-2.5 line-clamp-3 rounded-lg bg-mist px-2.5 py-2 text-[0.68rem] leading-relaxed text-graphite">
+                  {lastResult.notes}
+                </p>
+              )}
             </Panel>
           )}
 
